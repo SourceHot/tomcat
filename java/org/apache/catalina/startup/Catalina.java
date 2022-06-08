@@ -129,6 +129,7 @@ public class Catalina {
 
     /**
      * Prevent duplicate loads.
+     * 是否已加载
      */
     protected boolean loaded = false;
 
@@ -142,6 +143,7 @@ public class Catalina {
 
     /**
      * Generate Tomcat embedded code from configuration files.
+     * 从配置文件生成 Tomcat 嵌入式代码
      */
     protected boolean generateCode = false;
 
@@ -166,6 +168,7 @@ public class Catalina {
 
     /**
      * Use generated code as a replacement for configuration files.
+     * 使用生成的代码代替配置文件。
      */
     protected boolean useGeneratedCode = false;
 
@@ -576,15 +579,22 @@ public class Catalina {
 
     protected void parseServerXml(boolean start) {
         // Set configuration source
+
+        // 将 conf/server.xml 文件转换为CatalinaBaseConfigurationSource对象
         ConfigFileLoader.setSource(new CatalinaBaseConfigurationSource(Bootstrap.getCatalinaBaseFile(), getConfigFile()));
         File file = configFile();
+        // 1. 使用生成的代码代替配置文件
+        // 2. GeneratedCodeLoader 不为空
 
         if (useGeneratedCode && !Digester.isGeneratedCodeLoaderSet()) {
             // Load loader
+            // 组装加载的类
             String loaderClassName = generatedCodePackage + ".DigesterGeneratedCodeLoader";
             try {
+                // 生成Digester.GeneratedCodeLoader类
                 Digester.GeneratedCodeLoader loader = (Digester.GeneratedCodeLoader)
                         Catalina.class.getClassLoader().loadClass(loaderClassName).getDeclaredConstructor().newInstance();
+                // 设置Digester.GeneratedCodeLoader
                 Digester.setGeneratedCodeLoader(loader);
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
@@ -598,8 +608,13 @@ public class Catalina {
         }
 
         // Init source location
+
+        // server.xml 文件
         File serverXmlLocation = null;
         String xmlClassName = null;
+        // 通常情况下不会进入
+        // 1. 从配置文件生成
+        // 2. 使用代码生成器生成
         if (generateCode || useGeneratedCode) {
             xmlClassName = start ? generatedCodePackage + ".ServerXml" : generatedCodePackage + ".ServerXmlStop";
         }
@@ -612,6 +627,7 @@ public class Catalina {
             } else {
                 generatedCodeLocation = new File(Bootstrap.getCatalinaHomeFile(), "work");
             }
+            // 生成文件
             serverXmlLocation = new File(generatedCodeLocation, generatedCodePackage);
             if (!serverXmlLocation.isDirectory() && !serverXmlLocation.mkdirs()) {
                 log.warn(sm.getString("catalina.generatedCodeLocationError", generatedCodeLocation.getAbsolutePath()));
@@ -627,9 +643,13 @@ public class Catalina {
 
         if (serverXml != null) {
             serverXml.load(this);
-        } else {
+        }
+        // 主要分析路线
+        else {
+            // 读取资源对象，该资源对象是server.xml
             try (ConfigurationSource.Resource resource = ConfigFileLoader.getSource().getServerXml()) {
                 // Create and execute our Digester
+                // 创建Digester对象，注意创建的时候有启动和关闭两种类型
                 Digester digester = start ? createStartDigester() : createStopDigester();
                 InputStream inputStream = resource.getInputStream();
                 InputSource inputSource = new InputSource(resource.getURI().toURL().toString());
@@ -664,13 +684,19 @@ public class Catalina {
 
     public void stopServer(String[] arguments) {
 
+        // 参数不为空
         if (arguments != null) {
+            // 根据参数执行不同的逻辑
             arguments(arguments);
         }
 
+        // 获取服务对象
         Server s = getServer();
+        // 服务对象为空
         if (s == null) {
+            // 解析server.xml
             parseServerXml(false);
+            // 服务对象为空结束进程
             if (getServer() == null) {
                 log.error(sm.getString("catalina.stopError"));
                 System.exit(1);
@@ -678,6 +704,7 @@ public class Catalina {
         } else {
             // Server object already present. Must be running as a service
             try {
+                // 停止并摧毁服务对象
                 s.stop();
                 s.destroy();
             } catch (LifecycleException e) {
@@ -687,8 +714,11 @@ public class Catalina {
         }
 
         // Stop the existing server
+
         s = getServer();
+        // 获取端口，原本端口+端口偏移量
         if (s.getPortWithOffset() > 0) {
+            // 打开socket将关闭信息写出
             try (Socket socket = new Socket(s.getAddress(), s.getPortWithOffset());
                     OutputStream stream = socket.getOutputStream()) {
                 String shutdown = s.getShutdown();
@@ -718,37 +748,48 @@ public class Catalina {
      */
     public void load() {
 
+        // 如果已加载不做处理
         if (loaded) {
             return;
         }
+        // 是否已加载标记设置为true
         loaded = true;
 
+        // 开始时间
         long t1 = System.nanoTime();
 
         // Before digester - it may be needed
+        // 初始化一些系统属性
         initNaming();
 
         // Parse main server.xml
+        // 解析server.xml
         parseServerXml(true);
+        // 获取服务对象
         Server s = getServer();
+        // 服务对象为空返回
         if (s == null) {
             return;
         }
 
+        // 为服务对象设置属性
         getServer().setCatalina(this);
         getServer().setCatalinaHome(Bootstrap.getCatalinaHomeFile());
         getServer().setCatalinaBase(Bootstrap.getCatalinaBaseFile());
 
         // Stream redirection
+        // 初始化流
         initStreams();
 
         // Start the new server
         try {
+            // 实例化服务
             getServer().init();
         } catch (LifecycleException e) {
             if (throwOnInitFailure) {
                 throw new java.lang.Error(e);
-            } else {
+            }
+            else {
                 log.error(sm.getString("catalina.initError"), e);
             }
         }
@@ -779,21 +820,27 @@ public class Catalina {
      */
     public void start() {
 
+        // 如果服务对象为空则进行加载操作
         if (getServer() == null) {
             load();
         }
 
+        // 执行过load方法后服务对象还为空则记录异常日志并结束处理
         if (getServer() == null) {
             log.fatal(sm.getString("catalina.noServer"));
             return;
         }
 
+        // 开始时间
         long t1 = System.nanoTime();
 
         // Start the new server
         try {
+            // 启动
             getServer().start();
-        } catch (LifecycleException e) {
+        }
+        // 出现异常进行服务对象的摧毁操作
+        catch (LifecycleException e) {
             log.fatal(sm.getString("catalina.serverStartFail"), e);
             try {
                 getServer().destroy();
@@ -807,12 +854,14 @@ public class Catalina {
             log.info(sm.getString("catalina.startup", Long.toString(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1))));
         }
 
+        // 如果允许生成代码，则通过generateLoader方法补充一段代码，补充的类是DigesterGeneratedCodeLoader
         if (generateCode) {
             // Generate loader which will load all generated classes
             generateLoader();
         }
 
         // Register shutdown hook
+        // 是否使用关闭钩子，如果使用则注册关闭钩子相关操作
         if (useShutdownHook) {
             if (shutdownHook == null) {
                 shutdownHook = new CatalinaShutdownHook();
@@ -829,6 +878,7 @@ public class Catalina {
             }
         }
 
+        // 如果需要等待则进行等待造作
         if (await) {
             await();
             stop();
@@ -844,6 +894,7 @@ public class Catalina {
         try {
             // Remove the ShutdownHook first so that server.stop()
             // doesn't get invoked twice
+            // 关闭钩子相关操作
             if (useShutdownHook) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHook);
 
@@ -863,8 +914,11 @@ public class Catalina {
 
         // Shut down the server
         try {
+            // 获取服务对象
             Server s = getServer();
+            // 获取服务对象状态
             LifecycleState state = s.getState();
+            // 状态小于等于停止准备状态并且状态大于等于摧毁状态不做处理，反之则关闭服务对象并摧毁服务对象
             if (LifecycleState.STOPPING_PREP.compareTo(state) <= 0
                     && LifecycleState.DESTROYED.compareTo(state) >= 0) {
                 // Nothing to do. stop() was already called
@@ -940,7 +994,9 @@ public class Catalina {
      * Set the security package access/protection.
      */
     protected void setSecurityProtection(){
+        // 安全配置类实例化
         SecurityConfig securityConfig = SecurityConfig.newInstance();
+        // 设置package.definition属性和package.access属性
         securityConfig.setPackageDefinition();
         securityConfig.setPackageAccess();
     }

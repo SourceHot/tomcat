@@ -62,10 +62,13 @@ public final class Bootstrap {
 
     static {
         // Will always be non-null
+        // 获取 user.dir 目录
         String userDir = System.getProperty("user.dir");
 
         // Home first
+        // 获取 catalina.home 目录
         String home = System.getProperty(Constants.CATALINA_HOME_PROP);
+        // 将 catalina.home 目录字符串转换为文件对象
         File homeFile = null;
 
         if (home != null) {
@@ -77,11 +80,14 @@ public final class Bootstrap {
             }
         }
 
+        // 如果 catalina.home 文件对象为空
         if (homeFile == null) {
             // First fall-back. See if current directory is a bin directory
             // in a normal Tomcat install
+            // 获取bootstrap.jar路径
             File bootstrapJar = new File(userDir, "bootstrap.jar");
 
+            // 如果bootstrap.jar存在则将home文件修改为userDir的父级
             if (bootstrapJar.exists()) {
                 File f = new File(userDir, "..");
                 try {
@@ -92,6 +98,7 @@ public final class Bootstrap {
             }
         }
 
+        // home文件为空
         if (homeFile == null) {
             // Second fall-back. Use current directory
             File f = new File(userDir);
@@ -103,10 +110,12 @@ public final class Bootstrap {
         }
 
         catalinaHomeFile = homeFile;
+        // 设置系统变量catalina.home
         System.setProperty(
                 Constants.CATALINA_HOME_PROP, catalinaHomeFile.getPath());
 
         // Then base
+        // 获取catalina.base
         String base = System.getProperty(Constants.CATALINA_BASE_PROP);
         if (base == null) {
             catalinaBaseFile = catalinaHomeFile;
@@ -119,6 +128,7 @@ public final class Bootstrap {
             }
             catalinaBaseFile = baseFile;
         }
+        // 设置 catalina.base 属性
         System.setProperty(
                 Constants.CATALINA_BASE_PROP, catalinaBaseFile.getPath());
     }
@@ -131,8 +141,17 @@ public final class Bootstrap {
      */
     private Object catalinaDaemon = null;
 
+    /**
+     * 通用类加载器
+     */
     ClassLoader commonLoader = null;
+    /**
+     * Tomcat私有的类加载器，该类加载器中的类对webapp不可见
+     */
     ClassLoader catalinaLoader = null;
+    /**
+     * 共享的类加载器，该类加载器中的类对Tomcat不可见，对webapp可见
+     */
     ClassLoader sharedLoader = null;
 
 
@@ -141,6 +160,7 @@ public final class Bootstrap {
 
     private void initClassLoaders() {
         try {
+            // 初始化三个类加载器：commonLoader、catalinaLoader和catalinaLoader
             commonLoader = createClassLoader("common", null);
             if (commonLoader == null) {
                 // no config file, default to this loader - we might be in a 'single' env.
@@ -159,22 +179,28 @@ public final class Bootstrap {
     private ClassLoader createClassLoader(String name, ClassLoader parent)
         throws Exception {
 
+        // 从catalina.properties文件中获取属性
         String value = CatalinaProperties.getProperty(name + ".loader");
+        // 如果属性为空返回父类加载器
         if ((value == null) || (value.equals(""))) {
             return parent;
         }
 
+        // 做字符串替换
         value = replace(value);
 
         List<Repository> repositories = new ArrayList<>();
 
         String[] repositoryPaths = getPaths(value);
 
+        // 循环repositoryPaths变量，将其中的数据转换为Repository对象放入到repositories
         for (String repository : repositoryPaths) {
             // Check for a JAR URL repository
             try {
+                // 创建url对象
                 @SuppressWarnings("unused")
                 URL url = new URL(repository);
+                // 转换Repository对象
                 repositories.add(new Repository(repository, RepositoryType.URL));
                 continue;
             } catch (MalformedURLException e) {
@@ -193,6 +219,7 @@ public final class Bootstrap {
             }
         }
 
+        // 类加载器工厂创建类加载器
         return ClassLoaderFactory.createClassLoader(repositories, parent);
     }
 
@@ -249,23 +276,29 @@ public final class Bootstrap {
      */
     public void init() throws Exception {
 
+        // 初始化类加载器
         initClassLoaders();
 
+        // 将catalinaLoader设置到当前线程中作为上下文类加载器
         Thread.currentThread().setContextClassLoader(catalinaLoader);
 
+        // 通过catalinaLoader加载一些类
         SecurityClassLoad.securityClassLoad(catalinaLoader);
 
         // Load our startup class and call its process() method
         if (log.isDebugEnabled()) {
             log.debug("Loading startup class");
         }
+        // 获取org.apache.catalina.startup.Catalina类
         Class<?> startupClass = catalinaLoader.loadClass("org.apache.catalina.startup.Catalina");
+        // 实例化org.apache.catalina.startup.Catalina类
         Object startupInstance = startupClass.getConstructor().newInstance();
 
         // Set the shared extensions class loader
         if (log.isDebugEnabled()) {
             log.debug("Setting startup class properties");
         }
+        // 调用Catalina类中的setParentClassLoader方法，将sharedLoader作为父类加载器
         String methodName = "setParentClassLoader";
         Class<?> paramTypes[] = new Class[1];
         paramTypes[0] = Class.forName("java.lang.ClassLoader");
@@ -275,12 +308,14 @@ public final class Bootstrap {
             startupInstance.getClass().getMethod(methodName, paramTypes);
         method.invoke(startupInstance, paramValues);
 
+        // 设置变量
         catalinaDaemon = startupInstance;
     }
 
 
     /**
      * Load daemon.
+     * 核心目的：执行 {@link org.apache.catalina.startup.Catalina#load(java.lang.String[])} 方法
      */
     private void load(String[] arguments) throws Exception {
 
@@ -308,6 +343,7 @@ public final class Bootstrap {
 
     /**
      * getServer() for configtest
+     * 执行getServer方法
      */
     private Object getServer() throws Exception {
 
@@ -322,6 +358,7 @@ public final class Bootstrap {
 
     /**
      * Load the Catalina daemon.
+     * 初始化Catalina
      * @param arguments Initialization arguments
      * @throws Exception Fatal initialization error
      */
@@ -334,6 +371,7 @@ public final class Bootstrap {
 
     /**
      * Start the Catalina daemon.
+     * 调用Catalina类中的start方法
      * @throws Exception Fatal start error
      */
     public void start() throws Exception {
@@ -348,6 +386,7 @@ public final class Bootstrap {
 
     /**
      * Stop the Catalina Daemon.
+     * 调用Catalina类中的stop方法
      * @throws Exception Fatal stop error
      */
     public void stop() throws Exception {
@@ -438,6 +477,7 @@ public final class Bootstrap {
     public static void main(String args[]) {
 
         synchronized (daemonLock) {
+            // 如果Bootstrap对象为空则创建Bootstrap对象，并执行init方法
             if (daemon == null) {
                 // Don't set daemon until init() has completed
                 Bootstrap bootstrap = new Bootstrap();
@@ -449,7 +489,9 @@ public final class Bootstrap {
                     return;
                 }
                 daemon = bootstrap;
-            } else {
+            }
+            // 成员变量daemon不为空的情况下设置上下文类加载器
+            else {
                 // When running as a service the call to stop will be on a new
                 // thread so make sure the correct class loader is used to
                 // prevent a range of class not found exceptions.
@@ -458,6 +500,7 @@ public final class Bootstrap {
         }
 
         try {
+            // 根据启动命令参数执行不同方法
             String command = "start";
             if (args.length > 0) {
                 command = args[args.length - 1];

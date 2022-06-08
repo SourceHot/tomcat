@@ -18,6 +18,9 @@ package org.apache.catalina.loader;
 
 import org.apache.catalina.LifecycleException;
 
+/**
+ * webapp所使用的类加载器
+ */
 public class WebappClassLoader extends WebappClassLoaderBase {
 
     public WebappClassLoader() {

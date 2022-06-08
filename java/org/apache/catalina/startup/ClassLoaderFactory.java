@@ -159,6 +159,7 @@ public final class ClassLoaderFactory {
         }
 
         // Construct the "class path" for this class loader
+        // 当前类加载器可访问的地址
         Set<URL> set = new LinkedHashSet<>();
 
         if (repositories != null) {

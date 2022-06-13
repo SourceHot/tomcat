@@ -88,66 +88,77 @@ public interface Lifecycle {
 
     /**
      * The LifecycleEvent type for the "component before init" event.
+     * 初始化之前的事件
      */
     public static final String BEFORE_INIT_EVENT = "before_init";
 
 
     /**
      * The LifecycleEvent type for the "component after init" event.
+     * 初始化之后的事件
      */
     public static final String AFTER_INIT_EVENT = "after_init";
 
 
     /**
      * The LifecycleEvent type for the "component start" event.
+     * 开始事件
      */
     public static final String START_EVENT = "start";
 
 
     /**
      * The LifecycleEvent type for the "component before start" event.
+     * 事件开始前的事件
      */
     public static final String BEFORE_START_EVENT = "before_start";
 
 
     /**
      * The LifecycleEvent type for the "component after start" event.
+     * 事件结束后的事件
      */
     public static final String AFTER_START_EVENT = "after_start";
 
 
     /**
      * The LifecycleEvent type for the "component stop" event.
+     * 停止事件
      */
     public static final String STOP_EVENT = "stop";
 
 
     /**
      * The LifecycleEvent type for the "component before stop" event.
+     * 停止事件之前的事件
      */
     public static final String BEFORE_STOP_EVENT = "before_stop";
 
 
     /**
      * The LifecycleEvent type for the "component after stop" event.
+     * 停止事件之后的事件
      */
     public static final String AFTER_STOP_EVENT = "after_stop";
 
 
     /**
      * The LifecycleEvent type for the "component after destroy" event.
+     * 摧毁之后的事件
      */
     public static final String AFTER_DESTROY_EVENT = "after_destroy";
 
 
     /**
      * The LifecycleEvent type for the "component before destroy" event.
+     * 摧毁之前的事件
      */
     public static final String BEFORE_DESTROY_EVENT = "before_destroy";
 
 
     /**
      * The LifecycleEvent type for the "periodic" event.
+     * 周期事件
      */
     public static final String PERIODIC_EVENT = "periodic";
 
@@ -157,6 +168,8 @@ public interface Lifecycle {
      * components that use a separate component to perform configuration and
      * need to signal when configuration should be performed - usually after
      * {@link #BEFORE_START_EVENT} and before {@link #START_EVENT}.
+     *
+     * 配置开始事件
      */
     public static final String CONFIGURE_START_EVENT = "configure_start";
 
@@ -166,6 +179,8 @@ public interface Lifecycle {
      * components that use a separate component to perform configuration and
      * need to signal when de-configuration should be performed - usually after
      * {@link #STOP_EVENT} and before {@link #AFTER_STOP_EVENT}.
+     *
+     * 配置结束事件
      */
     public static final String CONFIGURE_STOP_EVENT = "configure_stop";
 
@@ -176,6 +191,7 @@ public interface Lifecycle {
     /**
      * Add a LifecycleEvent listener to this component.
      *
+     * 添加生命周期监听器
      * @param listener The listener to add
      */
     public void addLifecycleListener(LifecycleListener listener);
@@ -184,6 +200,7 @@ public interface Lifecycle {
     /**
      * Get the life cycle listeners associated with this life cycle.
      *
+     * 获取所有的生命周期监听器
      * @return An array containing the life cycle listeners associated with this
      *         life cycle. If this component has no listeners registered, a
      *         zero-length array is returned.
@@ -193,6 +210,7 @@ public interface Lifecycle {
 
     /**
      * Remove a LifecycleEvent listener from this component.
+     * 移除某个生命周期监听器
      *
      * @param listener The listener to remove
      */
@@ -208,6 +226,7 @@ public interface Lifecycle {
      *                   initialization.</li>
      * </ol>
      *
+     * 初始化方法
      * @exception LifecycleException if this component detects a fatal error
      *  that prevents this component from being used
      */
@@ -236,6 +255,7 @@ public interface Lifecycle {
      *                          </li>
      * </ol>
      *
+     * 启动方法
      * @exception LifecycleException if this component detects a fatal error
      *  that prevents this component from being used
      */
@@ -270,6 +290,7 @@ public interface Lifecycle {
      * {@link LifecycleState#STOPPING}, bypassing
      * {@link LifecycleState#STOPPING_PREP}
      *
+     * 停止方法
      * @exception LifecycleException if this component detects a fatal error
      *  that needs to be reported
      */
@@ -283,6 +304,7 @@ public interface Lifecycle {
      *                      destruction.</li>
      * </ol>
      *
+     * 摧毁方法
      * @exception LifecycleException if this component detects a fatal error
      *  that prevents this component from being used
      */
@@ -292,6 +314,7 @@ public interface Lifecycle {
     /**
      * Obtain the current state of the source component.
      *
+     * 获取生命周期状态
      * @return The current state of the source component.
      */
     public LifecycleState getState();
@@ -303,6 +326,7 @@ public interface Lifecycle {
      * should not be relied upon to determine component state. To determine
      * component state, use {@link #getState()}.
      *
+     * 获取生命周期状态名称
      * @return The name of the current component state.
      */
     public String getStateName();

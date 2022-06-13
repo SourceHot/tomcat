@@ -16,11 +16,11 @@
  */
 package org.apache.catalina;
 
-import java.io.File;
-import java.util.concurrent.ScheduledExecutorService;
-
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.catalina.startup.Catalina;
+
+import java.io.File;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * A <code>Server</code> element represents the entire Catalina
@@ -46,6 +46,8 @@ public interface Server extends Lifecycle {
     // ------------------------------------------------------------- Properties
 
     /**
+     * 获取全局命名资源
+     *
      * @return the global naming resources.
      */
     public NamingResourcesImpl getGlobalNamingResources();
@@ -53,6 +55,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Set the global naming resources.
+     * 设置全局命名资源
      *
      * @param globalNamingResources The new global naming resources
      */
@@ -61,12 +64,14 @@ public interface Server extends Lifecycle {
 
 
     /**
+     * 获取全局命名资源上下文
      * @return the global naming resources context.
      */
     public javax.naming.Context getGlobalNamingContext();
 
 
     /**
+     * 获取端口
      * @return the port number we listen to for shutdown commands.
      *
      * @see #getPortOffset()
@@ -77,6 +82,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Set the port number we listen to for shutdown commands.
+     * 设置端口
      *
      * @param port The new port number
      *
@@ -89,6 +95,7 @@ public interface Server extends Lifecycle {
      * For example, if port is 8005, and portOffset is 1000,
      * the server listens at 9005.
      *
+     * 获取端口偏移量
      * @return the port offset
      */
     public int getPortOffset();
@@ -98,6 +105,7 @@ public interface Server extends Lifecycle {
      * For example, if port is 8005, and you set portOffset to 1000,
      * connector listens at 9005.
      *
+     * 设置端口偏移量
      * @param portOffset sets the port offset
      */
     public void setPortOffset(int portOffset);
@@ -107,11 +115,13 @@ public interface Server extends Lifecycle {
      * If you do not set port offset, port is returned. If you set
      * port offset, port offset + port is returned.
      *
+     * 获取偏移后的端口
      * @return the port with offset
      */
     public int getPortWithOffset();
 
     /**
+     * 获取地址
      * @return the address on which we listen to for shutdown commands.
      */
     public String getAddress();
@@ -120,12 +130,14 @@ public interface Server extends Lifecycle {
     /**
      * Set the address on which we listen to for shutdown commands.
      *
+     * 设置地址
      * @param address The new address
      */
     public void setAddress(String address);
 
 
     /**
+     * 获取关闭命令
      * @return the shutdown command string we are waiting for.
      */
     public String getShutdown();
@@ -134,12 +146,14 @@ public interface Server extends Lifecycle {
     /**
      * Set the shutdown command we are waiting for.
      *
+     * 设置关闭命令
      * @param shutdown The new shutdown command
      */
     public void setShutdown(String shutdown);
 
 
     /**
+     * 获取父类加载器
      * @return the parent class loader for this component. If not set, return
      * {@link #getCatalina()} {@link Catalina#getParentClassLoader()}. If
      * catalina has not been set, return the system class loader.
@@ -149,6 +163,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Set the parent class loader for this server.
+     * 设置父类加载器
      *
      * @param parent The new parent class loader
      */
@@ -156,6 +171,7 @@ public interface Server extends Lifecycle {
 
 
     /**
+     * 获取Catalina
      * @return the outer Catalina startup/shutdown component if present.
      */
     public Catalina getCatalina();
@@ -163,12 +179,14 @@ public interface Server extends Lifecycle {
     /**
      * Set the outer Catalina startup/shutdown component if present.
      *
+     * 设置 Catalina
      * @param catalina the outer Catalina component
      */
     public void setCatalina(Catalina catalina);
 
 
     /**
+     * 获取 ${catalina.base} 目录
      * @return the configured base (instance) directory. Note that home and base
      * may be the same (and are by default). If this is not set the value
      * returned by {@link #getCatalinaHome()} will be used.
@@ -179,12 +197,14 @@ public interface Server extends Lifecycle {
      * Set the configured base (instance) directory. Note that home and base
      * may be the same (and are by default).
      *
+     * 设置 ${catalina.base} 目录
      * @param catalinaBase the configured base directory
      */
     public void setCatalinaBase(File catalinaBase);
 
 
     /**
+     * 获取 ${catalina.home} 目录
      * @return the configured home (binary) directory. Note that home and base
      * may be the same (and are by default).
      */
@@ -194,6 +214,7 @@ public interface Server extends Lifecycle {
      * Set the configured home (binary) directory. Note that home and base
      * may be the same (and are by default).
      *
+     * 设置 ${catalina.home} 目录
      * @param catalinaHome the configured home directory
      */
     public void setCatalinaHome(File catalinaHome);
@@ -201,6 +222,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Get the utility thread count.
+     * 获取线程数
      * @return the thread count
      */
     public int getUtilityThreads();
@@ -208,6 +230,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Set the utility thread count.
+     * 设置线程数
      * @param utilityThreads the new thread count
      */
     public void setUtilityThreads(int utilityThreads);
@@ -219,6 +242,7 @@ public interface Server extends Lifecycle {
     /**
      * Add a new Service to the set of defined Services.
      *
+     * 添加 Service
      * @param service The Service to be added
      */
     public void addService(Service service);
@@ -226,6 +250,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Wait until a proper shutdown command is received, then return.
+     * 等待关闭命令
      */
     public void await();
 
@@ -233,6 +258,7 @@ public interface Server extends Lifecycle {
     /**
      * Find the specified Service
      *
+     * 根据名称寻找Service
      * @param name Name of the Service to be returned
      * @return the specified Service, or <code>null</code> if none exists.
      */
@@ -240,6 +266,7 @@ public interface Server extends Lifecycle {
 
 
     /**
+     * 寻找所有的Service
      * @return the set of Services defined within this Server.
      */
     public Service[] findServices();
@@ -248,6 +275,7 @@ public interface Server extends Lifecycle {
     /**
      * Remove the specified Service from the set associated from this
      * Server.
+     * 移除Service
      *
      * @param service The Service to be removed
      */
@@ -255,12 +283,14 @@ public interface Server extends Lifecycle {
 
 
     /**
+     * 获取命名令牌
      * @return the token necessary for operations on the associated JNDI naming
      * context.
      */
     public Object getNamingToken();
 
     /**
+     * 获取执行器
      * @return the utility executor managed by the Service.
      */
     public ScheduledExecutorService getUtilityExecutor();

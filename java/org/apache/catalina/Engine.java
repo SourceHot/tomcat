@@ -43,12 +43,14 @@ package org.apache.catalina;
 public interface Engine extends Container {
 
     /**
+     * 获取引擎的默认名称（HostName）
      * @return the default host name for this Engine.
      */
     public String getDefaultHost();
 
 
     /**
+     * 设置引擎的默认名称（主机名称）
      * Set the default hostname for this Engine.
      *
      * @param defaultHost The new default host
@@ -57,12 +59,14 @@ public interface Engine extends Container {
 
 
     /**
+     * 获取jvmRouteId
      * @return the JvmRouteId for this engine.
      */
     public String getJvmRoute();
 
 
     /**
+     * 设置jvmRouteId
      * Set the JvmRouteId for this engine.
      *
      * @param jvmRouteId the (new) JVM Route ID. Each Engine within a cluster
@@ -72,12 +76,14 @@ public interface Engine extends Container {
 
 
     /**
+     * 获取Service对象
      * @return the <code>Service</code> with which we are associated (if any).
      */
     public Service getService();
 
 
     /**
+     * 设置Service对象
      * Set the <code>Service</code> with which we are associated (if any).
      *
      * @param service The service that owns this Engine

@@ -260,6 +260,7 @@ public final class UserConfig
 
         // Identify the host we are associated with
         try {
+            // 从事件对象中提取Host对象
             host = (Host) event.getLifecycle();
         } catch (ClassCastException e) {
             log.error(sm.getString("hostConfig.cce", event.getLifecycle()), e);

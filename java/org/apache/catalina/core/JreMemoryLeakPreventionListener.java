@@ -58,6 +58,12 @@ import org.w3c.dom.ls.DOMImplementationLS;
  * caching by default.
  * <p>
  * This listener must only be nested within {@link Server} elements.
+ *
+ *
+ * 为 Java 运行时环境可能导致内存泄漏或锁定文件的已知位置提供解决方法。
+ * 当 JRE 代码使用上下文类加载器加载单例时会发生内存泄漏，因为如果 Web 应用程序类加载器当时恰好是上下文类加载器，这将导致内存泄漏。解决方法是在 Tomcat 的公共类加载器是上下文类加载器时初始化这些单例。
+ * 锁定文件通常发生在访问 JAR 中的资源而没有首先禁用 Jar URL 连接缓存时。解决方法是默认禁用此缓存。
+ * 此侦听器只能嵌套在Server元素中。
  */
 public class JreMemoryLeakPreventionListener implements LifecycleListener {
 

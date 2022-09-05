@@ -46,6 +46,9 @@ import org.apache.tomcat.util.res.StringManager;
  * <p>
  * This listener must only be nested within {@link Server} elements.
  *
+ *
+ * 它实例化与受管理的全局 JNDI 资源关联的 MBean 集。 <p> 此侦听器只能嵌套在 {@link Server} 元素中。
+ *
  * @author Craig R. McClanahan
  * @since 4.1
  */

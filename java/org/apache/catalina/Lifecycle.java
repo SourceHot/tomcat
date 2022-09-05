@@ -109,14 +109,14 @@ public interface Lifecycle {
 
     /**
      * The LifecycleEvent type for the "component before start" event.
-     * 事件开始前的事件
+     * 启动开始前的事件
      */
     public static final String BEFORE_START_EVENT = "before_start";
 
 
     /**
      * The LifecycleEvent type for the "component after start" event.
-     * 事件结束后的事件
+     * 启动结束后的事件
      */
     public static final String AFTER_START_EVENT = "after_start";
 
@@ -130,14 +130,14 @@ public interface Lifecycle {
 
     /**
      * The LifecycleEvent type for the "component before stop" event.
-     * 停止事件之前的事件
+     * 启动停止之前的事件
      */
     public static final String BEFORE_STOP_EVENT = "before_stop";
 
 
     /**
      * The LifecycleEvent type for the "component after stop" event.
-     * 停止事件之后的事件
+     * 启动停止后的事件
      */
     public static final String AFTER_STOP_EVENT = "after_stop";
 

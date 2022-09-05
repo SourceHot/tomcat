@@ -22,6 +22,8 @@ package org.apache.catalina;
  * Note that "container start" and "container stop" events are normally
  * LifecycleEvents, not ContainerEvents.
  *
+ *
+ * 容器监听器
  * @author Craig R. McClanahan
  */
 public interface ContainerListener {

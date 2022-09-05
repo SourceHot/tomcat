@@ -1152,21 +1152,27 @@ public class Tomcat {
      * <p>
      * The start() method in context will set 'configured' to false - and
      * expects a listener to set it back to true.
+     * 修复上下文的监听器，在不需要 web.xml 文件的时候需要执行
      */
     public static class FixContextListener implements LifecycleListener {
 
         @Override
         public void lifecycleEvent(LifecycleEvent event) {
             try {
+                // 从事件对象中提取Context对象
                 Context context = (Context) event.getLifecycle();
+                // 如果事件类型是CONFIGURE_START_EVENT
                 if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
+                    // 将Context对象中是否配置的标记设置为true
                     context.setConfigured(true);
 
                     // Process annotations
+                    // 处理应用上的注解
                     WebAnnotationSet.loadApplicationAnnotations(context);
 
                     // LoginConfig is required to process @ServletSecurity
                     // annotations
+                    // 处理LoginConfig
                     if (context.getLoginConfig() == null) {
                         context.setLoginConfig(new LoginConfig("NONE", null, null, null));
                         context.getPipeline().addValve(new NonLoginAuthenticator());
@@ -1182,6 +1188,8 @@ public class Tomcat {
      * Fix reload - required if reloading and using programmatic configuration.
      * When a context is reloaded, any programmatic configuration is lost. This
      * listener sets the equivalent of conf/web.xml when the context starts.
+     *
+     * 修复重新加载 - 如果重新加载和使用编程配置，则需要。重新加载上下文时，任何编程配置都会丢失。此侦听器在上下文启动时设置 conf/web.xml 的等效项。
      */
     public static class DefaultWebXmlListener implements LifecycleListener {
         @Override

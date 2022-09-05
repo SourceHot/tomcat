@@ -16,29 +16,19 @@
  */
 package org.apache.catalina;
 
-import java.net.URL;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.servlet.ServletContainerInitializer;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRegistration;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletSecurityElement;
+import jakarta.servlet.*;
 import jakarta.servlet.descriptor.JspConfigDescriptor;
-
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.tomcat.ContextBind;
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.JarScanner;
-import org.apache.tomcat.util.descriptor.web.ApplicationParameter;
-import org.apache.tomcat.util.descriptor.web.ErrorPage;
-import org.apache.tomcat.util.descriptor.web.FilterDef;
-import org.apache.tomcat.util.descriptor.web.FilterMap;
-import org.apache.tomcat.util.descriptor.web.LoginConfig;
-import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
+import org.apache.tomcat.util.descriptor.web.*;
 import org.apache.tomcat.util.http.CookieProcessor;
+
+import java.net.URL;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A <b>Context</b> is a Container that represents a servlet context, and
@@ -56,6 +46,7 @@ import org.apache.tomcat.util.http.CookieProcessor;
  * of Wrapper (representing individual servlet definitions).
  * <p>
  *
+ * 上下文
  * @author Craig R. McClanahan
  */
 public interface Context extends Container, ContextBind {
@@ -86,30 +77,33 @@ public interface Context extends Container, ContextBind {
 
     // ------------------------------------------------------------- Properties
 
-    /**
-     * Returns <code>true</code> if requests mapped to servlets without
-     * "multipart config" to parse multipart/form-data requests anyway.
-     *
-     * @return <code>true</code> if requests mapped to servlets without
-     *    "multipart config" to parse multipart/form-data requests,
-     *    <code>false</code> otherwise.
-     */
+ /**
+  * 获取是否可以解析multipart config请求到multipart/form-data
+  * Returns <code>true</code> if requests mapped to servlets without
+  * "multipart config" to parse multipart/form-data requests anyway.
+  *
+  * @return <code>true</code> if requests mapped to servlets without
+  * "multipart config" to parse multipart/form-data requests,
+  * <code>false</code> otherwise.
+  */
     public boolean getAllowCasualMultipartParsing();
 
 
    /**
-     * Set to <code>true</code> to allow requests mapped to servlets that
-     * do not explicitly declare @MultipartConfig or have
-     * &lt;multipart-config&gt; specified in web.xml to parse
-     * multipart/form-data requests.
-     *
-     * @param allowCasualMultipartParsing <code>true</code> to allow such
-     *        casual parsing, <code>false</code> otherwise.
-     */
-    public void setAllowCasualMultipartParsing(boolean allowCasualMultipartParsing);
+    * 设置是否可以解析multipart config请求到multipart/form-data
+    * Set to <code>true</code> to allow requests mapped to servlets that
+    * do not explicitly declare @MultipartConfig or have
+    * &lt;multipart-config&gt; specified in web.xml to parse
+    * multipart/form-data requests.
+    *
+    * @param allowCasualMultipartParsing <code>true</code> to allow such
+    *        casual parsing, <code>false</code> otherwise.
+    */
+   void setAllowCasualMultipartParsing(boolean allowCasualMultipartParsing);
 
 
     /**
+     * 获取应用监听器集合
      * Obtain the registered application event listeners.
      *
      * @return An array containing the application event listener instances for
@@ -120,6 +114,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置应用监听器集合
      * Store the set of initialized application event listener objects,
      * in the order they were specified in the web application deployment
      * descriptor, for this application.
@@ -130,6 +125,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取生命周期相关的应用监听器集合
      * Obtain the registered application lifecycle listeners.
      *
      * @return An array containing the application lifecycle listener instances
@@ -140,6 +136,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置生命周期相关的应用监听器集合
      * Store the set of initialized application lifecycle listener objects,
      * in the order they were specified in the web application deployment
      * descriptor, for this application.
@@ -150,6 +147,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取编码
      * Obtain the character set name to use with the given Locale. Note that
      * different Contexts may have different mappings of Locale to character
      * set.
@@ -163,6 +161,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取配置文件地址
      * Return the URL of the XML descriptor for this context.
      *
      * @return The URL of the XML descriptor for this context
@@ -171,6 +170,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置配置文件地址
      * Set the URL of the XML descriptor for this context.
      *
      * @param configFile The URL of the XML descriptor for this context.
@@ -179,6 +179,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否正确配置的标志
      * Return the "correctly configured" flag for this Context.
      *
      * @return <code>true</code> if the Context has been correctly configured,
@@ -188,6 +189,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否正确配置的标志
      * Set the "correctly configured" flag for this Context.  This can be
      * set to false by startup listeners that detect a fatal configuration
      * error to avoid the application from being made available.
@@ -198,6 +200,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否使用cookies标志
      * Return the "use cookies for session ids" flag.
      *
      * @return <code>true</code> if it is permitted to use cookies to track
@@ -208,6 +211,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否使用cookies标志
      * Set the "use cookies for session ids" flag.
      *
      * @param cookies The new flag
@@ -216,6 +220,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取session\cookies名称
      * Gets the name to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *
@@ -226,6 +231,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置session\cookies名称
      * Sets the name to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *
@@ -235,6 +241,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否只是用http标志
      * Gets the value of the use HttpOnly cookies for session cookies flag.
      *
      * @return <code>true</code> if the HttpOnly flag should be set on session
@@ -244,6 +251,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否只是用http标志
      * Sets the use HttpOnly cookies for session cookies flag.
      *
      * @param useHttpOnly   Set to <code>true</code> to use HttpOnly cookies
@@ -253,6 +261,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取session\cookies域
      * Gets the domain to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *
@@ -263,6 +272,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置session\cookies域
      * Sets the domain to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *

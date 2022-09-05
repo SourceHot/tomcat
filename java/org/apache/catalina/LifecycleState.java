@@ -71,6 +71,9 @@ public enum LifecycleState {
     FAILED(false, null);
 
     private final boolean available;
+    /**
+     *时间名称
+     */
     private final String lifecycleEvent;
 
     private LifecycleState(boolean available, String lifecycleEvent) {

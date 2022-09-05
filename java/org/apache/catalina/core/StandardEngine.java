@@ -415,6 +415,9 @@ public class StandardEngine extends ContainerBase implements Engine {
         }
     }
 
+    /**
+     * 成功日志监听器
+     */
     protected static final class AccessLogListener
             implements PropertyChangeListener, LifecycleListener,
             ContainerListener {

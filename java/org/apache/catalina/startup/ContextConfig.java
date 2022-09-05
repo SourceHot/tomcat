@@ -293,27 +293,42 @@ public class ContextConfig implements LifecycleListener {
 
         // Identify the context we are associated with
         try {
+            // 从事件对象中提取Context对象。
             context = (Context) event.getLifecycle();
-        } catch (ClassCastException e) {
+        }
+        // 转换异常记录异常日志
+        catch (ClassCastException e) {
             log.error(sm.getString("contextConfig.cce", event.getLifecycle()), e);
             return;
         }
 
         // Process the event that has occurred
+        // 处理不同生命周期
+        // 配置开始事件
         if (event.getType().equals(Lifecycle.CONFIGURE_START_EVENT)) {
             configureStart();
-        } else if (event.getType().equals(Lifecycle.BEFORE_START_EVENT)) {
+        }
+        // 启动开始前的事件
+        else if (event.getType().equals(Lifecycle.BEFORE_START_EVENT)) {
             beforeStart();
-        } else if (event.getType().equals(Lifecycle.AFTER_START_EVENT)) {
+        }
+        // 启动结束后的事件
+        else if (event.getType().equals(Lifecycle.AFTER_START_EVENT)) {
             // Restore docBase for management tools
             if (originalDocBase != null) {
                 context.setDocBase(originalDocBase);
             }
-        } else if (event.getType().equals(Lifecycle.CONFIGURE_STOP_EVENT)) {
+        }
+        // 配置结束事件
+        else if (event.getType().equals(Lifecycle.CONFIGURE_STOP_EVENT)) {
             configureStop();
-        } else if (event.getType().equals(Lifecycle.AFTER_INIT_EVENT)) {
+        }
+        // 初始化之后的事件
+        else if (event.getType().equals(Lifecycle.AFTER_INIT_EVENT)) {
             init();
-        } else if (event.getType().equals(Lifecycle.AFTER_DESTROY_EVENT)) {
+        }
+        // 摧毁之后的事件
+        else if (event.getType().equals(Lifecycle.AFTER_DESTROY_EVENT)) {
             destroy();
         }
 
@@ -931,6 +946,7 @@ public class ContextConfig implements LifecycleListener {
 
     /**
      * Process a "init" event for this Context.
+     * 初始化方法
      */
     protected synchronized void init() {
         // Called from StandardContext.init()
@@ -953,6 +969,7 @@ public class ContextConfig implements LifecycleListener {
 
     /**
      * Process a "before start" event for this Context.
+     * 启动前方法
      */
     protected synchronized void beforeStart() {
 
@@ -969,6 +986,7 @@ public class ContextConfig implements LifecycleListener {
 
     /**
      * Process a "contextConfig" event for this Context.
+     * 配置开始方法
      */
     protected synchronized void configureStart() {
         // Called from StandardContext.start()
@@ -984,7 +1002,9 @@ public class ContextConfig implements LifecycleListener {
                     Boolean.valueOf(context.getXmlNamespaceAware())));
         }
 
+        // 添加 servlet 容器（ServletContainerInitializer）
         context.addServletContainerInitializer(new JasperInitializer(), null);
+        //
         webConfig();
 
         if (!context.getIgnoreAnnotations()) {
@@ -1028,6 +1048,7 @@ public class ContextConfig implements LifecycleListener {
 
     /**
      * Process a "stop" event for this Context.
+     * 配置结束方法
      */
     protected synchronized void configureStop() {
 
@@ -1136,6 +1157,7 @@ public class ContextConfig implements LifecycleListener {
 
     /**
      * Process a "destroy" event for this Context.
+     * 摧毁方法
      */
     protected synchronized void destroy() {
         // Called from StandardContext.destroy()

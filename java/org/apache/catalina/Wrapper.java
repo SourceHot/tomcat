@@ -60,6 +60,8 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取可用时间
+     *
      * @return the available date/time for this servlet, in milliseconds since
      * the epoch.  If this date/time is in the future, any request for this
      * servlet will return an SC_SERVICE_UNAVAILABLE error.  If it is zero,
@@ -70,6 +72,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 设置可用时间
      * Set the available date/time for this servlet, in milliseconds since the
      * epoch.  If this date/time is in the future, any request for this servlet
      * will return an SC_SERVICE_UNAVAILABLE error.  A value equal to
@@ -81,6 +84,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取启动序号
      * @return the load-on-startup order value (negative value means
      * load on first call).
      */
@@ -88,6 +92,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 设置启动序号
      * Set the load-on-startup order value (negative value means
      * load on first call).
      *
@@ -97,12 +102,14 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取启动身份
      * @return the run-as identity for this servlet.
      */
     public String getRunAs();
 
 
     /**
+     * 设置启动身份
      * Set the run-as identity for this servlet.
      *
      * @param runAs New run-as identity value
@@ -111,12 +118,14 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取servlet类
      * @return the fully qualified servlet class name for this servlet.
      */
     public String getServletClass();
 
 
     /**
+     * 设置servlet类
      * Set the fully qualified servlet class name for this servlet.
      *
      * @param servletClass Servlet class name
@@ -125,6 +134,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取servlet方法名称集合
      * Gets the names of the methods supported by the underlying servlet.
      *
      * This is the same set of methods included in the Allow response header
@@ -140,12 +150,14 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 判断servlet是否可用
      * @return <code>true</code> if this Servlet is currently unavailable.
      */
     public boolean isUnavailable();
 
 
     /**
+     * 获取servlet
      * @return the associated Servlet instance.
      */
     public Servlet getServlet();
@@ -153,7 +165,7 @@ public interface Wrapper extends Container {
 
     /**
      * Set the associated Servlet instance
-     *
+     * 设置servlet
      * @param servlet The associated Servlet
      */
     public void setServlet(Servlet servlet);
@@ -163,7 +175,7 @@ public interface Wrapper extends Container {
 
     /**
      * Add a new servlet initialization parameter for this servlet.
-     *
+     * 添加初始化参数
      * @param name Name of this initialization parameter to add
      * @param value Value of this initialization parameter to add
      */
@@ -172,7 +184,7 @@ public interface Wrapper extends Container {
 
     /**
      * Add a mapping associated with the Wrapper.
-     *
+     * 添加映射
      * @param mapping The new wrapper mapping
      */
     public void addMapping(String mapping);
@@ -182,6 +194,7 @@ public interface Wrapper extends Container {
      * Add a new security role reference record to the set of records for
      * this servlet.
      *
+     * 添加安全角色和引用
      * @param name Role name used within this servlet
      * @param link Role name used within the web application
      */
@@ -189,6 +202,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 分配servlet实例
      * Allocate an initialized instance of this Servlet that is ready to have
      * its <code>service()</code> method called.  If the Servlet class does
      * not implement <code>SingleThreadModel</code>, the (only) initialized
@@ -206,6 +220,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 回收servlet实例
      * Return this previously allocated servlet to the pool of available
      * instances.  If this servlet class does not implement SingleThreadModel,
      * no action is actually required.
@@ -221,12 +236,14 @@ public interface Wrapper extends Container {
      * @return the value for the specified initialization parameter name,
      * if any; otherwise return <code>null</code>.
      *
+     * 寻找初始化参数
      * @param name Name of the requested initialization parameter
      */
     public String findInitParameter(String name);
 
 
     /**
+     * 获取所有初始化参数名称
      * @return the names of all defined initialization parameters for this
      * servlet.
      */
@@ -234,12 +251,14 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取所有映射
      * @return the mappings associated with this wrapper.
      */
     public String[] findMappings();
 
 
     /**
+     * 获取安全角色对应的引用
      * @return the security role link for the specified security role
      * reference name, if any; otherwise return <code>null</code>.
      *
@@ -249,6 +268,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取所有的安全角色
      * @return the set of security role reference names associated with
      * this servlet, if any; otherwise return a zero-length array.
      */
@@ -257,11 +277,13 @@ public interface Wrapper extends Container {
 
     /**
      * Increment the error count value used when monitoring.
+     * 异常计数器累加
      */
     public void incrementErrorCount();
 
 
     /**
+     * 在没有servlet实例的情况下加载并初始化一个servlet实例
      * Load and initialize an instance of this Servlet, if there is not already
      * at least one initialized instance.  This can be used, for example, to
      * load Servlets that are marked in the deployment descriptor to be loaded
@@ -276,6 +298,7 @@ public interface Wrapper extends Container {
     /**
      * Remove the specified initialization parameter from this Servlet.
      *
+     * 移除初始化参数
      * @param name Name of the initialization parameter to remove
      */
     public void removeInitParameter(String name);
@@ -283,7 +306,7 @@ public interface Wrapper extends Container {
 
     /**
      * Remove a mapping associated with the wrapper.
-     *
+     * 移除映射
      * @param mapping The pattern to remove
      */
     public void removeMapping(String mapping);
@@ -291,15 +314,17 @@ public interface Wrapper extends Container {
 
     /**
      * Remove any security role reference for the specified role name.
-     *
+     * 移除安全映射
      * @param name Security role used within this servlet to be removed
      */
     public void removeSecurityReference(String name);
 
 
     /**
+     * UnavailableException异常处理方法
      * Process an UnavailableException, marking this Servlet as unavailable
      * for the specified amount of time.
+     *
      *
      * @param unavailable The exception that occurred, or <code>null</code>
      *  to mark this Servlet as permanently unavailable
@@ -308,6 +333,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 卸载servlet实例，使用机会在摧毁方法触发阶段
      * Unload all initialized instances of this servlet, after calling the
      * <code>destroy()</code> method for each instance.  This can be used,
      * for example, prior to shutting down the entire servlet engine, or
@@ -320,6 +346,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 获取servlet的配置
      * @return the multi-part configuration for the associated Servlet. If no
      * multi-part configuration has been defined, then <code>null</code> will be
      * returned.
@@ -328,6 +355,7 @@ public interface Wrapper extends Container {
 
 
     /**
+     * 设置servlet配置
      * Set the multi-part configuration for the associated Servlet. To clear the
      * multi-part configuration specify <code>null</code> as the new value.
      *
@@ -340,18 +368,20 @@ public interface Wrapper extends Container {
      * Does the associated Servlet support async processing? Defaults to
      * <code>false</code>.
      *
+     * 获取当前servlet是否支持异步处理标记
      * @return <code>true</code> if the Servlet supports async
      */
     public boolean isAsyncSupported();
 
     /**
      * Set the async support for the associated Servlet.
-     *
+     * 设置当前servlet是否支持异步处理标记
      * @param asyncSupport the new value
      */
     public void setAsyncSupported(boolean asyncSupport);
 
     /**
+     * 获取servlet是否启动标识
      * Is the associated Servlet enabled? Defaults to <code>true</code>.
      *
      * @return <code>true</code> if the Servlet is enabled
@@ -359,6 +389,7 @@ public interface Wrapper extends Container {
     public boolean isEnabled();
 
     /**
+     * 为servlet设置是否启动标识
      * Sets the enabled attribute for the associated servlet.
      *
      * @param enabled the new value
@@ -366,6 +397,7 @@ public interface Wrapper extends Container {
     public void setEnabled(boolean enabled);
 
     /**
+     * 获取servlet覆盖属性
      * Is the Servlet overridable by a ServletContainerInitializer?
      *
      * @return <code>true</code> if the Servlet can be overridden in a ServletContainerInitializer
@@ -373,6 +405,7 @@ public interface Wrapper extends Container {
     public boolean isOverridable();
 
     /**
+     * 设置servlet覆盖属性
      * Sets the overridable attribute for this Servlet.
      *
      * @param overridable the new value

@@ -115,6 +115,7 @@ public interface Container extends Lifecycle {
     /**
      * Obtain the log to which events for this container should be logged.
      *
+     * 获取日志对象用于记录日志
      * @return The Logger with which this Container is associated.  If there is
      *         no associated Logger, return the Logger associated with the
      *         parent Container (if any); otherwise return <code>null</code>.
@@ -124,6 +125,7 @@ public interface Container extends Lifecycle {
 
     /**
      * Return the logger name that the container will use.
+     * 获取日志名称
      * @return the abbreviated name of this container for logging messages
      */
     public String getLogName();
@@ -132,6 +134,7 @@ public interface Container extends Lifecycle {
     /**
      * Obtain the JMX name for this container.
      *
+     * 获取对象名称（当前容器的JMX名称）
      * @return the JMX name associated with this container.
      */
     public ObjectName getObjectName();
@@ -140,7 +143,7 @@ public interface Container extends Lifecycle {
     /**
      * Obtain the JMX domain under which this container will be / has been
      * registered.
-     *
+     * 获取当前容器的JMX域
      * @return The JMX domain name
      */
     public String getDomain();
@@ -150,6 +153,7 @@ public interface Container extends Lifecycle {
      * Calculate the key properties string to be added to an object's
      * {@link ObjectName} to indicate that it is associated with this container.
      *
+     * 获取属性键
      * @return          A string suitable for appending to the ObjectName
      *
      */

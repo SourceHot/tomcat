@@ -175,6 +175,8 @@ public class StandardContext extends ContainerBase
      * Allow multipart/form-data requests to be parsed even when the
      * target servlet doesn't specify @MultipartConfig or have a
      * &lt;multipart-config&gt; element.
+     *
+     * 是否标记@MultipartConfig都解析multipart/form-data类型的媒体数据
      */
     protected boolean allowCasualMultipartParsing = false;
 

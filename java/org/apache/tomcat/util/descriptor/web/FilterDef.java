@@ -26,6 +26,7 @@ import org.apache.tomcat.util.res.StringManager;
 
 
 /**
+ * 过滤器定义
  * Representation of a filter definition for a web application, as represented
  * in a <code>&lt;filter&gt;</code> element in the deployment descriptor.
  *

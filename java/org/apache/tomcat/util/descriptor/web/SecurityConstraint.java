@@ -38,6 +38,7 @@ import org.apache.tomcat.util.res.StringManager;
 
 
 /**
+ * 安全约束
  * Representation of a security constraint element for a web application,
  * as represented in a <code>&lt;security-constraint&gt;</code> element in the
  * deployment descriptor.

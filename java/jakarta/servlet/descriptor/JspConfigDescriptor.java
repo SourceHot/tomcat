@@ -23,6 +23,7 @@ import java.util.Collection;
  * from the deployment descriptors. It is primarily provided so that JSP
  * implementations do not have to parse deployment descriptors.
  *
+ * JSP 配置
  * @since Servlet 3.0
  */
 public interface JspConfigDescriptor {

@@ -20,6 +20,9 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.naming.NamingException;
 
+/**
+ * 实例管理器
+ */
 public interface InstanceManager {
 
     Object newInstance(Class<?> clazz) throws IllegalAccessException, InvocationTargetException,

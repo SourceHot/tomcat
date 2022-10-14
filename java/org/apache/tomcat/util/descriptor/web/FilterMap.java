@@ -26,6 +26,7 @@ import jakarta.servlet.DispatcherType;
 import org.apache.tomcat.util.buf.UDecoder;
 
 /**
+ * 过滤器映射
  * Representation of a filter mapping for a web application, as represented
  * in a <code>&lt;filter-mapping&gt;</code> element in the deployment
  * descriptor.  Each filter mapping must contain a filter name plus either

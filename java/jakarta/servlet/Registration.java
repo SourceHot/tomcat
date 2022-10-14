@@ -22,6 +22,7 @@ import java.util.Set;
 /**
  * Common interface for the registration of Filters and Servlets.
  *
+ * servlet 和 filter 公用的注册接口
  * @since Servlet 3.0
  */
 public interface Registration {

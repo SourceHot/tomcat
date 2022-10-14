@@ -282,6 +282,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取session\cookies路径
      * Gets the path to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *
@@ -292,6 +293,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置session\cookies路径
      * Sets the path to use for session cookies. Overrides any setting that
      * may be specified by the application.
      *
@@ -301,6 +303,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否追加/的标记
      * Is a / added to the end of the session cookie path to ensure browsers,
      * particularly IE, don't send a session cookie for context /foo with
      * requests intended for context /foobar.
@@ -312,6 +315,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否追加/的标记
      * Configures if a / is added to the end of the session cookie path to
      * ensure browsers, particularly IE, don't send a session cookie for context
      * /foo with requests intended for context /foobar.
@@ -325,6 +329,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否允许跨域的标记
      * Return the "allow crossing servlet contexts" flag.
      *
      * @return <code>true</code> if cross-contest requests are allowed from this
@@ -334,6 +339,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取部署描述名称
      * Return the alternate Deployment Descriptor name.
      *
      * @return the name
@@ -342,6 +348,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置部署描述名称
      * Set an alternate Deployment Descriptor name.
      *
      * @param altDDName The new name
@@ -350,6 +357,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否允许跨域的标记
      * Set the "allow crossing servlet contexts" flag.
      *
      * @param crossContext The new cross contexts flag
@@ -358,6 +366,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 返回deny-uncovered-http-methods标记
      * Return the deny-uncovered-http-methods flag for this web application.
      *
      * @return The current value of the flag
@@ -366,6 +375,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置deny-uncovered-http-methods标记
      * Set the deny-uncovered-http-methods flag for this web application.
      *
      * @param denyUncoveredHttpMethods The new deny-uncovered-http-methods flag
@@ -374,6 +384,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取应用显示名称
      * Return the display name of this web application.
      *
      * @return The display name
@@ -382,6 +393,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置应用显示名称
      * Set the display name of this web application.
      *
      * @param displayName The new display name
@@ -390,6 +402,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否是分布式标记
      * Get the distributable flag for this web application.
      *
      * @return The value of the distributable flag for this web application.
@@ -398,6 +411,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否是分布式标记
      * Set the distributable flag for this web application.
      *
      * @param distributable The new distributable flag
@@ -406,6 +420,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取文档根路径
      * Obtain the document root for this Context.
      *
      * @return An absolute pathname or a relative (to the Host's appBase)
@@ -415,6 +430,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置文档根路径
      * Set the document root for this Context. This can be either an absolute
      * pathname or a relative pathname. Relative pathnames are relative to the
      * containing Host's appBase.
@@ -425,6 +441,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 返回 URL 编码的上下文路径
      * Return the URL encoded context path
      *
      * @return The URL encoded (with UTF-8) context path
@@ -433,6 +450,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否忽略注解标志
      * Determine if annotations parsing is currently disabled
      *
      * @return {@code true} if annotation parsing is disabled for this web
@@ -442,6 +460,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否忽略注解标志
      * Set the boolean on the annotations parsing for this web
      * application.
      *
@@ -451,12 +470,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取登陆配置
      * @return the login configuration descriptor for this web application.
      */
     public LoginConfig getLoginConfig();
 
 
     /**
+     * 设置登陆配置
      * Set the login configuration descriptor for this web application.
      *
      * @param config The new login configuration
@@ -465,12 +486,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取命名资源
      * @return the naming resources associated with this web application.
      */
     public NamingResourcesImpl getNamingResources();
 
 
     /**
+     * 设置命名资源
      * Set the naming resources for this web application.
      *
      * @param namingResources The new naming resources
@@ -479,12 +502,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取应用路径
      * @return the context path for this web application.
      */
     public String getPath();
 
 
     /**
+     * 设置应用路径
      * Set the context path for this web application.
      *
      * @param path The new context path
@@ -493,6 +518,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取解析的部署描述符 DTD 的公共标识符
      * @return the public identifier of the deployment descriptor DTD that is
      * currently being parsed.
      */
@@ -500,6 +526,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置解析的部署描述符 DTD 的公共标识符
      * Set the public identifier of the deployment descriptor DTD that is
      * currently being parsed.
      *
@@ -509,12 +536,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否可以重载标记
      * @return the reloadable flag for this web application.
      */
     public boolean getReloadable();
 
 
     /**
+     * 设置是否可以重载标记
      * Set the reloadable flag for this web application.
      *
      * @param reloadable The new reloadable flag
@@ -523,12 +552,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否可以覆盖标记
      * @return the override flag for this web application.
      */
     public boolean getOverride();
 
 
     /**
+     * 设置是否可以覆盖标记
      * Set the override flag for this web application.
      *
      * @param override The new override flag
@@ -537,12 +568,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取当前应用是否存在特殊标记
      * @return the privileged flag for this web application.
      */
     public boolean getPrivileged();
 
 
     /**
+     * 设置当前应用是否存在特殊标记
      * Set the privileged flag for this web application.
      *
      * @param privileged The new privileged flag
@@ -551,12 +584,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取servlet上下文
      * @return the Servlet context for which this Context is a facade.
      */
     public ServletContext getServletContext();
 
 
     /**
+     * 获取会话超时时间
      * @return the default session timeout (in minutes) for this
      * web application.
      */
@@ -564,6 +599,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置会话超时时间
      * Set the default session timeout (in minutes) for this
      * web application.
      *
@@ -573,6 +609,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取在超过数据包大小的情况下是否继续接收标记
      * Returns <code>true</code> if remaining request data will be read
      * (swallowed) even the request violates a data size constraint.
      *
@@ -583,6 +620,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置在超过数据包大小的情况下是否继续接收标记
      * Set to <code>false</code> to disable request data swallowing
      * after an upload was aborted due to size constraints.
      *
@@ -592,12 +630,14 @@ public interface Context extends Container, ContextBind {
     public void setSwallowAbortedUploads(boolean swallowAbortedUploads);
 
     /**
+     * 获取swallowOutput标记
      * @return the value of the swallowOutput flag.
      */
     public boolean getSwallowOutput();
 
 
     /**
+     * 设置swallowOutput标记，为真则会将system.out和system.err输出到日志中
      * Set the value of the swallowOutput flag. If set to true, the system.out
      * and system.err will be redirected to the logger during a servlet
      * execution.
@@ -608,6 +648,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取wrapper类
      * @return the Java class name of the Wrapper implementation used
      * for servlets registered in this Context.
      */
@@ -615,6 +656,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置wrapper类
      * Set the Java class name of the Wrapper implementation used
      * for servlets registered in this Context.
      *
@@ -624,6 +666,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取web.xml 和 web-fragment.xml 文件是否由命名空间解析器执行标记
      * Will the parsing of web.xml and web-fragment.xml files for this Context
      * be performed by a namespace aware parser?
      *
@@ -633,6 +676,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置web.xml 和 web-fragment.xml 文件是否由命名空间解析器执行标记
      * Controls whether the parsing of web.xml and web-fragment.xml files for
      * this Context will be performed by a namespace aware parser.
      *
@@ -642,6 +686,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取web.xml 和 web-fragment.xml 文件是否需要进行验证
      * Will the parsing of web.xml and web-fragment.xml files for this Context
      * be performed by a validating parser?
      *
@@ -651,6 +696,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置web.xml 和 web-fragment.xml 文件是否需要进行验证
      * Controls whether the parsing of web.xml and web-fragment.xml files
      * for this Context will be performed by a validating parser.
      *
@@ -660,6 +706,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取在解析阶段时是否阻止外部实体
      * Will the parsing of web.xml, web-fragment.xml, *.tld, *.jspx, *.tagx and
      * tagplugin.xml files for this Context block the use of external entities?
      *
@@ -669,6 +716,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置在解析阶段时是否阻止外部实体
      * Controls whether the parsing of web.xml, web-fragment.xml, *.tld, *.jspx,
      * *.tagx and tagplugin.xml files for this Context will block the use of
      * external entities.
@@ -679,6 +727,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取tld文件是否需要验证标记
      * Will the parsing of *.tld files for this Context be performed by a
      * validating parser?
      *
@@ -688,6 +737,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置tld文件是否需要验证标记
      * Controls whether the parsing of *.tld files for this Context will be
      * performed by a validating parser.
      *
@@ -697,6 +747,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取jar扫描器
      * Get the Jar Scanner to be used to scan for JAR resources for this
      * context.
      * @return  The Jar Scanner configured for this context.
@@ -704,6 +755,7 @@ public interface Context extends Container, ContextBind {
     public JarScanner getJarScanner();
 
     /**
+     * 设置jar扫描器
      * Set the Jar Scanner to be used to scan for JAR resources for this
      * context.
      * @param jarScanner    The Jar Scanner to be used for this context.
@@ -711,12 +763,14 @@ public interface Context extends Container, ContextBind {
     public void setJarScanner(JarScanner jarScanner);
 
     /**
+     * 获取Authenticator
      * @return the {@link Authenticator} that is used by this context. This is
      *         always non-{@code null} for a started Context
      */
     public Authenticator getAuthenticator();
 
     /**
+     * 设置在启动阶段是否输出web.xml中的内容标记
      * Set whether or not the effective web.xml for this context should be
      * logged on context start.
      *
@@ -726,6 +780,7 @@ public interface Context extends Container, ContextBind {
     public void setLogEffectiveWebXml(boolean logEffectiveWebXml);
 
     /**
+     * 获取在启动阶段是否输出web.xml中的内容标记
      * Should the effective web.xml for this context be logged on context start?
      *
      * @return true if the reconstructed web.xml that will be used for the
@@ -734,11 +789,13 @@ public interface Context extends Container, ContextBind {
     public boolean getLogEffectiveWebXml();
 
     /**
+     * 获取InstanceManager
      * @return the instance manager associated with this context.
      */
     public InstanceManager getInstanceManager();
 
     /**
+     * 设置InstanceManager
      * Set the instance manager associated with this context.
      *
      * @param instanceManager the new instance manager instance
@@ -746,6 +803,7 @@ public interface Context extends Container, ContextBind {
     public void setInstanceManager(InstanceManager instanceManager);
 
     /**
+     * 设置过滤器正则表达式
      * Sets the regular expression that specifies which container provided SCIs
      * should be filtered out and not used for this context. Matching uses
      * {@link java.util.regex.Matcher#find()} so the regular expression only has
@@ -759,6 +817,7 @@ public interface Context extends Container, ContextBind {
     public void setContainerSciFilter(String containerSciFilter);
 
     /**
+     * 获取过滤器正则表达式
      * Obtains the regular expression that specifies which container provided
      * SCIs should be filtered out and not used for this context. Matching uses
      * {@link java.util.regex.Matcher#find()} so the regular expression only has
@@ -782,12 +841,14 @@ public interface Context extends Container, ContextBind {
     }
 
     /**
+     * 获取parallelAnnotationScanning
      * @return the value of the parallel annotation scanning flag.  If true,
      * it will dispatch scanning to the utility executor.
      */
     public boolean getParallelAnnotationScanning();
 
     /**
+     * 设置parallelAnnotationScanning
      * Set the parallel annotation scanning value.
      *
      * @param parallelAnnotationScanning new parallel annotation scanning flag
@@ -798,6 +859,7 @@ public interface Context extends Container, ContextBind {
     // --------------------------------------------------------- Public Methods
 
     /**
+     * 添加应用监听器名称
      * Add a new Listener class name to the set of Listeners
      * configured for this application.
      *
@@ -807,6 +869,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加应用参数
      * Add a new application parameter for this application.
      *
      * @param parameter The new application parameter
@@ -815,6 +878,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加安全约束
      * Add a security constraint to the set for this web application.
      *
      * @param constraint The security constraint that should be added
@@ -823,6 +887,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加异常页
      * Add an error page for the specified error or Java exception.
      *
      * @param errorPage The error page definition to be added
@@ -831,6 +896,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加过滤器定义
      * Add a filter definition to this Context.
      *
      * @param filterDef The filter definition to be added
@@ -839,6 +905,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加过滤器映射
      * Add a filter mapping to this Context.
      *
      * @param filterMap The filter mapping to be added
@@ -846,6 +913,7 @@ public interface Context extends Container, ContextBind {
     public void addFilterMap(FilterMap filterMap);
 
     /**
+     * 添加过滤器映射之前执行的方法
      * Add a filter mapping to this Context before the mappings defined in the
      * deployment descriptor but after any other mappings added via this method.
      *
@@ -859,6 +927,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加地区和编码映射
      * Add a Locale Encoding Mapping (see Sec 5.4 of Servlet spec 2.4)
      *
      * @param locale locale to map an encoding for
@@ -868,6 +937,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加扩展名和媒体类型的映射
      * Add a new MIME mapping, replacing any existing mapping for
      * the specified extension.
      *
@@ -878,6 +948,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加初始化参数
      * Add a new context initialization parameter, replacing any existing
      * value for the specified name.
      *
@@ -888,6 +959,8 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加role和link之间的映射关系.
+     *
      * Add a security role reference for this web application.
      *
      * @param role Security role used in the application
@@ -897,6 +970,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加role
      * Add a new security role for this web application.
      *
      * @param role New security role
@@ -905,6 +979,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加url正则和名称之间的映射关系
      * Add a new servlet mapping, replacing any existing mapping for
      * the specified pattern.
      *
@@ -917,6 +992,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加url正则和名称之间的映射关系
      * Add a new servlet mapping, replacing any existing mapping for
      * the specified pattern.
      *
@@ -930,6 +1006,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加监视资源
      * Add a resource which will be watched for reloading by the host auto
      * deployer. Note: this will not be used in embedded mode.
      *
@@ -939,6 +1016,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 添加欢迎界面
      * Add a new welcome file to the set recognized by this Context.
      *
      * @param name New welcome file name
@@ -947,6 +1025,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 将LifecycleListener添加到当前Context中的所有wrapper中
      * Add the classname of a LifecycleListener to be added to each
      * Wrapper appended to this Context.
      *
@@ -956,6 +1035,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 将ContainerListener添加到当前Context中的所有wrapper中
      * Add the classname of a ContainerListener to be added to each
      * Wrapper appended to this Context.
      *
@@ -965,6 +1045,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 创建InstanceManager
      * Factory method to create and return a new InstanceManager
      * instance. This can be used for framework integration or easier
      * configuration with custom Context implementations.
@@ -973,6 +1054,7 @@ public interface Context extends Container, ContextBind {
     public InstanceManager createInstanceManager();
 
     /**
+     * 创建Wrapper
      * Factory method to create and return a new Wrapper instance, of
      * the Java implementation class appropriate for this Context
      * implementation.  The constructor of the instantiated Wrapper
@@ -984,6 +1066,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取应用监听器名称列表
      * @return the set of application listener class names configured
      * for this application.
      */
@@ -991,12 +1074,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取应用参数列表
      * @return the set of application parameters for this application.
      */
     public ApplicationParameter[] findApplicationParameters();
 
 
     /**
+     * 获取安全约束列表
      * @return the set of security constraints for this web application.
      * If there are none, a zero-length array is returned.
      */
@@ -1004,6 +1089,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 根据异常编码获取对应的异常页
      * @return the error page entry for the specified HTTP error code,
      * if any; otherwise return <code>null</code>.
      *
@@ -1013,6 +1099,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 根据异常对象获取对应的异常页
      * Find and return the ErrorPage instance for the specified exception's
      * class, or an ErrorPage instance for the closest superclass for which
      * there is such a definition.  If no associated ErrorPage instance is
@@ -1027,6 +1114,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取所有异常页
      * @return the set of defined error pages for all specified error codes
      * and exception types.
      */
@@ -1034,6 +1122,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 根据过滤器名称获取对应的过滤器定义
      * @return the filter definition for the specified filter name, if any;
      * otherwise return <code>null</code>.
      *
@@ -1043,18 +1132,21 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取所有过滤器
      * @return the set of defined filters for this Context.
      */
     public FilterDef[] findFilterDefs();
 
 
     /**
+     * 获取所有的过滤器映射
      * @return the set of filter mappings for this Context.
      */
     public FilterMap[] findFilterMaps();
 
 
     /**
+     * 根据扩展名获取媒体类型（MIME type）
      * @return the MIME type to which the specified extension is mapped,
      * if any; otherwise return <code>null</code>.
      *
@@ -1064,6 +1156,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取媒体映射集合
      * @return the extensions for which MIME mappings are defined.  If there
      * are none, a zero-length array is returned.
      */
@@ -1071,6 +1164,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取参数名称对应的参数值
      * @return the value for the specified context initialization
      * parameter name, if any; otherwise return <code>null</code>.
      *
@@ -1080,6 +1174,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取所有参数名称列表
      * @return the names of all defined context initialization parameters
      * for this Context.  If no parameters are defined, a zero-length
      * array is returned.
@@ -1088,6 +1183,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取角色映射
      * For the given security role (as used by an application), return the
      * corresponding role name (as defined by the underlying Realm) if there
      * is one.  Otherwise, return the specified role unchanged.
@@ -1099,6 +1195,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 判断角色是否是安全角色
      * @return <code>true</code> if the specified security role is defined
      * for this application; otherwise return <code>false</code>.
      *
@@ -1108,6 +1205,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取所有安全角色
      * @return the security roles defined for this application.  If none
      * have been defined, a zero-length array is returned.
      */
@@ -1115,6 +1213,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 根据正则表达式获取servlet名称
      * @return the servlet name mapped by the specified pattern (if any);
      * otherwise return <code>null</code>.
      *
@@ -1124,6 +1223,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取所有的正则表达式
      * @return the patterns of all defined servlet mappings for this
      * Context.  If no mappings are defined, a zero-length array is returned.
      */
@@ -1131,12 +1231,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取ThreadBindingListener对象
      * @return the associated ThreadBindingListener.
      */
     public ThreadBindingListener getThreadBindingListener();
 
 
     /**
+     * 设置ThreadBindingListener对象
      * Get the associated ThreadBindingListener.
      *
      * @param threadBindingListener Set the listener that will receive
@@ -1146,6 +1248,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取监控资源列表
      * @return the set of watched resources for this Context. If none are
      * defined, a zero length array will be returned.
      */
@@ -1153,6 +1256,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 判断欢迎文件名是否存在
      * @return <code>true</code> if the specified welcome file is defined
      * for this Context; otherwise return <code>false</code>.
      *
@@ -1162,6 +1266,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取欢迎文件名称集合
      * @return the set of welcome files defined for this Context.  If none are
      * defined, a zero-length array is returned.
      */
@@ -1169,6 +1274,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取wrapper对应的LifecycleListener集合
      * @return the set of LifecycleListener classes that will be added to
      * newly created Wrappers automatically.
      */
@@ -1176,6 +1282,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取wrapper对应的ContainerListener集合
      * @return the set of ContainerListener classes that will be added to
      * newly created Wrappers automatically.
      */
@@ -1183,6 +1290,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 通知ServletRequestListener，请求已经到位
      * Notify all {@link jakarta.servlet.ServletRequestListener}s that a request
      * has started.
      *
@@ -1193,6 +1301,7 @@ public interface Context extends Container, ContextBind {
     public boolean fireRequestInitEvent(ServletRequest request);
 
     /**
+     * 通知ServletRequestListener，请求已经摧毁
      * Notify all {@link jakarta.servlet.ServletRequestListener}s that a request
      * has ended.
      *
@@ -1203,6 +1312,7 @@ public interface Context extends Container, ContextBind {
     public boolean fireRequestDestroyEvent(ServletRequest request);
 
     /**
+     * 重新加载web应用
      * Reload this web application, if reloading is supported.
      *
      * @exception IllegalStateException if the <code>reloadable</code>
@@ -1212,6 +1322,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除应用监听器
      * Remove the specified application listener class from the set of
      * listeners for this application.
      *
@@ -1221,6 +1332,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除应用参数名称
      * Remove the application parameter with the specified name from
      * the set for this application.
      *
@@ -1230,6 +1342,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除安全约束
      * Remove the specified security constraint from this web application.
      *
      * @param constraint Constraint to be removed
@@ -1238,6 +1351,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除异常页
      * Remove the error page for the specified error code or
      * Java language exception, if it exists; otherwise, no action is taken.
      *
@@ -1247,6 +1361,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除过滤器定义
      * Remove the specified filter definition from this Context, if it exists;
      * otherwise, no action is taken.
      *
@@ -1256,6 +1371,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除过滤器映射
      * Remove a filter mapping from this Context.
      *
      * @param filterMap The filter mapping to be removed
@@ -1264,6 +1380,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除扩展媒体映射
      * Remove the MIME mapping for the specified extension, if it exists;
      * otherwise, no action is taken.
      *
@@ -1273,6 +1390,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除初始化参数
      * Remove the context initialization parameter with the specified
      * name, if it exists; otherwise, no action is taken.
      *
@@ -1282,6 +1400,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除规则映射
      * Remove any security role reference for the specified name
      *
      * @param role Security role (as used in the application) to remove
@@ -1290,6 +1409,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除安全角色
      * Remove any security role with the specified name.
      *
      * @param role Security role to remove
@@ -1298,6 +1418,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 删除正则和servlet之间的映射
      * Remove any servlet mapping for the specified pattern, if it exists;
      * otherwise, no action is taken.
      *
@@ -1307,6 +1428,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 移除资源
      * Remove the specified watched resource name from the list associated
      * with this Context.
      *
@@ -1319,6 +1441,7 @@ public interface Context extends Container, ContextBind {
      * Remove the specified welcome file name from the list recognized
      * by this Context.
      *
+     * 移除欢迎页
      * @param name Name of the welcome file to be removed
      */
     public void removeWelcomeFile(String name);
@@ -1328,6 +1451,7 @@ public interface Context extends Container, ContextBind {
      * Remove a class name from the set of LifecycleListener classes that
      * will be added to newly created Wrappers.
      *
+     * 移除 LifecycleListener 作用范围是 wrapper
      * @param listener Class name of a LifecycleListener class to be removed
      */
     public void removeWrapperLifecycle(String listener);
@@ -1337,12 +1461,14 @@ public interface Context extends Container, ContextBind {
      * Remove a class name from the set of ContainerListener classes that
      * will be added to newly created Wrappers.
      *
+     * 移除 ContainerListener 作用范围是wrapper
      * @param listener Class name of a ContainerListener class to be removed
      */
     public void removeWrapperListener(String listener);
 
 
     /**
+     * 获取真实路径
      * @return the real path for a given virtual path, if possible; otherwise
      * return <code>null</code>.
      *
@@ -1352,6 +1478,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取servlet主要版本
      * @return the effective major version of the Servlet spec used by this
      * context.
      */
@@ -1362,12 +1489,14 @@ public interface Context extends Container, ContextBind {
      * Set the effective major version of the Servlet spec used by this
      * context.
      *
+     * 设置 servlet 主要版本
      * @param major Set the version number
      */
     public void setEffectiveMajorVersion(int major);
 
 
     /**
+     * 获取 servlet 次要版本
      * @return the effective minor version of the Servlet spec used by this
      * context.
      */
@@ -1377,6 +1506,7 @@ public interface Context extends Container, ContextBind {
     /**
      * Set the effective minor version of the Servlet spec used by this
      * context.
+     * 设置 servlet 次要版本
      *
      * @param minor Set the version number
      */
@@ -1384,6 +1514,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取 JSP 配置
      * @return the JSP configuration for this context.
      * Will be null if there is no JSP configuration.
      */
@@ -1391,6 +1522,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置 JSP 配置
      * Set the JspConfigDescriptor for this context.
      * A null value indicates there is not JSP configuration.
      *
@@ -1402,6 +1534,7 @@ public interface Context extends Container, ContextBind {
     /**
      * Add a ServletContainerInitializer instance to this web application.
      *
+     * 添加 ServletContainerInitializer 到web应用中
      * @param sci       The instance to add
      * @param classes   The classes in which the initializer expressed an
      *                  interest
@@ -1413,6 +1546,7 @@ public interface Context extends Container, ContextBind {
     /**
      * Is this Context paused whilst it is reloaded?
      *
+     * 是否需要在重新加载的时候暂停
      * @return <code>true</code> if the context has been paused
      */
     public boolean getPaused();
@@ -1421,6 +1555,7 @@ public interface Context extends Container, ContextBind {
     /**
      * Is this context using version 2.2 of the Servlet spec?
      *
+     * servlet 是否是 2.2 规范
      * @return <code>true</code> for a legacy Servlet 2.2 webapp
      */
     boolean isServlet22();
@@ -1429,6 +1564,8 @@ public interface Context extends Container, ContextBind {
     /**
      * Notification that Servlet security has been dynamically set in a
      * {@link jakarta.servlet.ServletRegistration.Dynamic}
+     *
+     * 添加 servlet 安全约束
      * @param registration Servlet security was modified for
      * @param servletSecurityElement new security constraints for this Servlet
      * @return urls currently mapped to this registration that are already
@@ -1463,6 +1600,7 @@ public interface Context extends Container, ContextBind {
     public boolean isResourceOnlyServlet(String servletName);
 
     /**
+     * 获取基本名称
      * @return the base name to use for WARs, directories or context.xml files
      * for this context.
      */
@@ -1473,12 +1611,14 @@ public interface Context extends Container, ContextBind {
      * different versions of the same web application when using parallel
      * deployment.
      *
+     * 设置web应用版本号
      * @param webappVersion The webapp version associated with the context,
      *    which should be unique
      */
     public void setWebappVersion(String webappVersion);
 
     /**
+     * 获取web应用版本号
      * @return The version of this web application, used to differentiate
      * different versions of the same web application when using parallel
      * deployment. If not specified, defaults to the empty string.
@@ -1489,11 +1629,13 @@ public interface Context extends Container, ContextBind {
      * Configure whether or not requests listeners will be fired on forwards for
      * this Context.
      *
+     * 设置是否在请求发生转发是触发监听器标记
      * @param enable <code>true</code> to fire request listeners when forwarding
      */
     public void setFireRequestListenersOnForwards(boolean enable);
 
     /**
+     * 获取是否在请求发生转发是触发监听器标记
      * @return whether or not requests listeners will be fired on forwards for
      * this Context.
      */
@@ -1875,10 +2017,16 @@ public interface Context extends Container, ContextBind {
     public boolean getAllowMultipleLeadingForwardSlashInPath();
 
 
-    public void incrementInProgressAsyncCount();
+ /**
+  * 异步计数器加一
+  */
+ public void incrementInProgressAsyncCount();
 
 
-    public void decrementInProgressAsyncCount();
+ /**
+  * 异步计数器减一
+  */
+ public void decrementInProgressAsyncCount();
 
 
     /**
@@ -1904,6 +2052,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 是否每次更新会话访问时间
      * If this is <code>true</code>, every request that is associated with a
      * session will cause the session's last accessed time to be updated
      * regardless of whether or not the request explicitly accesses the session.
@@ -1923,6 +2072,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取资源标识符是否必须以斜杠开头
      * If this is <code>true</code> then the path passed to
      * <code>ServletContext.getResource()</code> or
      * <code>ServletContext.getResourceAsStream()</code> must start with
@@ -1938,6 +2088,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置资源标识符是否必须以斜杠开头
      * Allow using <code>ServletContext.getResource()</code> or
      * <code>ServletContext.getResourceAsStream()</code> without
      * a leading &quot;/&quot;.
@@ -1947,6 +2098,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取是否允许在请求调度程序中禁用对象包装检查标记
      * If this is <code>true</code> then any wrapped request or response
      * object passed to an application dispatcher will be checked to ensure that
      * it has wrapped the original request or response.
@@ -1959,6 +2111,7 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 设置是否允许在请求调度程序中禁用对象包装检查标记
      * Allow disabling the object wrap check in the request dispatcher.
      * @param dispatcherWrapsSameObject the new flag value
      */
@@ -1966,12 +2119,14 @@ public interface Context extends Container, ContextBind {
 
 
     /**
+     * 获取在查找资源的时候是否使用布隆过滤器标记
      * @return <code>true</code> if the resources archive lookup will
      * use a bloom filter.
      */
     public boolean getUseBloomFilterForArchives();
 
     /**
+     * 设置在查找资源的时候是否使用布隆过滤器标记
      * Set bloom filter flag value.
      *
      * @param useBloomFilterForArchives The new fast class path scan flag

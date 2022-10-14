@@ -78,38 +78,53 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * The set of aliases for this Host.
+     * 别名列表
      */
     private String[] aliases = new String[0];
 
+    /**
+     * 别名锁
+     */
     private final Object aliasesLock = new Object();
 
 
     /**
      * The application root for this Host.
+     * 应用根路径
      */
     private String appBase = "webapps";
+    /**
+     * app base 文件
+     */
     private volatile File appBaseFile = null;
 
 
     /**
      * The legacy (Java EE) application root for this Host.
+     * 旧的 java ee 应用程序地址
      */
     private String legacyAppBase = "webapps-javaee";
+    /**
+     * 旧的 java ee 应用文件
+     */
     private volatile File legacyAppBaseFile = null;
 
 
     /**
      * The XML root for this Host.
+     * xml根路径
      */
     private String xmlBase = null;
 
     /**
      * host's default config path
+     * host配置根路径
      */
     private volatile File hostConfigBase = null;
 
     /**
      * The auto deploy flag for this Host.
+     * 是否自动部署
      */
     private boolean autoDeploy = true;
 
@@ -117,6 +132,8 @@ public class StandardHost extends ContainerBase implements Host {
     /**
      * The Java class name of the default context configuration class
      * for deployed web applications.
+     *
+     * 配置类类名
      */
     private String configClass =
         "org.apache.catalina.startup.ContextConfig";
@@ -125,6 +142,7 @@ public class StandardHost extends ContainerBase implements Host {
     /**
      * The Java class name of the default Context implementation class for
      * deployed web applications.
+     * 上下文类名
      */
     private String contextClass =
         "org.apache.catalina.core.StandardContext";
@@ -132,12 +150,14 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * The deploy on startup flag for this Host.
+     * 启动时部署标记
      */
     private boolean deployOnStartup = true;
 
 
     /**
      * deploy Context XML config files property.
+     * 基于XML部署
      */
     private boolean deployXML = !Globals.IS_SECURITY_ENABLED;
 
@@ -146,6 +166,7 @@ public class StandardHost extends ContainerBase implements Host {
      * Should XML files be copied to
      * $CATALINA_BASE/conf/&lt;engine&gt;/&lt;host&gt; by default when
      * a web application is deployed?
+     * 是否拷贝xml文件
      */
     private boolean copyXML = false;
 
@@ -153,6 +174,7 @@ public class StandardHost extends ContainerBase implements Host {
     /**
      * The Java class name of the default error reporter implementation class
      * for deployed web applications.
+     * 异常报告实现类类名
      */
     private String errorReportValveClass =
         "org.apache.catalina.valves.ErrorReportValve";
@@ -160,18 +182,21 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * Unpack WARs property.
+     * 是否解压war
      */
     private boolean unpackWARs = true;
 
 
     /**
      * Work Directory base for applications.
+     * 工作路径
      */
     private String workDir = null;
 
 
     /**
      * Should we create directories upon startup for appBase and xmlBase
+     * 是否创建 appbase 和 xmlbase 目录
      */
     private boolean createDirs = true;
 
@@ -179,6 +204,7 @@ public class StandardHost extends ContainerBase implements Host {
     /**
      * Track the class loaders for the child web applications so memory leaks
      * can be detected.
+     * 应用的类加载器容器
      */
     private final Map<ClassLoader, String> childClassLoaders =
             new WeakHashMap<>();
@@ -188,12 +214,20 @@ public class StandardHost extends ContainerBase implements Host {
      * Any file or directory in {@link #appBase} that this pattern matches will
      * be ignored by the automatic deployment process (both
      * {@link #deployOnStartup} and {@link #autoDeploy}).
+     *
+     * 部署时所需忽略文件的正则表达式对象
      */
     private Pattern deployIgnore = null;
 
 
+    /**
+     * 是否取消历史版本部署
+     */
     private boolean undeployOldVersions = false;
 
+    /**
+     * 是否servlet启动失败
+     */
     private boolean failCtxIfServletStartFails = false;
 
 
@@ -777,10 +811,12 @@ public class StandardHost extends ContainerBase implements Host {
      */
     public String[] findReloadedContextMemoryLeaks() {
 
+        // 直接GC？
         System.gc();
 
         List<String> result = new ArrayList<>();
 
+        // 遍历childClassLoaders，如果类加载器是WebappClassLoaderBase，并且属于不可用状态将提取数据s
         for (Map.Entry<ClassLoader, String> entry :
                 childClassLoaders.entrySet()) {
             ClassLoader cl = entry.getKey();
@@ -859,10 +895,14 @@ public class StandardHost extends ContainerBase implements Host {
     protected synchronized void startInternal() throws LifecycleException {
 
         // Set error report valve
+        // 获取异常报告类名
         String errorValve = getErrorReportValveClass();
+        // 如果异常报告类名不为空
         if ((errorValve != null) && (!errorValve.equals(""))) {
             try {
+                // 标记：是否找到异常报告类名
                 boolean found = false;
+                // 提取Value接口集合
                 Valve[] valves = getPipeline().getValves();
                 for (Valve valve : valves) {
                     if (errorValve.equals(valve.getClass().getName())) {

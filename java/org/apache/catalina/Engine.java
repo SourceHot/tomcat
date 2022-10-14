@@ -43,7 +43,7 @@ package org.apache.catalina;
 public interface Engine extends Container {
 
     /**
-     * 获取引擎的默认名称（HostName）
+     * 获取host名称（HostName）
      * @return the default host name for this Engine.
      */
     public String getDefaultHost();

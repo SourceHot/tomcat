@@ -21,6 +21,7 @@ import java.io.Serializable;
 import org.apache.tomcat.util.buf.UDecoder;
 
 /**
+ * 异常页
  * Representation of an error page element for a web application,
  * as represented in a <code>&lt;error-page&gt;</code> element in the
  * deployment descriptor.

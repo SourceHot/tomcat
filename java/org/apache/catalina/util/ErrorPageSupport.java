@@ -26,6 +26,7 @@ import org.apache.tomcat.util.descriptor.web.ErrorPage;
 /**
  * Provides support for tracking per exception type and per HTTP status code
  * error pages.
+ * 错误页面支持对象
  */
 public class ErrorPageSupport {
 

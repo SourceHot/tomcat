@@ -51,6 +51,7 @@ import org.apache.tomcat.util.res.StringManager;
  * managing the filter instances instantiated when a web application
  * is first started.
  *
+ * 应用过滤器配置
  * @author Craig R. McClanahan
  */
 public final class ApplicationFilterConfig implements FilterConfig, Serializable {

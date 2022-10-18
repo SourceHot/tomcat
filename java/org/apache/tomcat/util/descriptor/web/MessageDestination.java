@@ -22,6 +22,7 @@ package org.apache.tomcat.util.descriptor.web;
  * represented in a <code>&lt;message-destination&gt;</code> element
  * in the deployment descriptor.</p>
  *
+ * 消息描述
  * @author Craig R. McClanahan
  * @since Tomcat 5.0
  */

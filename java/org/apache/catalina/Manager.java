@@ -35,6 +35,7 @@ import java.io.IOException;
  *     <code>start()</code> on the same <code>Manager</code> instance.
  * </ul>
  *
+ * 管理器
  * @author Craig R. McClanahan
  */
 public interface Manager {

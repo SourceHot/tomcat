@@ -183,23 +183,30 @@ public class StandardContext extends ContainerBase
     /**
      * Control whether remaining request data will be read
      * (swallowed) even if the request violates a data size constraint.
+     *
+     * 是否需要在上传的时候将超过最大限制长度的内容堵住
      */
     private boolean swallowAbortedUploads = true;
 
     /**
      * The alternate deployment descriptor name.
+     * 备用部署名称
      */
     private String altDDName = null;
 
 
     /**
      * Lifecycle provider.
+     *
+     * 实例管理器
      */
     private InstanceManager instanceManager = null;
 
 
     /**
      * The antiResourceLocking flag for this Context.
+     *
+     * 是否需要锁定所有资源文件
      */
     private boolean antiResourceLocking = false;
 
@@ -208,9 +215,13 @@ public class StandardContext extends ContainerBase
      * The set of application listener class names configured for this
      * application, in the order they were encountered in the resulting merged
      * web.xml file.
+     * 应用监听器列表
      */
-    private String applicationListeners[] = new String[0];
+    private String[] applicationListeners = new String[0];
 
+    /**
+     * 应用监听器列表对应的锁
+     */
     private final Object applicationListenersLock = new Object();
 
     /**
@@ -223,48 +234,59 @@ public class StandardContext extends ContainerBase
      * The list of instantiated application event listener objects. Note that
      * SCIs and other code may use the pluggability APIs to add listener
      * instances directly to this list before the application starts.
+     *
+     * 应用监听器列表
      */
-    private List<Object> applicationEventListenersList = new CopyOnWriteArrayList<>();
+    private final List<Object> applicationEventListenersList = new CopyOnWriteArrayList<>();
 
 
     /**
      * The set of instantiated application lifecycle listener objects. Note that
      * SCIs and other code may use the pluggability APIs to add listener
      * instances directly to this list before the application starts.
+     * 应用生命周期监听器列表
      */
-    private Object applicationLifecycleListenersObjects[] =
+    private Object[] applicationLifecycleListenersObjects =
         new Object[0];
 
 
     /**
      * The ordered set of ServletContainerInitializers for this web application.
+     * 当前应用对应的ServletContainerInitializer集合
      */
-    private Map<ServletContainerInitializer,Set<Class<?>>> initializers =
+    private final Map<ServletContainerInitializer,Set<Class<?>>> initializers =
         new LinkedHashMap<>();
 
 
     /**
      * The set of application parameters defined for this application.
+     * 应用参数
      */
-    private ApplicationParameter applicationParameters[] =
+    private ApplicationParameter[] applicationParameters =
         new ApplicationParameter[0];
 
+    /**
+     * 应用参数锁
+     */
     private final Object applicationParametersLock = new Object();
 
 
     /**
      * The broadcaster that sends j2ee notifications.
+     * J2EE广播器
      */
     private NotificationBroadcasterSupport broadcaster = null;
 
     /**
      * The Locale to character set mapper for this application.
+     * 字符映射器
      */
     private CharsetMapper charsetMapper = null;
 
 
     /**
      * The Java class name of the CharsetMapper class to be created.
+     * 字符映射器类名
      */
     private String charsetMapperClass =
       "org.apache.catalina.util.CharsetMapper";
@@ -272,27 +294,34 @@ public class StandardContext extends ContainerBase
 
     /**
      * The URL of the XML descriptor for this context.
+     * 配置文件
      */
     private URL configFile = null;
 
 
     /**
      * The "correctly configured" flag for this Context.
+     * 是否正确配置标记
      */
     private boolean configured = false;
 
 
     /**
      * The security constraints for this web application.
+     * 安全约束集合
      */
-    private volatile SecurityConstraint constraints[] =
+    private volatile SecurityConstraint[] constraints =
             new SecurityConstraint[0];
 
+    /**
+     * 安全约束锁
+     */
     private final Object constraintsLock = new Object();
 
 
     /**
      * The ServletContext implementation associated with this Context.
+     * 应用上下文
      */
     protected ApplicationContext context = null;
 
@@ -300,12 +329,15 @@ public class StandardContext extends ContainerBase
      * The wrapped version of the associated ServletContext that is presented
      * to listeners that are required to have limited access to ServletContext
      * methods. See Servlet 3.1 section 4.4.
+     *
+     * servlet 上下文
      */
     private NoPluggabilityServletContext noPluggabilityServletContext = null;
 
 
     /**
      * Should we attempt to use cookies for session id communication?
+     * 是否使用cookie
      */
     private boolean cookies = true;
 
@@ -313,18 +345,22 @@ public class StandardContext extends ContainerBase
     /**
      * Should we allow the <code>ServletContext.getContext()</code> method
      * to access the context of other web applications in this server?
+     *
+     * 上下文是否开启跨
      */
     private boolean crossContext = false;
 
 
     /**
      * Encoded path.
+     * 是否对地址进行编码
      */
     private String encodedPath = null;
 
 
     /**
      * Unencoded path for this web application.
+     * 地址，上下文路径
      */
     private String path = null;
 
@@ -334,57 +370,73 @@ public class StandardContext extends ContainerBase
      * configure our ClassLoader.
      * Graal cannot actually load a class from the webapp classloader,
      * so delegate by default.
+     *
+     * 是否启用委托
      */
     private boolean delegate = JreCompat.isGraalAvailable();
 
 
+    /**
+     * 是否拒绝未知的HTTP请求方法
+     */
     private boolean denyUncoveredHttpMethods;
 
 
     /**
      * The display name of this web application.
+     * 显示用的应用名称
      */
     private String displayName = null;
 
 
     /**
      * Override the default context xml location.
+     * 默认的上下文xml路径
      */
     private String defaultContextXml;
 
 
     /**
      * Override the default web xml location.
+     * 覆盖默认web xml的路径
      */
     private String defaultWebXml;
 
 
     /**
      * The distributable flag for this web application.
+     * 是否是分布式的
      */
     private boolean distributable = false;
 
 
     /**
      * The document root for this web application.
+     * 文档路径
      */
     private String docBase = null;
 
 
+    /**
+     * 错误页面支持对象
+     */
     private final ErrorPageSupport errorPageSupport = new ErrorPageSupport();
 
     /**
      * The set of filter configurations (and associated filter instances) we
      * have initialized, keyed by filter name.
+     *
+     * 应用和应用过滤器配置映射表
      */
-    private Map<String, ApplicationFilterConfig> filterConfigs = new HashMap<>();
+    private final Map<String, ApplicationFilterConfig> filterConfigs = new HashMap<>();
 
 
     /**
      * The set of filter definitions for this application, keyed by
      * filter name.
+     * 过滤器名称和过滤器定义的映射表
      */
-    private Map<String, FilterDef> filterDefs = new HashMap<>();
+    private final Map<String, FilterDef> filterDefs = new HashMap<>();
 
 
     /**
@@ -392,68 +444,86 @@ public class StandardContext extends ContainerBase
      * they were defined in the deployment descriptor with additional mappings
      * added via the {@link ServletContext} possibly both before and after those
      * defined in the deployment descriptor.
+     *
+     * 工具类，用于管理上下文中的筛选器映射。
      */
     private final ContextFilterMaps filterMaps = new ContextFilterMaps();
 
     /**
      * Ignore annotations.
+     * 是否忽略注解
      */
     private boolean ignoreAnnotations = false;
 
 
     /**
      * The Loader implementation with which this Container is associated.
+     * 加载器
      */
     private Loader loader = null;
+    /**
+     * 加载器使用时所需的读写锁
+     */
     private final ReadWriteLock loaderLock = new ReentrantReadWriteLock();
 
 
     /**
      * The login configuration descriptor for this web application.
+     * 登陆配置
      */
     private LoginConfig loginConfig = null;
 
 
     /**
      * The Manager implementation with which this Container is associated.
+     * 管理器
      */
     protected Manager manager = null;
+    /**
+     * 管理器使用时所需的读写锁
+     */
     private final ReadWriteLock managerLock = new ReentrantReadWriteLock();
 
 
     /**
      * The naming context listener for this web application.
+     * 命名上下文监听器
      */
     private NamingContextListener namingContextListener = null;
 
 
     /**
      * The naming resources for this web application.
+     * 命名资源
      */
     private NamingResourcesImpl namingResources = null;
 
     /**
      * The message destinations for this web application.
+     * 消息名称和消息描述的映射表
      */
-    private HashMap<String, MessageDestination> messageDestinations =
+    private final HashMap<String, MessageDestination> messageDestinations =
         new HashMap<>();
 
 
     /**
      * The MIME mappings for this web application, keyed by extension.
+     * 媒体映射表
      */
-    private Map<String, String> mimeMappings = new HashMap<>();
+    private final Map<String, String> mimeMappings = new HashMap<>();
 
 
     /**
      * The context initialization parameters for this web application,
      * keyed by name.
+     * 上下文初始化所需参数
      */
     private final Map<String, String> parameters = new ConcurrentHashMap<>();
 
 
     /**
      * The request processing pause flag (while reloading occurs)
+     * 请求处理暂停标志（重新加载资源的时候需要使用）
      */
     private volatile boolean paused = false;
 
@@ -462,42 +532,50 @@ public class StandardContext extends ContainerBase
      * The public identifier of the DTD for the web application deployment
      * descriptor version we are currently parsing.  This is used to support
      * relaxed validation rules when processing version 2.2 web.xml files.
+     *
+     * 公共标识符 ,DTD 上的标识
      */
     private String publicId = null;
 
 
     /**
      * The reloadable flag for this web application.
+     * 是否允许重载web应用
      */
     private boolean reloadable = false;
 
 
     /**
      * Unpack WAR property.
+     * 是否解压缩war包
      */
     private boolean unpackWAR = true;
 
 
     /**
      * Context level override for default {@link StandardHost#isCopyXML()}.
+     * 是否拷贝xml
      */
     private boolean copyXML = false;
 
 
     /**
      * The default context override flag for this web application.
+     * 是否允许覆盖web应用
      */
     private boolean override = false;
 
 
     /**
      * The original document root for this web application.
+     * 文档地址
      */
     private String originalDocBase = null;
 
 
     /**
      * The privileged flag for this web application.
+     * 是否有特权
      */
     private boolean privileged = false;
 
@@ -508,6 +586,8 @@ public class StandardContext extends ContainerBase
      * web application's deployment descriptor, so that application specified
      * choices <strong>replace</strong>, rather than append to, those defined
      * in the global descriptor.
+     *
+     * 是否替换欢迎文件
      */
     private boolean replaceWelcomeFiles = false;
 
@@ -515,144 +595,210 @@ public class StandardContext extends ContainerBase
     /**
      * The security role mappings for this application, keyed by role
      * name (as used within the application).
+     *
+     * 安全角色映射
      */
-    private Map<String, String> roleMappings = new HashMap<>();
+    private final Map<String, String> roleMappings = new HashMap<>();
 
 
     /**
      * The security roles for this application, keyed by role name.
+     * 安全角色
      */
-    private String securityRoles[] = new String[0];
+    private String[] securityRoles = new String[0];
 
+    /**
+     * 安全角色操作时所需的锁
+     */
     private final Object securityRolesLock = new Object();
 
 
     /**
      * The servlet mappings for this web application, keyed by
      * matching pattern.
+     *
+     * servlet映射表
      */
-    private Map<String, String> servletMappings = new HashMap<>();
+    private final Map<String, String> servletMappings = new HashMap<>();
 
+    /**
+     * servlet映射表操作所需的锁
+     */
     private final Object servletMappingsLock = new Object();
 
 
     /**
      * The session timeout (in minutes) for this web application.
+     * session 过期时间
      */
     private int sessionTimeout = 30;
 
     /**
      * The notification sequence number.
+     * 序列号
      */
-    private AtomicLong sequenceNumber = new AtomicLong(0);
+    private final AtomicLong sequenceNumber = new AtomicLong(0);
 
 
     /**
      * Set flag to true to cause the system.out and system.err to be redirected
      * to the logger when executing a servlet.
+     * 是否将异常输出到system.out或system.err
      */
     private boolean swallowOutput = false;
 
 
     /**
      * Amount of ms that the container will wait for servlets to unload.
+     * 卸载延迟时间
      */
     private long unloadDelay = 2000;
 
 
     /**
      * The watched resources for this application.
+     * 需要观察的资源集合
      */
-    private String watchedResources[] = new String[0];
+    private String[] watchedResources = new String[0];
 
+    /**
+     * 观察资源集合的锁
+     */
     private final Object watchedResourcesLock = new Object();
 
 
     /**
      * The welcome files for this application.
+     * 欢迎文件集合
      */
-    private String welcomeFiles[] = new String[0];
+    private String[] welcomeFiles = new String[0];
 
+    /**
+     * 欢迎文件集合锁
+     */
     private final Object welcomeFilesLock = new Object();
 
 
     /**
      * The set of classnames of LifecycleListeners that will be added
      * to each newly created Wrapper by <code>createWrapper()</code>.
+     * wrapper相关的生命监听器集合
      */
-    private String wrapperLifecycles[] = new String[0];
-
+    private String[] wrapperLifecycles = new String[0];
+    /**
+     * wrapper相关的生命监听器集合操作所需的锁
+     */
     private final Object wrapperLifecyclesLock = new Object();
 
     /**
      * The set of classnames of ContainerListeners that will be added
      * to each newly created Wrapper by <code>createWrapper()</code>.
+     *
+     * 容器监听器集合
      */
-    private String wrapperListeners[] = new String[0];
+    private String[] wrapperListeners = new String[0];
 
+    /**
+     * 操作容器监听器集合所需的锁
+     */
     private final Object wrapperListenersLock = new Object();
 
     /**
      * The pathname to the work directory for this context (relative to
      * the server's home if not absolute).
+     *
+     * 工作目录地址
      */
     private String workDir = null;
 
 
     /**
      * Java class name of the Wrapper class implementation we use.
+     * <p>
+     * Wrapper实现类类名
      */
     private String wrapperClassName = StandardWrapper.class.getName();
+    /**
+     * wrapper实现类
+     */
     private Class<?> wrapperClass = null;
 
 
     /**
      * JNDI use flag.
+     * 是否使用命名空间（jndi使用标记）
      */
     private boolean useNaming = true;
 
 
     /**
      * Name of the associated naming context.
+     *
+     * 上下文名称
      */
     private String namingContextName = null;
 
 
+    /**
+     * web资源根集
+     */
     private WebResourceRoot resources;
+    /**
+     * web资源集操作时所需的锁
+     */
     private final ReadWriteLock resourcesLock = new ReentrantReadWriteLock();
 
+    /**
+     * 启动时间
+     */
     private long startupTime;
+    /**
+     * 开始时间
+     */
     private long startTime;
+    /**
+     * tld扫描时间
+     */
     private long tldScanTime;
 
     /**
      * Name of the engine. If null, the domain is used.
+     * 应用名称
      */
     private String j2EEApplication="none";
+    /**
+     * 服务名称
+      */
     private String j2EEServer="none";
 
 
     /**
      * Attribute value used to turn on/off XML validation for web.xml and
      * web-fragment.xml files.
+     * web.xml校验规则
      */
     private boolean webXmlValidation = Globals.STRICT_SERVLET_COMPLIANCE;
 
 
     /**
      * Attribute value used to turn on/off XML namespace validation
+     *
+     * 是否关闭命名空间检查
      */
     private boolean webXmlNamespaceAware = Globals.STRICT_SERVLET_COMPLIANCE;
 
 
     /**
      * Attribute used to turn on/off the use of external entities.
+     *
+     * 是否增强实体
      */
     private boolean xmlBlockExternal = true;
 
 
     /**
      * Attribute value used to turn on/off XML validation
+     * 是否严格验证XML的属性值
      */
     private boolean tldValidation = Globals.STRICT_SERVLET_COMPLIANCE;
 
@@ -660,12 +806,16 @@ public class StandardContext extends ContainerBase
     /**
      * The name to use for session cookies. <code>null</code> indicates that
      * the name is controlled by the application.
+     *
+     * cookie的名称
      */
     private String sessionCookieName;
 
 
     /**
      * The flag that indicates that session cookies should use HttpOnly
+     *
+     * 是否只是用HTTP方式
      */
     private boolean useHttpOnly = true;
 
@@ -673,6 +823,7 @@ public class StandardContext extends ContainerBase
     /**
      * The domain to use for session cookies. <code>null</code> indicates that
      * the domain is controlled by the application.
+     * cookie使用的域名
      */
     private String sessionCookieDomain;
 
@@ -680,6 +831,8 @@ public class StandardContext extends ContainerBase
     /**
      * The path to use for session cookies. <code>null</code> indicates that
      * the path is controlled by the application.
+     *
+     * cookie所使用的地址
      */
     private String sessionCookiePath;
 
@@ -688,6 +841,8 @@ public class StandardContext extends ContainerBase
      * Is a / added to the end of the session cookie path to ensure browsers,
      * particularly IE, don't send a session cookie for context /foo with
      * requests intended for context /foobar.
+     *
+     * 是否将cookie补充到请求末尾
      */
     private boolean sessionCookiePathUsesTrailingSlash = false;
 
@@ -695,6 +850,8 @@ public class StandardContext extends ContainerBase
     /**
      * The Jar scanner to use to search for Jars that might contain
      * configuration information such as TLDs or web-fragment.xml files.
+     *
+     * jar扫描器
      */
     private JarScanner jarScanner = null;
 
@@ -702,6 +859,8 @@ public class StandardContext extends ContainerBase
      * Enables the RMI Target memory leak detection to be controlled. This is
      * necessary since the detection can only work on Java 9 if some of the
      * modularity checks are disabled.
+     *
+     * 是否启用RMI内存泄露监控
      */
     private boolean clearReferencesRmiTargets = true;
 
@@ -713,6 +872,8 @@ public class StandardContext extends ContainerBase
      * resort in a development environment and is not recommended in a
      * production environment. If not specified, the default value of
      * <code>false</code> will be used.
+     *
+     * 是否需要停止线程（开发环境使用）
      */
     private boolean clearReferencesStopThreads = false;
 
@@ -720,6 +881,8 @@ public class StandardContext extends ContainerBase
      * Should Tomcat attempt to terminate any {@link java.util.TimerThread}s
      * that have been started by the web application? If not specified, the
      * default value of <code>false</code> will be used.
+     *
+     * 如果true是，Tomcat 会尝试终止 java.util.Timer已由 Web 应用程序启动的线程。与标准线程不同，定时器线程可以安全地停止，尽管应用程序可能仍然存在副作用。如果未指定，false将使用默认值。
      */
     private boolean clearReferencesStopTimerThreads = false;
 
@@ -730,6 +893,12 @@ public class StandardContext extends ContainerBase
      * {@link ClassLoader#getParent()} to prevent a memory leak? Note that the
      * keep-alive timer thread will stop on its own once the keep-alives all
      * expire however, on a busy system that might not happen for some time.
+     *
+     *
+     * 如果 此 Web 应用程序已经启动了true一个保持活动计时器线程并且仍在运行，
+     * 则 Tomcat 会将该线程的上下文类加载器从 Web 应用程序类加载器更改为 Web 应用程序类加载器的父级，
+     * 以防止内存泄漏sun.net.www.http.HttpClient. 请注意，一旦keep-alives 全部到期，keep-alive 计时器线程将自行停止，
+     * 但是，在一段时间内可能不会发生的繁忙系统上。如果未指定，true将使用默认值。
      */
     private boolean clearReferencesHttpClientKeepAliveThread = true;
 
@@ -738,105 +907,229 @@ public class StandardContext extends ContainerBase
      * is stopped to avoid memory leaks because of uncleaned ThreadLocal
      * variables. This also requires that the threadRenewalDelay property of the
      * StandardThreadExecutor or ThreadPoolExecutor be set to a positive value.
+     * 如果为 true，则当此上下文停止时，Tomcat 将更新用于服务此上下文的线程池中的所有线程。
+     * 这还要求在 server.xml 中配置 ThreadLocalLeakPreentionListener，
+     * 并且 Execator 的 threadRenewalDelay 属性 > = 0。如果未指定，则将使用默认值 true。
      */
     private boolean renewThreadsWhenStoppingContext = true;
 
     /**
      * Should Tomcat attempt to clear references to classes loaded by the web
      * application class loader from the ObjectStreamClass caches?
+     *
+     * 如果为真，当 Web 应用程序停止时，Tomcat 将在用于序列化的 ObjectStreamClass 类中查找 Web 应用程序加载的类的 SoftReferences，
+     * 并清除它找到的任何 SoftReferences。这个特性使用反射来识别 SoftReferences，
+     * 因此需要在 Java 9及以上版本上运行时设置命令行选项-XaddExports: Java.base/Java.io = ALL-UNNAMED。如果未指定，则将使用默认值 true。
      */
     private boolean clearReferencesObjectStreamClassCaches = true;
 
     /**
      * Should Tomcat attempt to clear references to classes loaded by this class
      * loader from ThreadLocals?
+     *
+     * 如果为真，Tomcat 将尝试清除 java.lang。用 Web 应用程序装载的类填充的 ThreadLocal 变量。如果未指定，则将使用默认值 true。
      */
     private boolean clearReferencesThreadLocals = true;
 
     /**
      * Should Tomcat skip the memory leak checks when the web application is
      * stopped as part of the process of shutting down the JVM?
+     *
+     * 如果为 true，当 Web 应用程序作为 JVM 关闭的一部分被停止时，Tomcat 将不会执行通常的内存泄漏检查。如果未指定，将使用默认值 false。
      */
     private boolean skipMemoryLeakChecksOnJvmShutdown = false;
 
     /**
      * Should the effective web.xml be logged when the context starts?
+     * 如果您希望在应用程序启动时(在 INFO 级别)记录用于 Web 应用程序的有效 web.xml，则将其设置为 true。
+     * 有效的 web.xml 是将应用程序的 web.xml 与 Tomcat 所配置的任何缺省值以及所发现的任何 web-Fragment.xml 文件和注释相结合的结果。
+     * 如果未指定，则使用默认值 false。
      */
     private boolean logEffectiveWebXml = false;
 
+    /**
+     * 有效的主要版本
+     */
     private int effectiveMajorVersion = 3;
 
+    /**
+     * 有效的小版本
+     */
     private int effectiveMinorVersion = 0;
 
+    /**
+     * JSP 配置描述
+     */
     private JspConfigDescriptor jspConfigDescriptor = null;
 
-    private Set<String> resourceOnlyServlets = new HashSet<>();
+    /**
+     * servlet 名称列表
+     */
+    private final Set<String> resourceOnlyServlets = new HashSet<>();
 
+    /**
+     * web应用版本号
+     */
     private String webappVersion = "";
 
+    /**
+     * 此属性控制是否除了从 Web 应用程序 JAR 文件中的 META-INF/resources 提供静态资源之外，还从 WEB-INF/classes/META-INF/resources 提供静态资源。
+     * 这只适用于主版本为3或更高版本的 Web 应用程序。由于这是 Servlet3规范的专有扩展，因此默认情况下禁用它。若要启用此特性，请将属性设置为 true。
+     */
     private boolean addWebinfClassesResources = false;
 
+    /**
+     * 设置为 true，以便在 Tomcat 转发请求时激发任何已配置的 ServletRequestListener。
+     * 这主要用于使用 ServletRequestListener 为请求配置必要环境的 CDI 框架的用户。如果未指定，则使用默认值 false。
+     */
     private boolean fireRequestListenersOnForwards = false;
 
     /**
      * Servlets created via {@link ApplicationContext#createServlet(Class)} for
      * tracking purposes.
+     * servlet实例
      */
-    private Set<Servlet> createdServlets = new HashSet<>();
+    private final Set<Servlet> createdServlets = new HashSet<>();
 
+    /**
+     * 当设置为 true 并且用户为不受安全约束保护的资源提供凭据时，
+     * 如果身份验证器支持抢占式身份验证(Tomcat 提供的标准身份验证器) ，
+     * 那么将处理用户的凭据。如果未指定，则使用默认值 false。
+     */
     private boolean preemptiveAuthentication = false;
 
+    /**
+     * 如果为真，重定向响应将包括一个简短的响应主体，其中包括 RFC 2616所建议的重定向的详细信息。
+     * 这在默认情况下是禁用的，因为包含响应主体可能会对某些应用程序组件(如压缩过滤器)造成问题。
+     */
     private boolean sendRedirectBody = false;
 
+    /**
+     * 如果为 true，那么应用程序通过调用 bind ()、 unbind ()、 createSubContext ()、 strucySubContext ()或
+     * close ()来修改提供的 JNDI 上下文的任何尝试都将触发 javax.name。根据 JavaEE 规范 EE.5.3.4部分的要求，
+     * OperationNotSupSupport dException。可以通过将此属性设置为 false 来禁用此异常，
+     * 在这种情况下，任何修改 JNDI 上下文的调用都将返回，而不需要进行任何更改，并且返回值的方法将返回 null。如果未指定，则将使用符合规范的默认值 true。
+     */
     private boolean jndiExceptionOnFailedWrite = true;
 
-    private Map<String, String> postConstructMethods = new HashMap<>();
-    private Map<String, String> preDestroyMethods = new HashMap<>();
+    /**
+     * 构造后的后置处理方法集合
+     */
+    private final Map<String, String> postConstructMethods = new HashMap<>();
+    /**
+     * 摧毁前需要处理的方法集合
+     */
+    private final Map<String, String> preDestroyMethods = new HashMap<>();
 
+    /**
+     * 指定提供 SCI 的容器的正则表达式应该被筛选出来，而不用于此上下文。
+     * 匹配使用 java.util.regex。Find () ，因此正则表达式只需要与所提供的 SCI 容器的完全限定类名的子字符串匹配，就可以过滤掉它。如果未指定，则不应用筛选。
+     */
     private String containerSciFilter;
 
+    /**
+     * 设置为 true 以使上下文的启动失败，如果任何 servlet 的 load-on-start > = 0的启动失败。
+     * 如果未指定，则使用父主机配置中相同名称的属性。否则使用默认值 false。
+     */
     private Boolean failCtxIfServletStartFails;
 
+    /**
+     * 默认的线程绑定监听器
+     */
     protected static final ThreadBindingListener DEFAULT_NAMING_LISTENER = (new ThreadBindingListener() {
         @Override
         public void bind() {}
         @Override
         public void unbind() {}
     });
+    /**
+     * 线程绑定监听器
+     */
     protected ThreadBindingListener threadBindingListener = DEFAULT_NAMING_LISTENER;
 
+    /**
+     * 操作JNDI命名空间的令牌
+     */
     private final Object namingToken = new Object();
 
+    /**
+     * cookie处理器
+     */
     private CookieProcessor cookieProcessor;
 
+    /**
+     * 是否需要验证新的会话id
+     */
     private boolean validateClientProvidedNewSessionId = true;
 
+    /**
+     * 对 Web 应用程序上下文根的请求将在必要时由 Mapper 而不是默认的 Servlet 重定向
+     */
     private boolean mapperContextRootRedirectEnabled = true;
 
+    /**
+     * 对 Web 应用程序目录的请求将在必要时由 Mapper 而不是默认的 Servlet 重定向
+     */
     private boolean mapperDirectoryRedirectEnabled = false;
 
+    /**
+     * 使用相对重定向还是绝对重定向
+     */
     private boolean useRelativeRedirects = !Globals.STRICT_SERVLET_COMPLIANCE;
 
+    /**
+     * 控制在调用中用于获取请求分派器的路径是否应该被编码。
+     */
     private boolean dispatchersUseEncodedPaths = true;
 
+    /**
+     * 请求编码格式
+     */
     private String requestEncoding = null;
 
+    /**
+     * 响应编码格式
+     */
     private String responseEncoding = null;
 
+    /**
+     * 是否需要关闭多个斜杠转换为一个斜杠
+     */
     private boolean allowMultipleLeadingForwardSlashInPath = false;
 
+    /**
+     * 异步请求计数器
+     */
     private final AtomicLong inProgressAsyncCount = new AtomicLong(0);
 
+    /**
+     * true如果 Tomcat 应该尝试创建在MultipartConfig Servlet 中指定的临时上传位置（如果该位置尚不存在），则设置为。如果未指定，false将使用默认值。
+     */
     private boolean createUploadTargets = false;
 
+    /**
+     * 每个请求是否需要更新会话访问时间
+     */
     private boolean alwaysAccessSession = Globals.STRICT_SERVLET_COMPLIANCE;
 
+    /**
+     * 是否需要以/开头
+     */
     private boolean contextGetResourceRequiresSlash = Globals.STRICT_SERVLET_COMPLIANCE;
 
+    /**
+     * 是否需要检查传递给应用程序调度程序的任何包装请求或响应对象，以确保它已包装原始请求或响应
+     */
     private boolean dispatcherWrapsSameObject = Globals.STRICT_SERVLET_COMPLIANCE;
 
+    /**
+     * 当设置为真正的注释扫描将使用实用程序执行器执行。它将允许并行处理扫描，这可能会改善部署类型，代价是更高的服务器负载。如果未指定，则使用默认值 false。
+     */
     private boolean parallelAnnotationScanning = false;
 
+    /**
+     * 是否使用布隆过滤器来查找
+     */
     private boolean useBloomFilterForArchives = false;
 
     // ----------------------------------------------------- Context Properties
@@ -950,7 +1243,7 @@ public class StandardContext extends ContainerBase
         if (responseEncoding == null) {
             this.responseEncoding = null;
         } else {
-            this.responseEncoding = new String(responseEncoding);
+            this.responseEncoding = responseEncoding;
         }
     }
 
@@ -1377,7 +1670,7 @@ public class StandardContext extends ContainerBase
      * the union of both.
      */
     @Override
-    public void setApplicationEventListeners(Object listeners[]) {
+    public void setApplicationEventListeners(Object[] listeners) {
         applicationEventListenersList.clear();
         if (listeners != null && listeners.length > 0) {
             applicationEventListenersList.addAll(Arrays.asList(listeners));
@@ -1410,7 +1703,7 @@ public class StandardContext extends ContainerBase
      * @param listeners The set of instantiated listener objects.
      */
     @Override
-    public void setApplicationLifecycleListeners(Object listeners[]) {
+    public void setApplicationLifecycleListeners(Object[] listeners) {
         applicationLifecycleListenersObjects = listeners;
     }
 
@@ -2886,7 +3179,7 @@ public class StandardContext extends ContainerBase
     public void addApplicationListener(String listener) {
 
         synchronized (applicationListenersLock) {
-            String results[] = new String[applicationListeners.length + 1];
+            String[] results = new String[applicationListeners.length + 1];
             for (int i = 0; i < applicationListeners.length; i++) {
                 if (listener.equals(applicationListeners[i])) {
                     log.info(sm.getString("standardContext.duplicateListener",listener));
@@ -2917,7 +3210,7 @@ public class StandardContext extends ContainerBase
                     return;
                 }
             }
-            ApplicationParameter results[] = Arrays.copyOf(
+            ApplicationParameter[] results = Arrays.copyOf(
                     applicationParameters, applicationParameters.length + 1);
             results[applicationParameters.length] = parameter;
             applicationParameters = results;
@@ -2981,9 +3274,9 @@ public class StandardContext extends ContainerBase
     public void addConstraint(SecurityConstraint constraint) {
 
         // Validate the proposed constraint
-        SecurityCollection collections[] = constraint.findCollections();
+        SecurityCollection[] collections = constraint.findCollections();
         for (SecurityCollection collection : collections) {
-            String patterns[] = collection.findPatterns();
+            String[] patterns = collection.findPatterns();
             for (int j = 0; j < patterns.length; j++) {
                 patterns[j] = adjustURLPattern(patterns[j]);
                 if (!validateURLPattern(patterns[j])) {
@@ -3499,7 +3792,7 @@ public class StandardContext extends ContainerBase
     @Override
     public FilterDef[] findFilterDefs() {
         synchronized (filterDefs) {
-            FilterDef results[] = new FilterDef[filterDefs.size()];
+            FilterDef[] results = new FilterDef[filterDefs.size()];
             return filterDefs.values().toArray(results);
         }
     }
@@ -3534,7 +3827,7 @@ public class StandardContext extends ContainerBase
      */
     public MessageDestination[] findMessageDestinations() {
         synchronized (messageDestinations) {
-            MessageDestination results[] =
+            MessageDestination[] results =
                 new MessageDestination[messageDestinations.size()];
             return messageDestinations.values().toArray(results);
         }
@@ -3560,7 +3853,7 @@ public class StandardContext extends ContainerBase
     @Override
     public String[] findMimeMappings() {
         synchronized (mimeMappings) {
-            String results[] = new String[mimeMappings.size()];
+            String[] results = new String[mimeMappings.size()];
             return mimeMappings.keySet().toArray(results);
         }
     }
@@ -3665,7 +3958,7 @@ public class StandardContext extends ContainerBase
     @Override
     public String[] findServletMappings() {
         synchronized (servletMappingsLock) {
-            String results[] = new String[servletMappings.size()];
+            String[] results = new String[servletMappings.size()];
             return servletMappings.keySet().toArray(results);
         }
     }
@@ -3821,7 +4114,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified listener
             int j = 0;
-            String results[] = new String[applicationListeners.length - 1];
+            String[] results = new String[applicationListeners.length - 1];
             for (int i = 0; i < applicationListeners.length; i++) {
                 if (i != n) {
                     results[j++] = applicationListeners[i];
@@ -3862,7 +4155,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified parameter
             int j = 0;
-            ApplicationParameter results[] =
+            ApplicationParameter[] results =
                 new ApplicationParameter[applicationParameters.length - 1];
             for (int i = 0; i < applicationParameters.length; i++) {
                 if (i != n) {
@@ -3925,7 +4218,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified constraint
             int j = 0;
-            SecurityConstraint results[] =
+            SecurityConstraint[] results =
                 new SecurityConstraint[constraints.length - 1];
             for (int i = 0; i < constraints.length; i++) {
                 if (i != n) {
@@ -4070,7 +4363,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified security role
             int j = 0;
-            String results[] = new String[securityRoles.length - 1];
+            String[] results = new String[securityRoles.length - 1];
             for (int i = 0; i < securityRoles.length; i++) {
                 if (i != n) {
                     results[j++] = securityRoles[i];
@@ -4132,7 +4425,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified watched resource
             int j = 0;
-            String results[] = new String[watchedResources.length - 1];
+            String[] results = new String[watchedResources.length - 1];
             for (int i = 0; i < watchedResources.length; i++) {
                 if (i != n) {
                     results[j++] = watchedResources[i];
@@ -4172,7 +4465,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified welcome file
             int j = 0;
-            String results[] = new String[welcomeFiles.length - 1];
+            String[] results = new String[welcomeFiles.length - 1];
             for (int i = 0; i < welcomeFiles.length; i++) {
                 if (i != n) {
                     results[j++] = welcomeFiles[i];
@@ -4216,7 +4509,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified lifecycle listener
             int j = 0;
-            String results[] = new String[wrapperLifecycles.length - 1];
+            String[] results = new String[wrapperLifecycles.length - 1];
             for (int i = 0; i < wrapperLifecycles.length; i++) {
                 if (i != n) {
                     results[j++] = wrapperLifecycles[i];
@@ -4258,7 +4551,7 @@ public class StandardContext extends ContainerBase
 
             // Remove the specified listener
             int j = 0;
-            String results[] = new String[wrapperListeners.length - 1];
+            String[] results = new String[wrapperListeners.length - 1];
             for (int i = 0; i < wrapperListeners.length; i++) {
                 if (i != n) {
                     results[j++] = wrapperListeners[i];
@@ -4480,7 +4773,7 @@ public class StandardContext extends ContainerBase
          */
         public void add(FilterMap filterMap) {
             synchronized (lock) {
-                FilterMap results[] = Arrays.copyOf(array, array.length + 1);
+                FilterMap[] results = Arrays.copyOf(array, array.length + 1);
                 results[array.length] = filterMap;
                 array = results;
             }
@@ -4495,7 +4788,7 @@ public class StandardContext extends ContainerBase
          */
         public void addBefore(FilterMap filterMap) {
             synchronized (lock) {
-                FilterMap results[] = new FilterMap[array.length + 1];
+                FilterMap[] results = new FilterMap[array.length + 1];
                 System.arraycopy(array, 0, results, 0, insertPoint);
                 System.arraycopy(array, insertPoint, results, insertPoint + 1,
                         array.length - insertPoint);
@@ -4525,7 +4818,7 @@ public class StandardContext extends ContainerBase
                 }
 
                 // Remove the specified filter mapping
-                FilterMap results[] = new FilterMap[array.length - 1];
+                FilterMap[] results = new FilterMap[array.length - 1];
                 System.arraycopy(array, 0, results, 0, n);
                 System.arraycopy(array, n + 1, results, n, (array.length - 1)
                         - n);
@@ -4629,8 +4922,8 @@ public class StandardContext extends ContainerBase
         }
 
         // Instantiate the required listeners
-        String listeners[] = findApplicationListeners();
-        Object results[] = new Object[listeners.length];
+        String[] listeners = findApplicationListeners();
+        Object[] results = new Object[listeners.length];
         boolean ok = true;
         for (int i = 0; i < results.length; i++) {
             if (getLogger().isDebugEnabled()) {
@@ -4695,7 +4988,7 @@ public class StandardContext extends ContainerBase
         getServletContext();
         context.setNewServletContextListenerAllowed(false);
 
-        Object instances[] = getApplicationLifecycleListeners();
+        Object[] instances = getApplicationLifecycleListeners();
         if (instances == null || instances.length == 0) {
             return ok;
         }
@@ -4744,7 +5037,7 @@ public class StandardContext extends ContainerBase
         }
 
         boolean ok = true;
-        Object listeners[] = getApplicationLifecycleListeners();
+        Object[] listeners = getApplicationLifecycleListeners();
         if (listeners != null && listeners.length > 0) {
             ServletContextEvent event = new ServletContextEvent(getServletContext());
             ServletContextEvent tldEvent = null;
@@ -4882,7 +5175,7 @@ public class StandardContext extends ContainerBase
      *  servlets (including those not declared load on startup)
      * @return <code>true</code> if load on startup was considered successful
      */
-    public boolean loadOnStartup(Container children[]) {
+    public boolean loadOnStartup(Container[] children) {
 
         // Collect "load on startup" servlets that need to be initialized
         TreeMap<Integer, ArrayList<Wrapper>> map = new TreeMap<>();
@@ -5341,12 +5634,12 @@ public class StandardContext extends ContainerBase
     private void mergeParameters() {
         Map<String,String> mergedParams = new HashMap<>();
 
-        String names[] = findParameters();
+        String[] names = findParameters();
         for (String s : names) {
             mergedParams.put(s, findParameter(s));
         }
 
-        ApplicationParameter params[] = findApplicationParameters();
+        ApplicationParameter[] params = findApplicationParameters();
         for (ApplicationParameter param : params) {
             if (param.getOverride()) {
                 if (mergedParams.get(param.getName()) == null) {
@@ -5923,7 +6216,7 @@ public class StandardContext extends ContainerBase
     @Override
     public boolean fireRequestInitEvent(ServletRequest request) {
 
-        Object instances[] = getApplicationEventListeners();
+        Object[] instances = getApplicationEventListeners();
 
         if ((instances != null) && (instances.length > 0)) {
 
@@ -5957,7 +6250,7 @@ public class StandardContext extends ContainerBase
 
     @Override
     public boolean fireRequestDestroyEvent(ServletRequest request) {
-        Object instances[] = getApplicationEventListeners();
+        Object[] instances = getApplicationEventListeners();
 
         if ((instances != null) && (instances.length > 0)) {
 
@@ -6207,15 +6500,13 @@ public class StandardContext extends ContainerBase
     @Override
     protected String getObjectNameKeyProperties() {
 
-        StringBuilder keyProperties =
-            new StringBuilder("j2eeType=WebModule,");
-        keyProperties.append(getObjectKeyPropertiesNameOnly());
-        keyProperties.append(",J2EEApplication=");
-        keyProperties.append(getJ2EEApplication());
-        keyProperties.append(",J2EEServer=");
-        keyProperties.append(getJ2EEServer());
+        String keyProperties = "j2eeType=WebModule," + getObjectKeyPropertiesNameOnly() +
+                ",J2EEApplication=" +
+                getJ2EEApplication() +
+                ",J2EEServer=" +
+                getJ2EEServer();
 
-        return keyProperties.toString();
+        return keyProperties;
     }
 
     private String getObjectKeyPropertiesNameOnly() {

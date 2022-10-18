@@ -24,6 +24,7 @@ package org.apache.tomcat.util.descriptor.web;
  * JNDI resource. Only Catalina implements this interface but because the
  * web.xml representation is shared this interface has to be visible to Catalina
  * and Jasper.
+ * 命名资源
  */
 public interface NamingResources {
 

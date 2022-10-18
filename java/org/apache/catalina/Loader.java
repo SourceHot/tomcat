@@ -45,6 +45,8 @@ import java.beans.PropertyChangeListener;
  *     loader is detected.
  * </ul>
  *
+ *
+ * 加载器
  * @author Craig R. McClanahan
  */
 public interface Loader {

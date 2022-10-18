@@ -21,6 +21,9 @@ import java.nio.charset.Charset;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
+/**
+ * cookie处理器
+ */
 public interface CookieProcessor {
 
     /**

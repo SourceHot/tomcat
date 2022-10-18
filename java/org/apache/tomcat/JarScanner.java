@@ -22,6 +22,8 @@ import jakarta.servlet.ServletContext;
  * Scans a web application and classloader hierarchy for JAR files. Uses
  * include TLD scanning and web-fragment.xml scanning. Uses a call-back
  * mechanism so the caller can process each JAR found.
+ *
+ * jar 扫描器
  */
 public interface JarScanner {
 

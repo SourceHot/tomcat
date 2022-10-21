@@ -43,6 +43,7 @@ import org.apache.tomcat.util.res.StringManager;
  * See http://docs.oracle.com/javase/1.4.2/docs/guide/extensions/spec.html
  * for a detailed explanation of the extension mechanism in Java.
  *
+ * 扩展验证器
  * @author Greg Murray
  * @author Justyna Horwat
  */

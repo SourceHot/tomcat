@@ -61,6 +61,7 @@ import org.apache.tomcat.util.res.StringManager;
  * org.apache.catalina.WebResourceRoot.ResourceSetType, String, String, String,
  * String)} represents the absolute path to a file.
  * </p>
+ * 标准根目录
  */
 public class StandardRoot extends LifecycleMBeanBase implements WebResourceRoot {
 

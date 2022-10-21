@@ -82,6 +82,7 @@ public enum LifecycleState {
     }
 
     /**
+     * 是否可用(启用)
      * May the public methods other than property getters/setters and lifecycle
      * methods be called for a component in this state? It returns
      * <code>true</code> for any component in any of the following states:

@@ -904,16 +904,21 @@ public class StandardHost extends ContainerBase implements Host {
                 boolean found = false;
                 // 提取Value接口集合
                 Valve[] valves = getPipeline().getValves();
+                // 遍历Value接口
                 for (Valve valve : valves) {
+                    // 判断异常报告类是否和value的类名相同，如果相同则结束循环，并将found设置为true
                     if (errorValve.equals(valve.getClass().getName())) {
                         found = true;
                         break;
                     }
                 }
+                // 如果没有找到
                 if(!found) {
+                    // 根据异常报告名称获取Value接口
                     Valve valve = ErrorReportValve.class.getName().equals(errorValve) ?
-                        new ErrorReportValve() :
-                        (Valve) Class.forName(errorValve).getConstructor().newInstance();
+                            new ErrorReportValve() :
+                            (Valve) Class.forName(errorValve).getConstructor().newInstance();
+                    // 向pipeline中添加Value接口实现类
                     getPipeline().addValve(valve);
                 }
             } catch (Throwable t) {
@@ -923,6 +928,7 @@ public class StandardHost extends ContainerBase implements Host {
                         errorValve), t);
             }
         }
+        // 父startInternal执行
         super.startInternal();
     }
 

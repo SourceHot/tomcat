@@ -57,6 +57,9 @@ public final class ExtensionValidator {
     private static final StringManager sm =
             StringManager.getManager("org.apache.catalina.util");
 
+    /**
+     * 容器扩展列表
+     */
     private static volatile List<Extension> containerAvailableExtensions = null;
     private static final List<ManifestResource> containerManifestResources =
             new ArrayList<>();
@@ -127,12 +130,15 @@ public final class ExtensionValidator {
                                            WebResourceRoot resources,
                                            Context context)
                     throws IOException {
-
+        // 获取上下文名称
         String appName = context.getName();
+        // 创建资源清单集合
         List<ManifestResource> appManifestResources = new ArrayList<>();
 
         // Web application manifest
+        // 获取/META-INF/MANIFEST.MF资源对象
         WebResource resource = resources.getResource("/META-INF/MANIFEST.MF");
+        // 如果/META-INF/MANIFEST.MF资源对象是文件则读取它将数据放入到appManifestResources容器中
         if (resource.isFile()) {
             try (InputStream inputStream = resource.getInputStream()) {
                 Manifest manifest = new Manifest(inputStream);
@@ -144,8 +150,10 @@ public final class ExtensionValidator {
         }
 
         // Web application library manifests
+        // 获取/META-INF/MANIFEST.MF对应的资源清单
         WebResource[] manifestResources =
                 resources.getClassLoaderResources("/META-INF/MANIFEST.MF");
+        // 遍历/META-INF/MANIFEST.MF对应的资源清单，将资源信息放入到appManifestResources容器中
         for (WebResource manifestResource : manifestResources) {
             if (manifestResource.isFile()) {
                 // Primarily used for error reporting
@@ -159,6 +167,7 @@ public final class ExtensionValidator {
             }
         }
 
+        // 校验资源清单
         return validateManifestResources(appName, appManifestResources);
     }
 
@@ -193,47 +202,59 @@ public final class ExtensionValidator {
      * <code>false</false> is returned if the extension dependencies
      * represented by any given <code>ManifestResource</code> objects
      * is not met.
-     *
+     * <p>
      * This method should also provide static validation of a Web Application
      * if provided with the necessary parameters.
      *
-     * @param appName The name of the Application that will appear in the
-     *                error messages
+     * @param appName   The name of the Application that will appear in the
+     *                  error messages
      * @param resources A list of <code>ManifestResource</code> objects
      *                  to be validated.
-     *
      * @return true if manifest resource file requirements are met
      */
     private static boolean validateManifestResources(String appName,
-            List<ManifestResource> resources) {
+                                                     List<ManifestResource> resources) {
+        // 是否校验通过
         boolean passes = true;
+        // 异常数量
         int failureCount = 0;
+        // 扩展列表
         List<Extension> availableExtensions = null;
 
+        // 遍历资源列表
         for (ManifestResource mre : resources) {
+
+            // 从资源对象中获取扩展对象，如果扩展对象为空则跳过处理
             ArrayList<Extension> requiredList = mre.getRequiredExtensions();
             if (requiredList == null) {
                 continue;
             }
 
             // build the list of available extensions if necessary
+            // 扩展列表为空的情况下将执行资源绑定操作
             if (availableExtensions == null) {
                 availableExtensions = buildAvailableExtensionsList(resources);
             }
 
             // load the container level resource map if it has not been built
             // yet
+            // 如果容器扩展列表为空
             if (containerAvailableExtensions == null) {
                 containerAvailableExtensions
-                    = buildAvailableExtensionsList(containerManifestResources);
+                        = buildAvailableExtensionsList(containerManifestResources);
             }
 
             // iterate through the list of required extensions
+            // 遍历扩展对象集合
             for (Extension requiredExt : requiredList) {
+                // 是否找到标记，初始化为false
                 boolean found = false;
                 // check the application itself for the extension
+                // 遍历availableExtensions不为空
                 if (availableExtensions != null) {
+                    // 遍历availableExtensions变量，判断是否安装扩展，如果是则将found标记设置为true
                     for (Extension targetExt : availableExtensions) {
+                        // 是否安装扩展
                         if (targetExt.isCompatibleWith(requiredExt)) {
                             requiredExt.setFulfilled(true);
                             found = true;
@@ -242,6 +263,7 @@ public final class ExtensionValidator {
                     }
                 }
                 // check the container level list for the extension
+                // 遍历containerAvailableExtensions变量，判断是否安装扩展，如果是则将found标记设置为true
                 if (!found && containerAvailableExtensions != null) {
                     for (Extension targetExt : containerAvailableExtensions) {
                         if (targetExt.isCompatibleWith(requiredExt)) {
@@ -251,12 +273,13 @@ public final class ExtensionValidator {
                         }
                     }
                 }
+                // 如果found标记为false则将是否校验通过标记passes设置为false并且累加failureCount
                 if (!found) {
                     // Failure
                     log.info(sm.getString(
-                        "extensionValidator.extension-not-found-error",
-                        appName, mre.getResourceName(),
-                        requiredExt.getExtensionName()));
+                            "extensionValidator.extension-not-found-error",
+                            appName, mre.getResourceName(),
+                            requiredExt.getExtensionName()));
                     passes = false;
                     failureCount++;
                 }
@@ -265,8 +288,8 @@ public final class ExtensionValidator {
 
         if (!passes) {
             log.info(sm.getString(
-                     "extensionValidator.extension-validation-error", appName,
-                     failureCount + ""));
+                    "extensionValidator.extension-validation-error", appName,
+                    failureCount + ""));
         }
 
         return passes;

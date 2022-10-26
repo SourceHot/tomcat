@@ -130,17 +130,21 @@ public class ContextBindings {
      *
      * @param obj   Object bound to the required naming context
      * @param token Security token
-     *
      * @throws NamingException If no naming context is bound to the provided
-     *         object
+     *                         object
      */
     public static void bindThread(Object obj, Object token) throws NamingException {
+
+        // 判断是否有权限设置数据
         if (ContextAccessController.checkSecurityToken(obj, token)) {
+            // 从objectBindings对象中获取上下文
             Context context = objectBindings.get(obj);
+            // 如果上下文为空则抛出异常
             if (context == null) {
                 throw new NamingException(
                         sm.getString("contextBindings.unknownContext", obj));
             }
+            // 绑定数据
             threadBindings.put(Thread.currentThread(), context);
             threadObjectBindings.put(Thread.currentThread(), obj);
         }

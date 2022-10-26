@@ -5175,13 +5175,17 @@ public class StandardContext extends ContainerBase
 
         // Check current status in case resources were added that had already
         // been started
+        // 检查资源是否是可用状态，如果不是则需要启用
         if (!resources.getState().isAvailable()) {
             resources.start();
         }
 
-        if (effectiveMajorVersion >=3 && addWebinfClassesResources) {
+        // 如果成员变量effectiveMajorVersion>=3并且成员变量addWebinfClassesResources为真
+        if (effectiveMajorVersion >= 3 && addWebinfClassesResources) {
+            // 获取/WEB-INF/classes/META-INF/resources资源对象
             WebResource webinfClassesResource = resources.getResource(
                     "/WEB-INF/classes/META-INF/resources");
+            // 如果资源对象是目录，创建这个目录
             if (webinfClassesResource.isDirectory()) {
                 getResources().createWebResourceSet(
                         WebResourceRoot.ResourceSetType.RESOURCE_JAR, "/",
@@ -5315,7 +5319,6 @@ public class StandardContext extends ContainerBase
 
             try {
                 // 为资源设置标准根，其中标准根的上下文是当前对象
-
                 setResources(new StandardRoot(this));
             } catch (IllegalArgumentException e) {
                 log.error(sm.getString("standardContext.resourcesInit"), e);
@@ -6181,8 +6184,10 @@ public class StandardContext extends ContainerBase
      */
     protected ClassLoader bindThread() {
 
+        // 执行bind方法
         ClassLoader oldContextClassLoader = bind(false, null);
 
+        // 是否使用命名空间，如果是则需要执行ContextBindings.bindThread方法
         if (isUseNaming()) {
             try {
                 ContextBindings.bindThread(this, getNamingToken());
@@ -6213,21 +6218,28 @@ public class StandardContext extends ContainerBase
 
     @Override
     public ClassLoader bind(boolean usePrivilegedAction, ClassLoader originalClassLoader) {
+        // 获取加载器
         Loader loader = getLoader();
+        // 确认类加载器
         ClassLoader webApplicationClassLoader = null;
+        // 如果加载器不为空，类加载器从加载器中获取
         if (loader != null) {
             webApplicationClassLoader = loader.getClassLoader();
         }
 
+        // 如果参数类加载器为空
         if (originalClassLoader == null) {
+            // 如果参数usePrivilegedAction为真，构造PrivilegedGetTccl对象获取类加载器
             if (usePrivilegedAction) {
                 PrivilegedAction<ClassLoader> pa = new PrivilegedGetTccl();
                 originalClassLoader = AccessController.doPrivileged(pa);
-            } else {
+            }
+            else {
                 originalClassLoader = Thread.currentThread().getContextClassLoader();
             }
         }
 
+        // 如果类加载器为空，或者类加载器和参数originalClassLoader相同则返回null结束处理
         if (webApplicationClassLoader == null ||
                 webApplicationClassLoader == originalClassLoader) {
             // Not possible or not necessary to switch class loaders. Return
@@ -6235,14 +6247,19 @@ public class StandardContext extends ContainerBase
             return null;
         }
 
+        // 获取线程绑定监听器
         ThreadBindingListener threadBindingListener = getThreadBindingListener();
 
+        // 如果参数usePrivilegedAction为真
         if (usePrivilegedAction) {
+            // 通过PrivilegedSetTccl设置
             PrivilegedAction<Void> pa = new PrivilegedSetTccl(webApplicationClassLoader);
             AccessController.doPrivileged(pa);
-        } else {
+        }
+        else {
             Thread.currentThread().setContextClassLoader(webApplicationClassLoader);
         }
+        // 如果线程绑定监听器不为空则执行bind方法
         if (threadBindingListener != null) {
             try {
                 threadBindingListener.bind();
@@ -6486,14 +6503,21 @@ public class StandardContext extends ContainerBase
     protected void postWorkDirectory() {
 
         // Acquire (or calculate) the work directory path
+        // 获取成员变量workDir
         String workDir = getWorkDir();
+        // 如果成员变量workDir为空
         if (workDir == null || workDir.length() == 0) {
 
             // Retrieve our parent (normally a host) name
+            // 主机名称
             String hostName = null;
+            // 引擎名称
             String engineName = null;
+            // 主机工作路径
             String hostWorkDir = null;
+            // 获取父容器（父主机）
             Container parentHost = getParent();
+            // 如果父主机不为空，hostName、engineName和hostWorkDir数据将从主机中获取
             if (parentHost != null) {
                 hostName = parentHost.getName();
                 if (parentHost instanceof StandardHost) {
@@ -6504,52 +6528,71 @@ public class StandardContext extends ContainerBase
                    engineName = parentEngine.getName();
                 }
             }
+            // 如果主机名称为空将其赋值为_
             if ((hostName == null) || (hostName.length() < 1)) {
                 hostName = "_";
             }
+            // 如果引擎名称为空将其赋值为_
             if ((engineName == null) || (engineName.length() < 1)) {
                 engineName = "_";
             }
 
+            // 获取基础路径
             String temp = getBaseName();
+            // 如果基础地址是以/开头则需要去掉斜杠
             if (temp.startsWith("/")) {
                 temp = temp.substring(1);
             }
+            // 将基础地址中的/替换为_
             temp = temp.replace('/', '_');
+            // 将基础地址中的\替换为_
             temp = temp.replace('\\', '_');
+            // 如果基础地址长度小于1，则将基础地址设置为ROOT
             if (temp.length() < 1) {
                 temp = ContextName.ROOT_NAME;
             }
+            // 如果主机工作目录不为空
             if (hostWorkDir != null ) {
+                // 工作目录=主机工作目录+文件分隔符+基础地址
                 workDir = hostWorkDir + File.separator + temp;
             } else {
+                // 工作目录=work+文件分隔符+引擎名称+文件分隔符+主机名称+文件分隔符+基础地址
                 workDir = "work" + File.separator + engineName +
                     File.separator + hostName + File.separator + temp;
             }
+            // 设置工作目录
             setWorkDir(workDir);
         }
 
         // Create this directory if necessary
+        // 将工作目录转换为文件对象
         File dir = new File(workDir);
+        // 确认工作目录的文件对象是否不是绝对地址，如果不是
         if (!dir.isAbsolute()) {
+            // 确认容器的路径
             String catalinaHomePath = null;
             try {
+                // 获取容器路径
                 catalinaHomePath = getCatalinaBase().getCanonicalPath();
+                // 工作目录的文件对象重新计算
                 dir = new File(catalinaHomePath, workDir);
             } catch (IOException e) {
                 log.warn(sm.getString("standardContext.workCreateException",
                         workDir, catalinaHomePath, getName()), e);
             }
         }
+        // 创建文件失败并且工作目录不是目录执行异常记录
         if (!dir.mkdirs() && !dir.isDirectory()) {
             log.warn(sm.getString("standardContext.workCreateFail", dir,
                     getName()));
         }
 
         // Set the appropriate servlet context attribute
+        // 如果上下文为空，则通过getServletContext方法初始化上下文
         if (context == null) {
             getServletContext();
         }
+        // 为上下文设置TEMPDIR属性，并且将其标记位只读
         context.setAttribute(ServletContext.TEMPDIR, dir);
         context.setAttributeReadOnly(ServletContext.TEMPDIR);
     }

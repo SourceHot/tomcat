@@ -6276,10 +6276,11 @@ public class StandardContext extends ContainerBase
 
     @Override
     public void unbind(boolean usePrivilegedAction, ClassLoader originalClassLoader) {
+        // 判断源类加载器是否为空
         if (originalClassLoader == null) {
             return;
         }
-
+        // 判断成员变量threadBindingListener是否为空
         if (threadBindingListener != null) {
             try {
                 threadBindingListener.unbind();
@@ -6290,10 +6291,12 @@ public class StandardContext extends ContainerBase
             }
         }
 
+        // 判断参数usePrivilegedAction是否为true
         if (usePrivilegedAction) {
             PrivilegedAction<Void> pa = new PrivilegedSetTccl(originalClassLoader);
             AccessController.doPrivileged(pa);
-        } else {
+        }
+        else {
             Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }

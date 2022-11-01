@@ -104,35 +104,41 @@ public class StandardWrapper extends ContainerBase
      * milliseconds since the epoch), or zero if the servlet is available.
      * If this value equals Long.MAX_VALUE, the unavailability of this
      * servlet is considered permanent.
+     * 可用时间，如果是0则永久可用，如果是Long.MAX_VALUE永久不可用
      */
     protected long available = 0L;
 
     /**
      * The broadcaster that sends j2ee notifications.
+     * J2EE广播器
      */
     protected final NotificationBroadcasterSupport broadcaster;
 
     /**
      * The count of allocations that are currently active (even if they
      * are for the same instance, as will be true on a non-STM servlet).
+     * 分配计数器
      */
     protected final AtomicInteger countAllocated = new AtomicInteger(0);
 
 
     /**
      * The facade associated with this wrapper.
+     * StandardWrapper的门面对象
      */
     protected final StandardWrapperFacade facade = new StandardWrapperFacade(this);
 
 
     /**
      * The (single) possibly uninitialized instance of this servlet.
+     * Servlet实例
      */
     protected volatile Servlet instance = null;
 
 
     /**
      * Flag that indicates if this instance has been initialized
+     * 是否初始化
      */
     protected volatile boolean instanceInitialized = false;
 
@@ -140,12 +146,15 @@ public class StandardWrapper extends ContainerBase
     /**
      * The load-on-startup order value (negative value means load on
      * first call) for this servlet.
+     *
+     * 启动序号
      */
     protected int loadOnStartup = -1;
 
 
     /**
      * Mappings associated with the wrapper.
+     * 映射集合
      */
     protected final ArrayList<String> mappings = new ArrayList<>();
 
@@ -153,6 +162,7 @@ public class StandardWrapper extends ContainerBase
     /**
      * The initialization parameters for this servlet, keyed by
      * parameter name.
+     * 初始化参数表
      */
     protected HashMap<String, String> parameters = new HashMap<>();
 
@@ -161,22 +171,26 @@ public class StandardWrapper extends ContainerBase
      * The security role references for this servlet, keyed by role name
      * used in the servlet.  The corresponding value is the role name of
      * the web application itself.
+     * 安全角色表
      */
     protected HashMap<String, String> references = new HashMap<>();
 
 
     /**
      * The run-as identity for this servlet.
+     * 启动身份
      */
     protected String runAs = null;
 
     /**
      * The notification sequence number.
+     * 序列号
      */
     protected long sequenceNumber = 0;
 
     /**
      * The fully qualified servlet class name for this servlet.
+     * servlet类类名
      */
     protected String servletClass = null;
 
@@ -184,6 +198,7 @@ public class StandardWrapper extends ContainerBase
     /**
      * Does this servlet implement the SingleThreadModel interface?
      *
+     * servlet 是否实现了SingleThreadModel
      * @deprecated This will be removed in Tomcat 10.1 onwards.
      */
     @Deprecated
@@ -192,12 +207,16 @@ public class StandardWrapper extends ContainerBase
 
     /**
      * Are we unloading our servlet instance at the moment?
+     *
+     * 是否处于卸载servlet阶段
      */
     protected volatile boolean unloading = false;
 
 
     /**
      * Maximum number of STM instances.
+     *
+     * STM的最大实例数
      *
      * @deprecated This will be removed in Tomcat 10.1 onwards.
      */
@@ -208,6 +227,8 @@ public class StandardWrapper extends ContainerBase
     /**
      * Number of instances currently loaded for a STM servlet.
      *
+     * STM实例数
+     *
      * @deprecated This will be removed in Tomcat 10.1 onwards.
      */
     @Deprecated
@@ -216,7 +237,7 @@ public class StandardWrapper extends ContainerBase
 
     /**
      * Stack containing the STM instances.
-     *
+     *STM实例堆栈
      * @deprecated This will be removed in Tomcat 10.1 onwards.
      */
     @Deprecated
@@ -225,61 +246,89 @@ public class StandardWrapper extends ContainerBase
 
     /**
      * Wait time for servlet unload in ms.
+     * servlet卸载最大等待时间，单位毫秒
      */
     protected long unloadDelay = 2000;
 
 
     /**
      * True if this StandardWrapper is for the JspServlet
+     * 是否是JSP的servlet
      */
     protected boolean isJspServlet;
 
 
     /**
      * The ObjectName of the JSP monitoring mbean
+     * JSP监控对象
      */
     protected ObjectName jspMonitorON;
 
 
     /**
      * Should we swallow System.out
+     * 是否需要拒绝System.out的指令
      */
     protected boolean swallowOutput = false;
 
     // To support jmx attributes
+    /**
+     * StandardWrapperValve实例
+     */
     protected StandardWrapperValve swValve;
+    /**
+     * 加载时间
+     */
     protected long loadTime=0;
+    /**
+     * 类加载时间
+     */
     protected int classLoadTime=0;
 
     /**
      * Multipart config
+     * MultipartConfig注解数据
      */
     protected MultipartConfigElement multipartConfigElement = null;
 
     /**
      * Async support
+     * 是否支持async
      */
     protected boolean asyncSupported = false;
 
     /**
      * Enabled
+     * 是否启动
      */
     protected boolean enabled = true;
 
+    /**
+     * 是否可覆盖
+     */
     private boolean overridable = false;
 
     /**
      * Static class array used when the SecurityManager is turned on and
      * <code>Servlet.init</code> is invoked.
+     *启动SecurityManager时所需的静态数据
      */
     protected static Class<?>[] classType = new Class[]{ServletConfig.class};
 
+    /**
+     * 操作parameters时所需的锁
+     */
     private final ReentrantReadWriteLock parametersLock =
             new ReentrantReadWriteLock();
-
+    /**
+     * 操作mappings时所需的锁
+     */
     private final ReentrantReadWriteLock mappingsLock =
             new ReentrantReadWriteLock();
 
+    /**
+     * 操作references时所需的锁
+     */
     private final ReentrantReadWriteLock referencesLock =
             new ReentrantReadWriteLock();
 
@@ -767,17 +816,23 @@ public class StandardWrapper extends ContainerBase
     public Servlet allocate() throws ServletException {
 
         // If we are currently unloading this servlet, throw an exception
+        // 判断成员变量unloading是否为true，如果是则抛出异常
         if (unloading) {
             throw new ServletException(sm.getString("standardWrapper.unloading", getName()));
         }
 
+        // 是否是新的servlet实例
         boolean newInstance = false;
 
         // If not SingleThreadedModel, return the same instance every time
+        // 判断成员变量singleThreadModel是否为false
         if (!singleThreadModel) {
             // Load and initialize our instance if necessary
+            // servlet 实例为空或者没有初始化
             if (instance == null || !instanceInitialized) {
+                // 锁
                 synchronized (this) {
+                    // servlet实例为空的情况
                     if (instance == null) {
                         try {
                             if (log.isDebugEnabled()) {
@@ -786,12 +841,16 @@ public class StandardWrapper extends ContainerBase
 
                             // Note: We don't know if the Servlet implements
                             // SingleThreadModel until we have loaded it.
+                            // 加载一个servlet
                             instance = loadServlet();
+                            // 将是否是新的servlet实例标记设置为true
                             newInstance = true;
+                            // 如果成员变量singleThreadModel为false
                             if (!singleThreadModel) {
                                 // For non-STM, increment here to prevent a race
                                 // condition with unload. Bug 43683, test case
                                 // #3
+                                // 计数器累加
                                 countAllocated.incrementAndGet();
                             }
                         } catch (ServletException e) {
@@ -801,13 +860,17 @@ public class StandardWrapper extends ContainerBase
                             throw new ServletException(sm.getString("standardWrapper.allocate"), e);
                         }
                     }
+                    // 如果没有初始化
                     if (!instanceInitialized) {
+                        // 将servlet实例初始化
                         initServlet(instance);
                     }
                 }
             }
 
+            // 成员变量singleThreadModel为true
             if (singleThreadModel) {
+                // 是新的servlet实例，将servlet实例加入到instancePool，成员变量nInstances累加1
                 if (newInstance) {
                     // Have to do this outside of the sync above to prevent a
                     // possible deadlock
@@ -816,25 +879,33 @@ public class StandardWrapper extends ContainerBase
                         nInstances++;
                     }
                 }
-            } else {
+            }
+            // 成员变量singleThreadModel为false
+            else {
                 if (log.isTraceEnabled()) {
                     log.trace("  Returning non-STM instance");
                 }
                 // For new instances, count will have been incremented at the
                 // time of creation
+                // 不是新的servlet实例，成员变量countAllocated累加1
                 if (!newInstance) {
                     countAllocated.incrementAndGet();
                 }
+                // 返回servlet实例
                 return instance;
             }
         }
 
         synchronized (instancePool) {
+            // 死循环，跳出条件countAllocated数量不大于等于nInstances
             while (countAllocated.get() >= nInstances) {
                 // Allocate a new instance if possible, or else wait
+                // 如果nInstances小于maxInstances
                 if (nInstances < maxInstances) {
                     try {
+                        // 向instancePool中追加一个servlet实例
                         instancePool.push(loadServlet());
+                        // 累加nInstances
                         nInstances++;
                     } catch (ServletException e) {
                         throw e;
@@ -854,6 +925,7 @@ public class StandardWrapper extends ContainerBase
                 log.trace("  Returning allocated STM instance");
             }
             countAllocated.incrementAndGet();
+            // 从instancePool中弹出一个servlet实例
             return instancePool.pop();
         }
     }
@@ -1047,29 +1119,37 @@ public class StandardWrapper extends ContainerBase
     public synchronized Servlet loadServlet() throws ServletException {
 
         // Nothing to do if we already have an instance or an instance pool
+        // 判断成员变量singleThreadModel是否为false，判断成员变量instance是否为空
         if (!singleThreadModel && (instance != null)) {
             return instance;
         }
 
+        // 输出流控制（非重点）
         PrintStream out = System.out;
         if (swallowOutput) {
             SystemLogHandler.startCapture();
         }
 
+        // servlet实例变量
         Servlet servlet;
         try {
+            // 启动时间
             long t1=System.currentTimeMillis();
             // Complain if no servlet class has been specified
+            //如果servlet类名为空，调度unavailable方法
             if (servletClass == null) {
                 unavailable(null);
                 throw new ServletException
                     (sm.getString("standardWrapper.notClass", getName()));
             }
 
+            // 获取实例管理器
             InstanceManager instanceManager = ((StandardContext)getParent()).getInstanceManager();
             try {
+                // 从实例管理器中创建servlet实例
                 servlet = (Servlet) instanceManager.newInstance(servletClass);
             } catch (ClassCastException e) {
+                // 出现异常执行unavailable方法
                 unavailable(null);
                 // Restore the context ClassLoader
                 throw new ServletException
@@ -1090,6 +1170,8 @@ public class StandardWrapper extends ContainerBase
                     (sm.getString("standardWrapper.instantiate", servletClass), e);
             }
 
+            // 如果成员变量multipartConfigElement为空则从servlet实例类上获取MultipartConfig注解，如果MultipartConfig注解不为空则将注解中的数据赋值到multipartConfigElement
+            // 处理multipartConfigElement成员变量。
             if (multipartConfigElement == null) {
                 MultipartConfig annotation =
                         servlet.getClass().getAnnotation(MultipartConfig.class);
@@ -1102,12 +1184,14 @@ public class StandardWrapper extends ContainerBase
             // Special handling for ContainerServlet instances
             // Note: The InstanceManager checks if the application is permitted
             //       to load ContainerServlets
+            // 如果servlet实例是ContainerServlet的子类则执行setWrapper方法
             if (servlet instanceof ContainerServlet) {
                 ((ContainerServlet) servlet).setWrapper(this);
             }
-
+            // 类加载时间
             classLoadTime=(int) (System.currentTimeMillis() -t1);
 
+            // 如果servlet实例如果是SingleThreadModel的子类
             if (servlet instanceof SingleThreadModel) {
                 if (instancePool == null) {
                     instancePool = new Stack<>();
@@ -1115,10 +1199,12 @@ public class StandardWrapper extends ContainerBase
                 singleThreadModel = true;
             }
 
+            // 初始化servlet实例
             initServlet(servlet);
 
+            // 推送load事件
             fireContainerEvent("load", this);
-
+            // 计算加载时间
             loadTime=System.currentTimeMillis() -t1;
         } finally {
             if (swallowOutput) {
@@ -1140,15 +1226,18 @@ public class StandardWrapper extends ContainerBase
     private synchronized void initServlet(Servlet servlet)
             throws ServletException {
 
+        // 如果成员变量instanceInitialized为真并且singleThreadModel为假则结束处理
         if (instanceInitialized && !singleThreadModel) {
             return;
         }
 
         // Call the initialization method of this servlet
         try {
+            // 启用安全模式
             if( Globals.IS_SECURITY_ENABLED) {
                 boolean success = false;
                 try {
+                    // 执行servlet的init方法
                     Object[] args = new Object[] { facade };
                     SecurityUtil.doAsPrivilege("init",
                                                servlet,

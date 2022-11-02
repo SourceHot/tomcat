@@ -18,6 +18,9 @@ package org.apache.catalina;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 执行器
+ */
 public interface Executor extends java.util.concurrent.Executor, Lifecycle {
 
     public String getName();

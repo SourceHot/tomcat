@@ -38,23 +38,27 @@ public interface Service extends Lifecycle {
     /**
      * @return the <code>Engine</code> that handles requests for all
      * <code>Connectors</code> associated with this Service.
+     *
+     *获取容器
      */
     public Engine getContainer();
 
     /**
      * Set the <code>Engine</code> that handles requests for all
      * <code>Connectors</code> associated with this Service.
-     *
+     * 设置容器
      * @param engine The new Engine
      */
     public void setContainer(Engine engine);
 
     /**
+     * 获取服务名称
      * @return the name of this Service.
      */
     public String getName();
 
     /**
+     * 设置服务名称
      * Set the name of this Service.
      *
      * @param name The new service name
@@ -62,11 +66,13 @@ public interface Service extends Lifecycle {
     public void setName(String name);
 
     /**
+     * 获取Server
      * @return the <code>Server</code> with which we are associated (if any).
      */
     public Server getServer();
 
     /**
+     * 设置Server
      * Set the <code>Server</code> with which we are associated (if any).
      *
      * @param server The server that owns this Service
@@ -74,6 +80,7 @@ public interface Service extends Lifecycle {
     public void setServer(Server server);
 
     /**
+     * 获取父类加载器
      * @return the parent class loader for this component. If not set, return
      * {@link #getServer()} {@link Server#getParentClassLoader()}. If no server
      * has been set, return the system class loader.
@@ -81,6 +88,7 @@ public interface Service extends Lifecycle {
     public ClassLoader getParentClassLoader();
 
     /**
+     * 设置父类加载器
      * Set the parent class loader for this service.
      *
      * @param parent The new parent class loader
@@ -88,6 +96,7 @@ public interface Service extends Lifecycle {
     public void setParentClassLoader(ClassLoader parent);
 
     /**
+     * 获取域名
      * @return the domain under which this container will be / has been
      * registered.
      */
@@ -100,6 +109,7 @@ public interface Service extends Lifecycle {
      * Add a new Connector to the set of defined Connectors, and associate it
      * with this Service's Container.
      *
+     * 添加连接器
      * @param connector The Connector to be added
      */
     public void addConnector(Connector connector);
@@ -107,6 +117,7 @@ public interface Service extends Lifecycle {
     /**
      * Find and return the set of Connectors associated with this Service.
      *
+     * 获取所有连接器
      * @return the set of associated Connectors
      */
     public Connector[] findConnectors();
@@ -116,23 +127,27 @@ public interface Service extends Lifecycle {
      * Service.  The removed Connector will also be disassociated from our
      * Container.
      *
+     * 移除一个连接器
      * @param connector The Connector to be removed
      */
     public void removeConnector(Connector connector);
 
     /**
+     * 添加一个执行器
      * Adds a named executor to the service
      * @param ex Executor
      */
     public void addExecutor(Executor ex);
 
     /**
+     * 获取所有执行器
      * Retrieves all executors
      * @return Executor[]
      */
     public Executor[] findExecutors();
 
     /**
+     * 根据名称获取执行器
      * Retrieves executor by name, null if not found
      * @param name String
      * @return Executor
@@ -140,12 +155,14 @@ public interface Service extends Lifecycle {
     public Executor getExecutor(String name);
 
     /**
+     * 移除一个执行器
      * Removes an executor from the service
      * @param ex Executor
      */
     public void removeExecutor(Executor ex);
 
     /**
+     * 获取映射对象
      * @return the mapper associated with this Service.
      */
     Mapper getMapper();

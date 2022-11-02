@@ -58,48 +58,67 @@ public class StandardService extends LifecycleMBeanBase implements Service {
 
     /**
      * The name of this service.
+     * service 名称
      */
     private String name = null;
 
 
     /**
      * The <code>Server</code> that owns this Service, if any.
+     * Server实例
      */
     private Server server = null;
 
     /**
      * The property change support for this component.
+     * 属性变更支持器
      */
     protected final PropertyChangeSupport support = new PropertyChangeSupport(this);
 
 
     /**
      * The set of Connectors associated with this Service.
+     * 连接器集合
      */
     protected Connector connectors[] = new Connector[0];
+    /**
+     * 连接器集合操作锁
+     */
     private final Object connectorsLock = new Object();
 
     /**
      * The list of executors held by the service.
+     *
+     * 执行器集合
      */
     protected final ArrayList<Executor> executors = new ArrayList<>();
 
+    /**
+     * 引擎
+     */
     private Engine engine = null;
-
+    /**
+     * 父类加载器
+     */
     private ClassLoader parentClassLoader = null;
 
     /**
      * Mapper.
+     * 映射器
      */
     protected final Mapper mapper = new Mapper();
 
 
     /**
      * Mapper listener.
+     * 映射监听器
      */
     protected final MapperListener mapperListener = new MapperListener(this);
 
 
+    /**
+     * 优雅停止等待时间
+     */
     private long gracefulStopAwaitMillis = 0;
 
 
@@ -129,17 +148,26 @@ public class StandardService extends LifecycleMBeanBase implements Service {
 
     @Override
     public void setContainer(Engine engine) {
+        // 将当前成员变量engine设置为历史引擎
         Engine oldEngine = this.engine;
+        // 如果历史引擎不为空
         if (oldEngine != null) {
+            // 设置service为null
             oldEngine.setService(null);
         }
+        // 将参数引擎设置给成员变量
         this.engine = engine;
+        // 如果参数引擎不为空
         if (this.engine != null) {
+            // 设置service为当前对象
             this.engine.setService(this);
         }
+        // 查看状态是否是可用的
         if (getState().isAvailable()) {
+            // 引擎不为空
             if (this.engine != null) {
                 try {
+                    // 启动引擎
                     this.engine.start();
                 } catch (LifecycleException e) {
                     log.error(sm.getString("standardService.engine.startFailed"), e);
@@ -147,11 +175,13 @@ public class StandardService extends LifecycleMBeanBase implements Service {
             }
             // Restart MapperListener to pick up new engine.
             try {
+                // 执行映射监听器的stop方法
                 mapperListener.stop();
             } catch (LifecycleException e) {
                 log.error(sm.getString("standardService.mapperListener.stopFailed"), e);
             }
             try {
+                // 执行映射监听器的start方法
                 mapperListener.start();
             } catch (LifecycleException e) {
                 log.error(sm.getString("standardService.mapperListener.startFailed"), e);
@@ -166,6 +196,7 @@ public class StandardService extends LifecycleMBeanBase implements Service {
         }
 
         // Report this property change to interested listeners
+        // 发布container变化通知
         support.firePropertyChange("container", oldEngine, this.engine);
     }
 

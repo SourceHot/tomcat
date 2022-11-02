@@ -50,6 +50,7 @@ import org.apache.tomcat.util.res.StringManager;
 /**
  * Implementation of a Coyote connector.
  *
+ * 连接器
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */

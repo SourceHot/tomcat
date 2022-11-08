@@ -607,6 +607,8 @@ public abstract class AbstractEndpoint<S,U> {
      * Allows the server developer to specify the acceptCount (backlog) that
      * should be used for server sockets. By default, this value
      * is 100.
+     *
+     * 等待队列的长度
      */
     private int acceptCount = 100;
     public void setAcceptCount(int acceptCount) { if (acceptCount > 0) {

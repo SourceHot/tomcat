@@ -23,6 +23,9 @@ public class AprStatus {
     private static volatile boolean aprInitialized = false;
     private static volatile boolean aprAvailable = false;
     private static volatile boolean useOpenSSL = true;
+    /**
+     * 是否创建实例
+     */
     private static volatile boolean instanceCreated = false;
 
 
@@ -30,6 +33,10 @@ public class AprStatus {
         return aprInitialized;
     }
 
+    /**
+     * 是否可用
+     * @return
+     */
     public static boolean isAprAvailable() {
         return aprAvailable;
     }
@@ -37,6 +44,7 @@ public class AprStatus {
     public static boolean getUseOpenSSL() {
         return useOpenSSL;
     }
+
 
     public static boolean isInstanceCreated() {
         return instanceCreated;

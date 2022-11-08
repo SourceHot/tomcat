@@ -73,7 +73,9 @@ public class Connector extends LifecycleMBeanBase  {
 
 
     public Connector(String protocol) {
+        // 赋值成员变量configuredProtocol，设置协议
         configuredProtocol = protocol;
+        // 构造协议处理器
         ProtocolHandler p = null;
         try {
             p = ProtocolHandler.create(protocol);
@@ -81,6 +83,7 @@ public class Connector extends LifecycleMBeanBase  {
             log.error(sm.getString(
                     "coyoteConnector.protocolHandlerInstantiationFailed"), e);
         }
+        // 如果p不为空则将p赋值到成员变量protocolHandler上，并且将具体的类名赋值到protocolHandlerClassName上
         if (p != null) {
             protocolHandler = p;
             protocolHandlerClassName = protocolHandler.getClass().getName();
@@ -106,6 +109,8 @@ public class Connector extends LifecycleMBeanBase  {
 
     /**
      * The <code>Service</code> we are associated with (if any).
+     *
+     * Service实例
      */
     protected Service service = null;
 
@@ -114,24 +119,31 @@ public class Connector extends LifecycleMBeanBase  {
      * If this is <code>true</code> the '\' character will be permitted as a
      * path delimiter. If not specified, the default value of
      * <code>false</code> will be used.
+     *
+     * 是否允许反斜杠
      */
     protected boolean allowBackslash = false;
 
 
     /**
      * Do we allow TRACE ?
+     * 是否允许 HEAD、TRACE 请求
      */
     protected boolean allowTrace = false;
 
 
     /**
      * Default timeout for asynchronous requests (ms).
+     * 异步请求超时时间
      */
     protected long asyncTimeout = 30000;
 
 
     /**
      * The "enable DNS lookups" flag for this Connector.
+     *
+     * 是否需要在调用request.getRemoteHost()方法的时候获取主机名称，为了提高性能一般不要
+     *
      */
     protected boolean enableLookups = false;
 
@@ -146,12 +158,18 @@ public class Connector extends LifecycleMBeanBase  {
      * (SRV.15.2.22.1)
      * If not specified, the default specification compliant value of
      * <code>true</code> will be used.
+     *
+     * 如果这是true ，那么在没有指定字符编码的情况下调用 Response.getWriter Response.getWriter() )
+     * 将导致对Response.getCharacterEncoding()的后续调用返回ISO-8859-1
+     * 并且Content-Type响应标头将包含一个charset=ISO-8859-1组件。
+     * (SRV.15.2.22.1) 如果未指定，将使用默认的规范兼容值true
      */
     protected boolean enforceEncodingInGetWriter = true;
 
 
     /**
      * Is generation of X-Powered-By response header enabled/disabled?
+     * 是否禁止X-Powered-By请求头生产，影响响应头
      */
     protected boolean xpoweredBy = false;
 
@@ -161,6 +179,8 @@ public class Connector extends LifecycleMBeanBase  {
      * were directed.  This is useful when operating Tomcat behind a proxy
      * server, so that redirects get constructed accurately.  If not specified,
      * the server name included in the <code>Host</code> header is used.
+     *
+     * 代理主机（Host）名称
      */
     protected String proxyName = null;
 
@@ -170,6 +190,8 @@ public class Connector extends LifecycleMBeanBase  {
      * were directed.  This is useful when operating Tomcat behind a proxy
      * server, so that redirects get constructed accurately.  If not specified,
      * the port number specified by the <code>port</code> property is used.
+     *
+     * 代理端口
      */
     protected int proxyPort = 0;
 
@@ -180,12 +202,17 @@ public class Connector extends LifecycleMBeanBase  {
      * will be discarded when the request is recycled. If the security
      * manager is enabled, this setting is ignored and object facades are
      * always discarded.
+     *
+     * 控制请求处理对象外观的回收的标志。如果设置为true ，
+     * 则在回收请求时将丢弃对象外观。如果启用了安全管理器，
+     * 则忽略此设置并且始终丢弃对象外观。
      */
     protected boolean discardFacades = true;
 
 
     /**
      * The redirect port for non-SSL to SSL redirects.
+     * 非 SSL 到 SSL 重定向的重定向端口
      */
     protected int redirectPort = 443;
 
@@ -193,6 +220,7 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * The request scheme that will be set on all requests received
      * through this connector.
+     * 请求方案
      */
     protected String scheme = "http";
 
@@ -200,12 +228,14 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * The secure connection flag that will be set on all requests received
      * through this connector.
+     * 是否使用安全的请求方式。
      */
     protected boolean secure = false;
 
 
     /**
      * The string manager for this package.
+     * 字符串管理器
      */
     protected static final StringManager sm = StringManager.getManager(Connector.class);
 
@@ -213,6 +243,8 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * The maximum number of cookies permitted for a request. Use a value less
      * than zero for no limit. Defaults to 200.
+     *
+     * 最大cookie数量
      */
     private int maxCookieCount = 200;
 
@@ -220,12 +252,15 @@ public class Connector extends LifecycleMBeanBase  {
      * The maximum number of parameters (GET plus POST) which will be
      * automatically parsed by the container. 10000 by default. A value of less
      * than 0 means no limit.
+     *
+     * 最大参数数量
      */
     protected int maxParameterCount = 10000;
 
     /**
      * Maximum size of a POST which will be automatically parsed by the
      * container. 2MB by default.
+     * POST 请求最大提交数据量
      */
     protected int maxPostSize = 2 * 1024 * 1024;
 
@@ -233,23 +268,29 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Maximum size of a POST which will be saved by the container
      * during authentication. 4kB by default
+     * 身份验证期间POST请求提交的最大数据量
      */
     protected int maxSavePostSize = 4 * 1024;
 
     /**
      * Comma-separated list of HTTP methods that will be parsed according
      * to POST-style rules for application/x-www-form-urlencoded request bodies.
+     * 当请求中的 context-type 是 application/x-www-form-urlencoded 并且请求方式是parseBodyMethods变量定义的时候会进行解析，具体处理方法org.apache.catalina.connector.Request#parseParameters()
      */
     protected String parseBodyMethods = "POST";
 
     /**
      * A Set of methods determined by {@link #parseBodyMethods}.
+     *
+     * parseBodyMethods 集合
      */
     protected HashSet<String> parseBodyMethodsSet;
 
 
     /**
      * Flag to use IP-based virtual hosting.
+     *
+     * 是否开启虚拟主机
      */
     protected boolean useIPVHosts = false;
 
@@ -257,42 +298,50 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Coyote Protocol handler class name.
      * See {@link #Connector()} for current default.
+     *
+     * 协议处理器类名
      */
     protected final String protocolHandlerClassName;
 
 
     /**
      * Name of the protocol that was configured.
+     * 配置的协议名称
      */
     protected final String configuredProtocol;
 
 
     /**
      * Coyote protocol handler.
+     * 协议处理器
      */
     protected final ProtocolHandler protocolHandler;
 
 
     /**
      * Coyote adapter.
+     * 适配器
      */
     protected Adapter adapter = null;
 
 
     /**
      * The URI encoding in use.
+     * 字符编码
      */
     private Charset uriCharset = StandardCharsets.UTF_8;
 
 
     /**
      * The behavior when an encoded solidus (slash) is submitted.
+     * 斜杠编码处理枚举
      */
     private EncodedSolidusHandling encodedSolidusHandling = EncodedSolidusHandling.REJECT;
 
 
     /**
      * URI encoding as body.
+     * 是否使用URI对请求体编码
      */
     protected boolean useBodyEncodingForURI = false;
 
@@ -1013,33 +1062,45 @@ public class Connector extends LifecycleMBeanBase  {
 
         super.initInternal();
 
+        // 如果协议处理器为空则抛出异常
         if (protocolHandler == null) {
             throw new LifecycleException(
                     sm.getString("coyoteConnector.protocolHandlerInstantiationFailed"));
         }
 
         // Initialize adapter
+        // 初始化
         adapter = new CoyoteAdapter(this);
+        // 设置适配器
         protocolHandler.setAdapter(adapter);
+        // 如果service不为空
         if (service != null) {
+            // 从service中获取ScheduledExecutorService将其设置到
             protocolHandler.setUtilityExecutor(service.getServer().getUtilityExecutor());
         }
 
         // Make sure parseBodyMethodsSet has a default
+        // 如果parseBodyMethodsSet为空则需要将成员变量parseBodyMethods设置到parseBodyMethods、parseBodyMethodsSet
         if (null == parseBodyMethodsSet) {
             setParseBodyMethods(getParseBodyMethods());
         }
 
+        // 需要APR/native相关类库，并且APR相关实例没有创建抛出异常
         if (protocolHandler.isAprRequired() && !AprStatus.isInstanceCreated()) {
             throw new LifecycleException(sm.getString("coyoteConnector.protocolHandlerNoAprListener",
                     getProtocolHandlerClassName()));
         }
+        // 需要APR/native相关类库，并且APR相关实例不可用抛出异常
         if (protocolHandler.isAprRequired() && !AprStatus.isAprAvailable()) {
             throw new LifecycleException(sm.getString("coyoteConnector.protocolHandlerNoAprLibrary",
                     getProtocolHandlerClassName()));
         }
+        // 1. ARP相关实例可用，
+        // 2. ARP使用了SSL
+        // 3. 协议处理器类型是AbstractHttp11JsseProtocol
         if (AprStatus.isAprAvailable() && AprStatus.getUseOpenSSL() &&
                 protocolHandler instanceof AbstractHttp11JsseProtocol) {
+
             AbstractHttp11JsseProtocol<?> jsseProtocolHandler =
                     (AbstractHttp11JsseProtocol<?>) protocolHandler;
             if (jsseProtocolHandler.isSSLEnabled() &&
@@ -1050,6 +1111,7 @@ public class Connector extends LifecycleMBeanBase  {
         }
 
         try {
+            // 协议处理器初始化
             protocolHandler.init();
         } catch (Exception e) {
             throw new LifecycleException(

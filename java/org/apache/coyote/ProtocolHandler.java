@@ -37,6 +37,7 @@ public interface ProtocolHandler {
 
     /**
      * Return the adapter associated with the protocol handler.
+     * 获取适配器
      * @return the adapter
      */
     public Adapter getAdapter();
@@ -45,6 +46,7 @@ public interface ProtocolHandler {
     /**
      * The adapter, used to call the connector.
      *
+     * 设置适配器
      * @param adapter The adapter to associate
      */
     public void setAdapter(Adapter adapter);
@@ -53,6 +55,7 @@ public interface ProtocolHandler {
     /**
      * The executor, provide access to the underlying thread pool.
      *
+     * 获取执行器
      * @return The executor used to process requests
      */
     public Executor getExecutor();
@@ -60,6 +63,7 @@ public interface ProtocolHandler {
 
     /**
      * Set the optional executor that will be used by the connector.
+     * 设置执行器
      * @param executor the executor
      */
     public void setExecutor(Executor executor);
@@ -67,6 +71,7 @@ public interface ProtocolHandler {
 
     /**
      * Get the utility executor that should be used by the protocol handler.
+     * 虎丘ScheduledExecutorService接口实现类
      * @return the executor
      */
     public ScheduledExecutorService getUtilityExecutor();
@@ -74,6 +79,7 @@ public interface ProtocolHandler {
 
     /**
      * Set the utility executor that should be used by the protocol handler.
+     * 设置ScheduledExecutorService接口实现类
      * @param utilityExecutor the executor
      */
     public void setUtilityExecutor(ScheduledExecutorService utilityExecutor);
@@ -82,6 +88,8 @@ public interface ProtocolHandler {
     /**
      * Initialise the protocol.
      *
+     * 初始化协议处理器
+     *
      * @throws Exception If the protocol handler fails to initialise
      */
     public void init() throws Exception;
@@ -89,7 +97,7 @@ public interface ProtocolHandler {
 
     /**
      * Start the protocol.
-     *
+     * 启动协议处理器
      * @throws Exception If the protocol handler fails to start
      */
     public void start() throws Exception;
@@ -97,7 +105,7 @@ public interface ProtocolHandler {
 
     /**
      * Pause the protocol (optional).
-     *
+     * 暂停协议处理器
      * @throws Exception If the protocol handler fails to pause
      */
     public void pause() throws Exception;
@@ -105,7 +113,7 @@ public interface ProtocolHandler {
 
     /**
      * Resume the protocol (optional).
-     *
+     * 恢复协议处理器
      * @throws Exception If the protocol handler fails to resume
      */
     public void resume() throws Exception;
@@ -113,7 +121,7 @@ public interface ProtocolHandler {
 
     /**
      * Stop the protocol.
-     *
+     * 停止协议处理器
      * @throws Exception If the protocol handler fails to stop
      */
     public void stop() throws Exception;
@@ -121,7 +129,7 @@ public interface ProtocolHandler {
 
     /**
      * Destroy the protocol (optional).
-     *
+     * 摧毁协议处理器
      * @throws Exception If the protocol handler fails to destroy
      */
     public void destroy() throws Exception;
@@ -131,6 +139,7 @@ public interface ProtocolHandler {
      * Close the server socket (to prevent further connections) if the server
      * socket was bound on {@link #start()} (rather than on {@link #init()}
      * but do not perform any further shutdown.
+     * 关闭socket链接
      */
     public void closeServerSocketGraceful();
 
@@ -140,6 +149,7 @@ public interface ProtocolHandler {
      * method will return when all of the client connections have closed or the
      * method has been waiting for {@code waitTimeMillis}.
      *
+     * 最多等待n毫秒后关闭socket链接
      * @param waitMillis    The maximum time to wait in milliseconds for the
      *                      client connections to close.
      *
@@ -150,6 +160,7 @@ public interface ProtocolHandler {
 
     /**
      * Requires APR/native library
+     * 是否需要 APR/native 相关类库
      *
      * @return <code>true</code> if this Protocol Handler requires the
      *         APR/native library, otherwise <code>false</code>
@@ -162,6 +173,7 @@ public interface ProtocolHandler {
 
     /**
      * Does this ProtocolHandler support sendfile?
+     * 协议处理器是否支持发送文件
      *
      * @return <code>true</code> if this Protocol Handler supports sendfile,
      *         otherwise <code>false</code>
@@ -171,6 +183,7 @@ public interface ProtocolHandler {
 
     /**
      * Add a new SSL configuration for a virtual host.
+     * 添加SSL配置
      * @param sslHostConfig the configuration
      */
     public void addSslHostConfig(SSLHostConfig sslHostConfig);
@@ -179,6 +192,8 @@ public interface ProtocolHandler {
     /**
      * Find all configured SSL virtual host configurations which will be used
      * by SNI.
+     *
+     * 获取所有的SSL配置
      * @return the configurations
      */
     public SSLHostConfig[] findSslHostConfigs();
@@ -186,6 +201,7 @@ public interface ProtocolHandler {
 
     /**
      * Add a new protocol for used by HTTP/1.1 upgrade or ALPN.
+     * 添加协议升级器
      * @param upgradeProtocol the protocol
      */
     public void addUpgradeProtocol(UpgradeProtocol upgradeProtocol);
@@ -193,6 +209,7 @@ public interface ProtocolHandler {
 
     /**
      * Return all configured upgrade protocols.
+     * 获取协议升级器
      * @return the protocols
      */
     public UpgradeProtocol[] findUpgradeProtocols();
@@ -202,6 +219,8 @@ public interface ProtocolHandler {
      * Some protocols, like AJP, have a packet length that
      * shouldn't be exceeded, and this can be used to adjust the buffering
      * used by the application layer.
+     *
+     * 获取缓冲区大小
      * @return the desired buffer size, or -1 if not relevant
      */
     public default int getDesiredBufferSize() {
@@ -213,6 +232,8 @@ public interface ProtocolHandler {
      * The default behavior is to identify connectors uniquely with address
      * and port. However, certain connectors are not using that and need
      * some other identifier, which then can be used as a replacement.
+     *
+     * 获取唯一标识
      * @return the id
      */
     public default String getId() {

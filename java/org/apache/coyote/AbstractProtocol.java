@@ -71,6 +71,8 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
      * Unique ID for this connector. Only used if the connector is configured
      * to use a random port as the port will change if stop(), start() is
      * called.
+     *
+     * 链接器的唯一id
      */
     private int nameIndex = 0;
 
@@ -79,20 +81,31 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
      * Endpoint that provides low-level network I/O - must be matched to the
      * ProtocolHandler implementation (ProtocolHandler using NIO, requires NIO
      * Endpoint etc.).
+     * 端点
      */
     private final AbstractEndpoint<S,?> endpoint;
 
 
+    /**
+     * 处理器
+     */
     private Handler<S> handler;
 
 
+    /**
+     * 协议处理器集合（异步）
+     */
     private final Set<Processor> waitingProcessors =
             Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     /**
      * Controller for the timeout scheduling.
+     * 超时处理程序
      */
     private ScheduledFuture<?> timeoutFuture = null;
+    /**
+     * 监控处理程序
+     */
     private ScheduledFuture<?> monitorFuture;
 
     public AbstractProtocol(AbstractEndpoint<S,?> endpoint) {
@@ -553,30 +566,41 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
 
     @Override
     public void init() throws Exception {
+        // 日志
         if (getLog().isInfoEnabled()) {
             getLog().info(sm.getString("abstractProtocolHandler.init", getName()));
             logPortOffset();
         }
 
+        // 判断成员变量oname是否为空
         if (oname == null) {
             // Component not pre-registered so register it
+            // 创建一个对象名称赋值给成员变量oname
             oname = createObjectName();
             if (oname != null) {
+                // 注册到MBean
                 Registry.getRegistry(null, null).registerComponent(this, oname, null);
             }
         }
 
+        // 判断域名是否为空
         if (this.domain != null) {
+            // 创建rgOname数据
             ObjectName rgOname = new ObjectName(domain + ":type=GlobalRequestProcessor,name=" + getName());
             this.rgOname = rgOname;
+            // 注册到MBean
             Registry.getRegistry(null, null).registerComponent(
                     getHandler().getGlobal(), rgOname, null);
         }
 
+        // 获取端点名称
         String endpointName = getName();
-        endpoint.setName(endpointName.substring(1, endpointName.length()-1));
+        // 设置端点名称
+        endpoint.setName(endpointName.substring(1, endpointName.length() - 1));
+        // 设置端点域名
         endpoint.setDomain(domain);
 
+        // 初始化端点
         endpoint.init();
     }
 
@@ -732,9 +756,21 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
 
     protected static class ConnectionHandler<S> implements AbstractEndpoint.Handler<S> {
 
+        /**
+         * 协议处理器
+         */
         private final AbstractProtocol<S> proto;
+        /**
+         * 请求信息组
+         */
         private final RequestGroupInfo global = new RequestGroupInfo();
+        /**
+         * 注册计数器
+         */
         private final AtomicLong registerCount = new AtomicLong(0);
+        /**
+         * 协议处理器堆栈
+         */
         private final RecycledProcessors recycledProcessors = new RecycledProcessors(this);
 
         public ConnectionHandler(AbstractProtocol<S> proto) {
@@ -763,64 +799,91 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
         @SuppressWarnings("deprecation")
         @Override
         public SocketState process(SocketWrapperBase<S> wrapper, SocketEvent status) {
+            // 第一部分
+            // 日志
             if (getLog().isDebugEnabled()) {
                 getLog().debug(sm.getString("abstractConnectionHandler.process",
                         wrapper.getSocket(), status));
             }
+            // 参数与wrapper为空则返回状态为关闭
             if (wrapper == null) {
                 // Nothing to do. Socket has been closed.
                 return SocketState.CLOSED;
             }
 
+            // 从包装类中获取socket对象
             S socket = wrapper.getSocket();
 
             // We take complete ownership of the Processor inside of this method to ensure
             // no other thread can release it while we're using it. Whatever processor is
             // held by this variable will be associated with the SocketWrapper before this
             // method returns.
+            // 从wrapper中获取处理器（Processor）
             Processor processor = (Processor) wrapper.takeCurrentProcessor();
             if (getLog().isDebugEnabled()) {
                 getLog().debug(sm.getString("abstractConnectionHandler.connectionsGet",
                         processor, socket));
             }
 
+            // 第二部分
             // Timeouts are calculated on a dedicated thread and then
             // dispatched. Because of delays in the dispatch process, the
             // timeout may no longer be required. Check here and avoid
             // unnecessary processing.
+            // 参数状态是超时并且
+            // 1. 处理器为空
+            // 2. 不是异步+不处于升级状态
+            // 3. 是异步+异步生成器检查不通过
             if (SocketEvent.TIMEOUT == status &&
                     (processor == null ||
-                    !processor.isAsync() && !processor.isUpgrade() ||
-                    processor.isAsync() && !processor.checkAsyncTimeoutGeneration())) {
+                            !processor.isAsync() && !processor.isUpgrade() ||
+                            processor.isAsync() && !processor.checkAsyncTimeoutGeneration())) {
                 // This is effectively a NO-OP
+                // socket状态开启
                 return SocketState.OPEN;
             }
 
+            // 处理器不为空
             if (processor != null) {
                 // Make sure an async timeout doesn't fire
+                // 获取成员变量proto，将处理器从中移除
                 getProtocol().removeWaitingProcessor(processor);
-            } else if (status == SocketEvent.DISCONNECT || status == SocketEvent.ERROR) {
+            }
+            // 状态是 DISCONNECT 或者  ERROR
+            else if (status == SocketEvent.DISCONNECT || status == SocketEvent.ERROR) {
                 // Nothing to do. Endpoint requested a close and there is no
                 // longer a processor associated with this socket.
                 return SocketState.CLOSED;
             }
 
+            // 第三部分
             try {
+                // 第3.1部分
+                // 处理器为空
                 if (processor == null) {
+                    // 获取协议
                     String negotiatedProtocol = wrapper.getNegotiatedProtocol();
                     // OpenSSL typically returns null whereas JSSE typically
                     // returns "" when no protocol is negotiated
+                    // 协议不为空
                     if (negotiatedProtocol != null && negotiatedProtocol.length() > 0) {
+                        // 从成员变量proto中获取协议升级器
                         UpgradeProtocol upgradeProtocol = getProtocol().getNegotiatedProtocol(negotiatedProtocol);
+                        // 协议升级器不为空
                         if (upgradeProtocol != null) {
+                            // 通过协议升级器升级处理器
                             processor = upgradeProtocol.getProcessor(wrapper, getProtocol().getAdapter());
                             if (getLog().isDebugEnabled()) {
                                 getLog().debug(sm.getString("abstractConnectionHandler.processorCreate", processor));
                             }
-                        } else if (negotiatedProtocol.equals("http/1.1")) {
+                        }
+                        // 如果协议是http/1.1
+                        else if (negotiatedProtocol.equals("http/1.1")) {
                             // Explicitly negotiated the default protocol.
                             // Obtain a processor below.
-                        } else {
+                        }
+                        // 其他情况
+                        else {
                             // TODO:
                             // OpenSSL 1.0.2's ALPN callback doesn't support
                             // failing the handshake with an error if no
@@ -832,6 +895,7 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
                                 getLog().debug(sm.getString("abstractConnectionHandler.negotiatedProcessor.fail",
                                         negotiatedProtocol));
                             }
+                            // 关闭状态
                             return SocketState.CLOSED;
                             /*
                              * To replace the code above once OpenSSL 1.1.0 is
@@ -844,14 +908,20 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
                         }
                     }
                 }
+
+                // 处理器为空
                 if (processor == null) {
+                    // 从recycledProcessors中弹出一个处理器
                     processor = recycledProcessors.pop();
                     if (getLog().isDebugEnabled()) {
                         getLog().debug(sm.getString("abstractConnectionHandler.processorPop", processor));
                     }
                 }
+                // 处理器为空
                 if (processor == null) {
+                    // 通过成员变量proto创建处理器
                     processor = getProtocol().createProcessor();
+                    // 注册处理器
                     register(processor);
                     if (getLog().isDebugEnabled()) {
                         getLog().debug(sm.getString("abstractConnectionHandler.processorCreate", processor));
@@ -859,42 +929,60 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
                 }
 
                 // Can switch to non-deprecated version in Tomcat 10.1.x
+                // 为处理器设置SSLSupport
                 processor.setSslSupport(
                         wrapper.getSslSupport(getProtocol().getClientCertProvider()));
 
+                // 第3.2部分
+                // 创建socket状态
                 SocketState state = SocketState.CLOSED;
                 do {
+                    // 处理器处理socket链接
                     state = processor.process(wrapper, status);
-
+                    // socket 状态是UPGRADING
                     if (state == SocketState.UPGRADING) {
                         // Get the HTTP upgrade handler
+                        // 获取升级令牌
                         UpgradeToken upgradeToken = processor.getUpgradeToken();
                         // Restore leftover input to the wrapper so the upgrade
                         // processor can process it.
+                        // 获取剩余的字节数据
                         ByteBuffer leftOverInput = processor.getLeftoverInput();
+                        // 读取剩余字节
                         wrapper.unRead(leftOverInput);
+                        // 升级令牌为空
                         if (upgradeToken == null) {
                             // Assume direct HTTP/2 connection
+                            // 获取h2c升级程序
                             UpgradeProtocol upgradeProtocol = getProtocol().getUpgradeProtocol("h2c");
+                            // 如果升级程序不为空
                             if (upgradeProtocol != null) {
                                 // Release the Http11 processor to be re-used
+                                // 释放处理器
                                 release(processor);
                                 // Create the upgrade processor
+                                // 通过升级程序升级处理器
                                 processor = upgradeProtocol.getProcessor(wrapper, getProtocol().getAdapter());
-                            } else {
+                            }
+                            else {
                                 if (getLog().isDebugEnabled()) {
                                     getLog().debug(sm.getString(
-                                        "abstractConnectionHandler.negotiatedProcessor.fail",
-                                        "h2c"));
+                                            "abstractConnectionHandler.negotiatedProcessor.fail",
+                                            "h2c"));
                                 }
                                 // Exit loop and trigger appropriate clean-up
+                                // 状态设置为CLOSED
                                 state = SocketState.CLOSED;
                             }
-                        } else {
+                        }
+                        else {
+                            // 获取HTTP升级处理器
                             HttpUpgradeHandler httpUpgradeHandler = upgradeToken.getHttpUpgradeHandler();
                             // Release the Http11 processor to be re-used
+                            //释放处理器
                             release(processor);
                             // Create the upgrade processor
+                            // 通过成员变量proto升级处理器
                             processor = getProtocol().createUpgradeProcessor(wrapper, upgradeToken);
                             if (getLog().isDebugEnabled()) {
                                 getLog().debug(sm.getString("abstractConnectionHandler.upgradeCreate",
@@ -906,94 +994,142 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
                             // This cast should be safe. If it fails the error
                             // handling for the surrounding try/catch will deal with
                             // it.
+                            // 如果升级令牌中不存在实例管理器
                             if (upgradeToken.getInstanceManager() == null) {
+                                // 通过HTTP升级处理器初始化协议处理器
                                 httpUpgradeHandler.init((WebConnection) processor);
-                            } else {
+                            }
+                            // 如果升级令牌中存在实例管理器
+                            else {
+                                // 从升级令牌中配合上下文绑定方法获取类加载器
                                 ClassLoader oldCL = upgradeToken.getContextBind().bind(false, null);
                                 try {
+                                    // 通过HTTP升级处理器初始化协议处理器
                                     httpUpgradeHandler.init((WebConnection) processor);
                                 } finally {
+                                    // 从升级令牌中配合上下文解绑方法解绑类加载器
                                     upgradeToken.getContextBind().unbind(false, oldCL);
                                 }
                             }
+                            // 如果HTTP升级处理器类型是InternalHttpUpgradeHandler
                             if (httpUpgradeHandler instanceof InternalHttpUpgradeHandler) {
+                                // 如果HTTP升级处理器支持异步io
                                 if (((InternalHttpUpgradeHandler) httpUpgradeHandler).hasAsyncIO()) {
                                     // The handler will initiate all further I/O
+                                    // 状态设置为UPGRADED
                                     state = SocketState.UPGRADED;
                                 }
                             }
                         }
                     }
-                } while ( state == SocketState.UPGRADING);
+                }
+                // 循环条件状态为UPGRADING
+                while (state == SocketState.UPGRADING);
 
+                // 第3.3部分
+                // 如果状态是 LONG
                 if (state == SocketState.LONG) {
                     // In the middle of processing a request/response. Keep the
                     // socket associated with the processor. Exact requirements
                     // depend on type of long poll
+                    // 进入长轮询
                     longPoll(wrapper, processor);
+
+                    // 如果处理器是异步的
                     if (processor.isAsync()) {
+                        // 将协议处理器加入到异步协议处理器容器中
                         getProtocol().addWaitingProcessor(processor);
                     }
-                } else if (state == SocketState.OPEN) {
+                }
+                // 如果状态是 OPEN
+                else if (state == SocketState.OPEN) {
                     // In keep-alive but between requests. OK to recycle
                     // processor. Continue to poll for the next request.
+                    // 释放处理器
                     release(processor);
+                    // 处理器设置为null
                     processor = null;
+                    // 注册读
                     wrapper.registerReadInterest();
-                } else if (state == SocketState.SENDFILE) {
+                }
+                // 如果状态是 SENDFILE
+                else if (state == SocketState.SENDFILE) {
                     // Sendfile in progress. If it fails, the socket will be
                     // closed. If it works, the socket either be added to the
                     // poller (or equivalent) to await more data or processed
                     // if there are any pipe-lined requests remaining.
-                } else if (state == SocketState.UPGRADED) {
+                }
+                // 如果状态是 UPGRADED
+                else if (state == SocketState.UPGRADED) {
                     // Don't add sockets back to the poller if this was a
                     // non-blocking write otherwise the poller may trigger
                     // multiple read events which may lead to thread starvation
                     // in the connector. The write() method will add this socket
                     // to the poller if necessary.
+                    // 状态不是OPEN_WRITE
                     if (status != SocketEvent.OPEN_WRITE) {
+                        // 进入长轮询
                         longPoll(wrapper, processor);
+                        // 将协议处理器加入到异步协议处理器容器中
                         getProtocol().addWaitingProcessor(processor);
                     }
-                } else if (state == SocketState.SUSPENDED) {
+                }
+                // 如果状态是 SUSPENDED
+                else if (state == SocketState.SUSPENDED) {
                     // Don't add sockets back to the poller.
                     // The resumeProcessing() method will add this socket
                     // to the poller.
-                } else {
+                }
+                // 其他情况
+                else {
                     // Connection closed. OK to recycle the processor.
                     // Processors handling upgrades require additional clean-up
                     // before release.
+                    // 处理器不为空并且处理器需要升级
                     if (processor != null && processor.isUpgrade()) {
+                        // 获取升级令牌
                         UpgradeToken upgradeToken = processor.getUpgradeToken();
+                        // 获取HTTP升级处理器
                         HttpUpgradeHandler httpUpgradeHandler = upgradeToken.getHttpUpgradeHandler();
+                        // 从升级令牌中获取实例管理器
                         InstanceManager instanceManager = upgradeToken.getInstanceManager();
+                        // 实例管理器为空，将HTTP升级处理器摧毁
                         if (instanceManager == null) {
                             httpUpgradeHandler.destroy();
-                        } else {
+                        }
+                        // 实例管理器不为空的情况下
+                        else {
+                            // 从升级令牌中配合上下文绑定方法获取类加载器
                             ClassLoader oldCL = upgradeToken.getContextBind().bind(false, null);
                             try {
+                                // HTTP升级处理器摧毁
                                 httpUpgradeHandler.destroy();
                             } finally {
                                 try {
+                                    // 将实例管理器中的HTTP升级处理器摧毁
                                     instanceManager.destroyInstance(httpUpgradeHandler);
                                 } catch (Throwable e) {
                                     ExceptionUtils.handleThrowable(e);
                                     getLog().error(sm.getString("abstractConnectionHandler.error"), e);
                                 }
+                                // 从升级令牌中配合上下文解绑方法解绑类加载器
                                 upgradeToken.getContextBind().unbind(false, oldCL);
                             }
                         }
                     }
-
+                    // 释放处理器
                     release(processor);
+                    // 将处理器设置为null
                     processor = null;
                 }
 
+                // 处理器不为空
                 if (processor != null) {
+                    // 将处理器设置到链接对象中
                     wrapper.setCurrentProcessor(processor);
                 }
                 return state;
-            } catch(java.net.SocketException e) {
+            } catch (java.net.SocketException e) {
                 // SocketExceptions are normal
                 getLog().debug(sm.getString(
                         "abstractConnectionHandler.socketexception.debug"), e);
@@ -1032,6 +1168,7 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
 
 
         protected void longPoll(SocketWrapperBase<?> socket, Processor processor) {
+            // 非异步
             if (!processor.isAsync()) {
                 // This is currently only used with HTTP
                 // Either:
@@ -1174,40 +1311,54 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
         @SuppressWarnings("sync-override") // Size may exceed cache size a bit
         @Override
         public boolean push(Processor processor) {
+            // 从链接持有器中确认缓存数量
             int cacheSize = handler.getProtocol().getProcessorCache();
+            // 是否需要进行移动
             boolean offer = cacheSize == -1 ? true : size.get() < cacheSize;
             //avoid over growing our cache or add after we have stopped
+            // 判断是否处理完成
             boolean result = false;
+            // 如果需要进行移动
             if (offer) {
+                // 调用父类提供的pus方法
                 result = super.push(processor);
+                // 如果处理成功标记为true，则累加size
                 if (result) {
                     size.incrementAndGet();
                 }
             }
+            // 如果处理成功标记为false，需要解除处理器
             if (!result) {
                 handler.unregister(processor);
             }
+            // 返回是否处理成功标记
             return result;
         }
 
         @SuppressWarnings("sync-override") // OK if size is too big briefly
         @Override
         public Processor pop() {
+            // 执行父类提供的pop方法用于获取处理器
             Processor result = super.pop();
+            // 判断处理器是否不为空，如果是则需要将sie减一
             if (result != null) {
                 size.decrementAndGet();
             }
+            // 返回处理器
             return result;
         }
 
         @Override
         public synchronized void clear() {
+            // 循环执行pop方法将数据从容器中清空，在清空过程中需要调用链接持有器的unregister方法
             Processor next = pop();
             while (next != null) {
                 handler.unregister(next);
                 next = pop();
             }
+            // 执行父类提供的clear方法
             super.clear();
+            // 设置size为0
             size.set(0);
         }
     }

@@ -25,28 +25,37 @@ public enum SocketEvent {
 
     /**
      * Data is available to be read.
+     *
+     * 开启读
      */
     OPEN_READ,
 
     /**
      * The socket is ready to be written to.
+     *
+     * 开启写
      */
     OPEN_WRITE,
 
     /**
      * The associated Connector/Endpoint is stopping and the connection/socket
      * needs to be closed cleanly.
+     *
+     * 暂停处理
      */
     STOP,
 
     /**
      * A timeout has occurred and the connection needs to be closed cleanly.
      * Currently this is only used by the Servlet 3.0 async processing.
+     *
+     * 超时
      */
     TIMEOUT,
 
     /**
      * The client has disconnected.
+     * 客户端链接已断开
      */
     DISCONNECT,
 
@@ -59,6 +68,8 @@ public enum SocketEvent {
      * <li>by the container to signal an I/O error on a non-container thread
      *     during Servlet 3.0 asynchronous processing.</li>
      * </ul>
+     *
+     * 异常
      */
     ERROR,
 
@@ -68,6 +79,8 @@ public enum SocketEvent {
      * <ul>
      * <li>TLS handshake failures</li>
      * </ul>
+     *
+     * 链接失败
      */
     CONNECT_FAIL
 }

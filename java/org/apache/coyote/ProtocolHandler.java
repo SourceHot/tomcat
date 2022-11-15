@@ -71,7 +71,7 @@ public interface ProtocolHandler {
 
     /**
      * Get the utility executor that should be used by the protocol handler.
-     * 虎丘ScheduledExecutorService接口实现类
+     * 获取ScheduledExecutorService接口实现类
      * @return the executor
      */
     public ScheduledExecutorService getUtilityExecutor();

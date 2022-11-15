@@ -20,6 +20,9 @@ import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http11.upgrade.InternalHttpUpgradeHandler;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 
+/**
+ * 协议升级器
+ */
 public interface UpgradeProtocol {
 
     /**

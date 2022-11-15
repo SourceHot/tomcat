@@ -758,8 +758,14 @@ public abstract class SocketWrapperBase<E> {
     }
 
 
+    /**
+     * 注册读
+     */
     public abstract void registerReadInterest();
 
+    /**
+     * 注册写
+     */
     public abstract void registerWriteInterest();
 
     public abstract SendfileDataBase createSendfileData(String filename, long pos, long length);

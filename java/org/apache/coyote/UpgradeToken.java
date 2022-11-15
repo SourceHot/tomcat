@@ -23,6 +23,7 @@ import org.apache.tomcat.InstanceManager;
 
 /**
  * Token used during the upgrade process.
+ * 升级令牌
  */
 public final class UpgradeToken {
 

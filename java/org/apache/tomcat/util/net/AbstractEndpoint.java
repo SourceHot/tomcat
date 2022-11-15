@@ -55,6 +55,7 @@ import org.apache.tomcat.util.threads.TaskThreadFactory;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 
 /**
+ * 端点
  * @param <S> The type used by the socket wrapper associated with this endpoint.
  *            May be the same as U.
  * @param <U> The type of the underlying socket used by this endpoint. May be
@@ -73,17 +74,26 @@ public abstract class AbstractEndpoint<S,U> {
 
         /**
          * Different types of socket states to react upon.
+         *
+         * 套接字状态（socket状态）
          */
         public enum SocketState {
             // TODO Add a new state to the AsyncStateMachine and remove
             //      ASYNC_END (if possible)
-            OPEN, CLOSED, LONG, ASYNC_END, SENDFILE, UPGRADING, UPGRADED, SUSPENDED
+            OPEN, CLOSED,
+
+            /**
+             * 长轮询
+             */
+            LONG, ASYNC_END, SENDFILE, UPGRADING, UPGRADED, SUSPENDED
         }
 
 
         /**
          * Process the provided socket with the given current status.
          *
+         *
+         * 处理socket
          * @param socket The socket to process
          * @param status The current socket status
          *
@@ -96,6 +106,7 @@ public abstract class AbstractEndpoint<S,U> {
         /**
          * Obtain the GlobalRequestProcessor associated with the handler.
          *
+         * 获取GlobalRequestProcessor
          * @return the GlobalRequestProcessor
          */
         public Object getGlobal();
@@ -104,6 +115,7 @@ public abstract class AbstractEndpoint<S,U> {
         /**
          * Release any resources associated with the given SocketWrapper.
          *
+         * 释放资源
          * @param socketWrapper The socketWrapper to release resources for
          */
         public void release(SocketWrapperBase<S> socketWrapper);
@@ -114,12 +126,15 @@ public abstract class AbstractEndpoint<S,U> {
          * connections. Typically, the endpoint will be stopped shortly
          * afterwards but it is possible that the endpoint will be resumed so
          * the handler should not assume that a stop will follow.
+         *
+         * 停止处理任何socket
          */
         public void pause();
 
 
         /**
          * Recycle resources associated with the handler.
+         * 回收资源
          */
         public void recycle();
     }

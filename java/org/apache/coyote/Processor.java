@@ -49,6 +49,7 @@ public interface Processor {
     /**
      * Generate an upgrade token.
      *
+     * 获取升级令牌
      * @return An upgrade token encapsulating the information required to
      *         process the upgrade request
      *
@@ -58,10 +59,16 @@ public interface Processor {
     UpgradeToken getUpgradeToken();
 
     /**
+     * 是否处于正在升级阶段
      * @return {@code true} if the Processor is currently processing an upgrade
      *         request, otherwise {@code false}
      */
     boolean isUpgrade();
+
+    /**
+     * 是否异步
+     * @return
+     */
     boolean isAsync();
 
     /**
@@ -100,6 +107,7 @@ public interface Processor {
     /**
      * Allows retrieving additional input during the upgrade process.
      *
+     * 获取剩余的字节数据
      * @return leftover bytes
      *
      * @throws IllegalStateException if this is called on a Processor that does

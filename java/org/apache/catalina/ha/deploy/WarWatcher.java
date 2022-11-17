@@ -16,14 +16,14 @@
  */
 package org.apache.catalina.ha.deploy;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * The <b>WarWatcher </b> watches the deployDir for changes made to the
@@ -74,7 +74,7 @@ public class WarWatcher {
         File[] list = watchDir.listFiles(new WarFilter());
         if (list == null) {
             log.warn(sm.getString("warWatcher.cantListWatchDir",
-                                  watchDir));
+                    watchDir));
 
             list = new File[0];
         }
@@ -89,26 +89,27 @@ public class WarWatcher {
         }
 
         // Check all the status codes and update the FarmDeployer
-        for (Iterator<Map.Entry<String,WarInfo>> i =
-                currentStatus.entrySet().iterator(); i.hasNext();) {
-            Map.Entry<String,WarInfo> entry = i.next();
+        for (Iterator<Map.Entry<String, WarInfo>> i =
+             currentStatus.entrySet().iterator(); i.hasNext(); ) {
+            Map.Entry<String, WarInfo> entry = i.next();
             WarInfo info = entry.getValue();
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace(sm.getString("warWatcher.checkingWar",
-                                       info.getWar()));
+                        info.getWar()));
             }
             int check = info.check();
             if (check == 1) {
                 listener.fileModified(info.getWar());
-            } else if (check == -1) {
+            }
+            else if (check == -1) {
                 listener.fileRemoved(info.getWar());
                 //no need to keep in memory
                 i.remove();
             }
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace(sm.getString("warWatcher.checkWarResult",
-                                       Integer.valueOf(check),
-                                       info.getWar()));
+                        Integer.valueOf(check),
+                        info.getWar()));
             }
         }
 
@@ -116,6 +117,7 @@ public class WarWatcher {
 
     /**
      * add cluster war to the watcher state
+     *
      * @param warfile The WAR to add
      */
     protected void addWarInfo(File warfile) {
@@ -190,11 +192,13 @@ public class WarWatcher {
                 //file has changed - timestamp
                 result = 1;
                 lastState = result;
-            } else if ((!exists()) && (!(lastState == -1))) {
+            }
+            else if ((!exists()) && (!(lastState == -1))) {
                 //file was removed
                 result = -1;
                 lastState = result;
-            } else if ((lastState == -1) && exists()) {
+            }
+            else if ((lastState == -1) && exists()) {
                 //file was added
                 result = 1;
                 lastState = result;
@@ -217,7 +221,8 @@ public class WarWatcher {
             if (other instanceof WarInfo) {
                 WarInfo wo = (WarInfo) other;
                 return wo.getWar().equals(getWar());
-            } else {
+            }
+            else {
                 return false;
             }
         }

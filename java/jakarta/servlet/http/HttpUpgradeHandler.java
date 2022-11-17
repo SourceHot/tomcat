@@ -29,7 +29,7 @@ public interface HttpUpgradeHandler {
      * processing and is the point where control of the connection passes from
      * the container to the {@link HttpUpgradeHandler}.
      *
-     * @param connection    The connection that has been upgraded
+     * @param connection The connection that has been upgraded
      */
     void init(WebConnection connection);
 

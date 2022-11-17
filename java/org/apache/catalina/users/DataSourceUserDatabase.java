@@ -16,6 +16,14 @@
  */
 package org.apache.catalina.users;
 
+import org.apache.catalina.Group;
+import org.apache.catalina.Role;
+import org.apache.catalina.User;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,15 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.sql.DataSource;
-
-import org.apache.catalina.Group;
-import org.apache.catalina.Role;
-import org.apache.catalina.User;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
-
 /**
  * UserDatabase backed by a data source.
  */
@@ -43,200 +42,140 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
 
     private static final Log log = LogFactory.getLog(DataSourceUserDatabase.class);
     private static final StringManager sm = StringManager.getManager(DataSourceUserDatabase.class);
-
-    public DataSourceUserDatabase(DataSource dataSource, String id) {
-        this.dataSource = dataSource;
-        this.id = id;
-    }
-
-
     /**
      * DataSource to use.
      */
     protected final DataSource dataSource;
-
-
     /**
      * The unique global identifier of this user database.
      */
     protected final String id;
-
     protected final ConcurrentHashMap<String, User> createdUsers = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, User> modifiedUsers = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, User> removedUsers = new ConcurrentHashMap<>();
-
     protected final ConcurrentHashMap<String, Group> createdGroups = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, Group> modifiedGroups = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, Group> removedGroups = new ConcurrentHashMap<>();
-
     protected final ConcurrentHashMap<String, Role> createdRoles = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, Role> modifiedRoles = new ConcurrentHashMap<>();
     protected final ConcurrentHashMap<String, Role> removedRoles = new ConcurrentHashMap<>();
+    // The write lock on the database is assumed to include the write locks
+    // for groups, users and roles.
+    private final ReentrantReadWriteLock dbLock = new ReentrantReadWriteLock();
 
 
     // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The generated string for the all users PreparedStatement
-     */
-    private String preparedAllUsers = null;
-
-
-    /**
-     * The generated string for the all groups PreparedStatement
-     */
-    private String preparedAllGroups = null;
-
-
-    /**
-     * The generated string for the all roles PreparedStatement
-     */
-    private String preparedAllRoles = null;
-
-
-    /**
-     * The generated string for the group PreparedStatement
-     */
-    private String preparedGroup = null;
-
-
-    /**
-     * The generated string for the role PreparedStatement
-     */
-    private String preparedRole = null;
-
-
-    /**
-     * The generated string for the roles PreparedStatement
-     */
-    private String preparedUserRoles = null;
-
-
-    /**
-     * The generated string for the user PreparedStatement
-     */
-    private String preparedUser = null;
-
-
-    /**
-     * The generated string for the groups PreparedStatement
-     */
-    private String preparedUserGroups = null;
-
-
-    /**
-     * The generated string for the groups PreparedStatement
-     */
-    private String preparedGroupRoles = null;
-
-
+    private final Lock dbReadLock = dbLock.readLock();
+    private final Lock dbWriteLock = dbLock.writeLock();
+    private final ReentrantReadWriteLock groupsLock = new ReentrantReadWriteLock();
+    private final Lock groupsReadLock = groupsLock.readLock();
+    private final Lock groupsWriteLock = groupsLock.writeLock();
+    private final ReentrantReadWriteLock usersLock = new ReentrantReadWriteLock();
+    private final Lock usersReadLock = usersLock.readLock();
+    private final Lock usersWriteLock = usersLock.writeLock();
+    private final ReentrantReadWriteLock rolesLock = new ReentrantReadWriteLock();
+    private final Lock rolesReadLock = rolesLock.readLock();
+    private final Lock rolesWriteLock = rolesLock.writeLock();
     /**
      * The name of the JNDI JDBC DataSource
      */
     protected String dataSourceName = null;
-
-
     /**
      * The column in the user role table that names a role
      */
     protected String roleNameCol = null;
-
-
     /**
      * The column in the role and group tables for the decription
      */
     protected String roleAndGroupDescriptionCol = null;
-
-
     /**
      * The column in the user group table that names a group
      */
     protected String groupNameCol = null;
-
-
     /**
      * The column in the user table that holds the user's credentials
      */
     protected String userCredCol = null;
-
-
     /**
      * The column in the user table that holds the user's full name
      */
     protected String userFullNameCol = null;
-
-
     /**
      * The column in the user table that holds the user's name
      */
     protected String userNameCol = null;
-
-
     /**
      * The table that holds the relation between users and roles
      */
     protected String userRoleTable = null;
-
-
     /**
      * The table that holds the relation between users and groups
      */
     protected String userGroupTable = null;
-
-
     /**
      * The table that holds the relation between groups and roles
      */
     protected String groupRoleTable = null;
-
-
     /**
      * The table that holds user data.
      */
     protected String userTable = null;
-
-
     /**
      * The table that holds user data.
      */
     protected String groupTable = null;
-
-
     /**
      * The table that holds user data.
      */
     protected String roleTable = null;
-
-
-    /**
-     * Last connection attempt.
-     */
-    private volatile boolean connectionSuccess = true;
-
-
     /**
      * A flag, indicating if the user database is read only.
      */
     protected boolean readonly = true;
-
-    // The write lock on the database is assumed to include the write locks
-    // for groups, users and roles.
-    private final ReentrantReadWriteLock dbLock = new ReentrantReadWriteLock();
-    private final Lock dbReadLock = dbLock.readLock();
-    private final Lock dbWriteLock = dbLock.writeLock();
-
-    private final ReentrantReadWriteLock groupsLock = new ReentrantReadWriteLock();
-    private final Lock groupsReadLock = groupsLock.readLock();
-    private final Lock groupsWriteLock = groupsLock.writeLock();
-
-    private final ReentrantReadWriteLock usersLock = new ReentrantReadWriteLock();
-    private final Lock usersReadLock = usersLock.readLock();
-    private final Lock usersWriteLock = usersLock.writeLock();
-
-    private final ReentrantReadWriteLock rolesLock = new ReentrantReadWriteLock();
-    private final Lock rolesReadLock = rolesLock.readLock();
-    private final Lock rolesWriteLock = rolesLock.writeLock();
+    /**
+     * The generated string for the all users PreparedStatement
+     */
+    private String preparedAllUsers = null;
+    /**
+     * The generated string for the all groups PreparedStatement
+     */
+    private String preparedAllGroups = null;
+    /**
+     * The generated string for the all roles PreparedStatement
+     */
+    private String preparedAllRoles = null;
+    /**
+     * The generated string for the group PreparedStatement
+     */
+    private String preparedGroup = null;
+    /**
+     * The generated string for the role PreparedStatement
+     */
+    private String preparedRole = null;
+    /**
+     * The generated string for the roles PreparedStatement
+     */
+    private String preparedUserRoles = null;
+    /**
+     * The generated string for the user PreparedStatement
+     */
+    private String preparedUser = null;
+    /**
+     * The generated string for the groups PreparedStatement
+     */
+    private String preparedUserGroups = null;
+    /**
+     * The generated string for the groups PreparedStatement
+     */
+    private String preparedGroupRoles = null;
+    /**
+     * Last connection attempt.
+     */
+    private volatile boolean connectionSuccess = true;
+    public DataSourceUserDatabase(DataSource dataSource, String id) {
+        this.dataSource = dataSource;
+        this.id = id;
+    }
 
 
     // ------------------------------------------------------------- Properties
@@ -269,7 +208,7 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
      *
      * @param roleNameCol The column name
      */
-    public void setRoleNameCol( String roleNameCol ) {
+    public void setRoleNameCol(String roleNameCol) {
         this.roleNameCol = roleNameCol;
     }
 
@@ -285,8 +224,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
      *
      * @param userCredCol The column name
      */
-    public void setUserCredCol( String userCredCol ) {
-       this.userCredCol = userCredCol;
+    public void setUserCredCol(String userCredCol) {
+        this.userCredCol = userCredCol;
     }
 
     /**
@@ -301,8 +240,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
      *
      * @param userNameCol The column name
      */
-    public void setUserNameCol( String userNameCol ) {
-       this.userNameCol = userNameCol;
+    public void setUserNameCol(String userNameCol) {
+        this.userNameCol = userNameCol;
     }
 
     /**
@@ -317,7 +256,7 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
      *
      * @param userRoleTable The table name
      */
-    public void setUserRoleTable( String userRoleTable ) {
+    public void setUserRoleTable(String userRoleTable) {
         this.userRoleTable = userRoleTable;
     }
 
@@ -333,8 +272,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
      *
      * @param userTable The table name
      */
-    public void setUserTable( String userTable ) {
-      this.userTable = userTable;
+    public void setUserTable(String userTable) {
+        this.userTable = userTable;
     }
 
 
@@ -666,7 +605,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
                     } finally {
                         closeConnection(dbConnection);
                     }
-                } else {
+                }
+                else {
                     return null;
                 }
             } finally {
@@ -745,7 +685,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
                     } finally {
                         closeConnection(dbConnection);
                     }
-                } else {
+                }
+                else {
                     return null;
                 }
             } finally {
@@ -937,9 +878,9 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
         if (log.isDebugEnabled()) {
             // As there are lots of parameters to configure, log some debug to help out
             log.debug("DataSource UserDatabase features: User<->Role ["
-                    + Boolean.toString(userRoleTable != null && roleNameCol != null)
-                    + "], Roles [" + Boolean.toString(isRoleStoreDefined())
-                    + "], Groups [" + Boolean.toString(isRoleStoreDefined()) + "]");
+                    + (userRoleTable != null && roleNameCol != null)
+                    + "], Roles [" + isRoleStoreDefined()
+                    + "], Groups [" + isRoleStoreDefined() + "]");
         }
 
         dbWriteLock.lock();
@@ -1029,7 +970,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
                 temp.append(" FROM ");
                 temp.append(roleTable);
                 preparedAllRoles = temp.toString();
-            } else if (userRoleTable != null && roleNameCol != null) {
+            }
+            else if (userRoleTable != null && roleNameCol != null) {
                 // Validate roles existence from the user <-> roles table
                 temp = new StringBuilder("SELECT ");
                 temp.append(roleNameCol);
@@ -1221,7 +1163,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
                 modifiedRoles.clear();
             }
 
-        } else if (userRoleTable != null && roleNameCol != null) {
+        }
+        else if (userRoleTable != null && roleNameCol != null) {
             // Only remove role from users
             tempRelationDelete = new StringBuilder("DELETE FROM ");
             tempRelationDelete.append(userRoleTable);
@@ -1509,7 +1452,8 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
                     if (userFullNameCol != null) {
                         stmt.setString(2, user.getFullName());
                         stmt.setString(3, user.getUsername());
-                    } else {
+                    }
+                    else {
                         stmt.setString(2, user.getUsername());
                     }
                     stmt.executeUpdate();
@@ -1571,6 +1515,7 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
 
     /**
      * Only use groups if the tables are fully defined.
+     *
      * @return true when groups are used
      */
     protected boolean isGroupStoreDefined() {
@@ -1581,6 +1526,7 @@ public class DataSourceUserDatabase extends SparseUserDatabase {
 
     /**
      * Only use roles if the tables are fully defined.
+     *
      * @return true when roles are used
      */
     protected boolean isRoleStoreDefined() {

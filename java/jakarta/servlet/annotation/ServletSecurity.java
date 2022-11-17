@@ -16,12 +16,7 @@
  */
 package jakarta.servlet.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Declare this annotation on a {@link jakarta.servlet.Servlet} implementation
@@ -37,6 +32,22 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ServletSecurity {
+
+    /**
+     * The default constraint to apply to requests not handled by specific
+     * method constraints
+     *
+     * @return http constraint
+     */
+    HttpConstraint value() default @HttpConstraint;
+
+    /**
+     * An array of HttpMethodConstraint objects to which the security constraint
+     * will be applied
+     *
+     * @return array of http method constraint
+     */
+    HttpMethodConstraint[] httpMethodConstraints() default {};
 
     /**
      * Represents the two possible values of the empty role semantic, active
@@ -71,20 +82,4 @@ public @interface ServletSecurity {
          */
         CONFIDENTIAL
     }
-
-    /**
-     * The default constraint to apply to requests not handled by specific
-     * method constraints
-     *
-     * @return http constraint
-     */
-    HttpConstraint value() default @HttpConstraint;
-
-    /**
-     * An array of HttpMethodConstraint objects to which the security constraint
-     * will be applied
-     *
-     * @return array of http method constraint
-     */
-    HttpMethodConstraint[] httpMethodConstraints() default {};
 }

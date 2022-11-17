@@ -31,7 +31,7 @@ public class MultiThrowable extends Throwable {
 
     private static final long serialVersionUID = 1L;
 
-    private List<Throwable> throwables = new ArrayList<>();
+    private final List<Throwable> throwables = new ArrayList<>();
 
     /**
      * Add a throwable to the list of wrapped throwables.
@@ -53,15 +53,17 @@ public class MultiThrowable extends Throwable {
 
     /**
      * @return {@code null} if there are no wrapped throwables, the Throwable if
-     *         there is a single wrapped throwable or the current instance of
-     *         there are multiple wrapped throwables
+     * there is a single wrapped throwable or the current instance of
+     * there are multiple wrapped throwables
      */
     public Throwable getThrowable() {
         if (size() == 0) {
             return null;
-        } else if (size() == 1) {
+        }
+        else if (size() == 1) {
             return throwables.get(0);
-        } else {
+        }
+        else {
             return this;
         }
     }

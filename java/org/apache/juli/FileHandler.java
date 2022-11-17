@@ -16,14 +16,7 @@
  */
 package org.apache.juli;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,13 +33,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.ErrorManager;
-import java.util.logging.Filter;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.LogRecord;
+import java.util.logging.*;
 import java.util.regex.Pattern;
 
 /**
@@ -110,7 +97,8 @@ public class FileHandler extends Handler {
                     if (s == null) {
                         this.isSecurityEnabled = false;
                         this.group = Thread.currentThread().getThreadGroup();
-                    } else {
+                    }
+                    else {
                         this.isSecurityEnabled = true;
                         this.group = s.getThreadGroup();
                     }
@@ -127,7 +115,8 @@ public class FileHandler extends Handler {
                                         .setContextClassLoader(getClass().getClassLoader());
                                 return null;
                             });
-                        } else {
+                        }
+                        else {
                             Thread.currentThread()
                                     .setContextClassLoader(getClass().getClassLoader());
                         }
@@ -141,7 +130,8 @@ public class FileHandler extends Handler {
                                 Thread.currentThread().setContextClassLoader(loader);
                                 return null;
                             });
-                        } else {
+                        }
+                        else {
                             Thread.currentThread().setContextClassLoader(loader);
                         }
                     }
@@ -149,6 +139,51 @@ public class FileHandler extends Handler {
             });
 
     // ------------------------------------------------------------ Constructor
+    /**
+     * Lock used to control access to the writer.
+     */
+    protected final ReadWriteLock writerLock = new ReentrantReadWriteLock();
+    /**
+     * The as-of date for the currently open log file, or null if there is no
+     * open log file.
+     */
+    private volatile String date = null;
+    /**
+     * The directory in which log files are created.
+     */
+    private String directory;
+    /**
+     * The prefix that is added to log file filenames.
+     */
+    private String prefix;
+
+
+    // ----------------------------------------------------- Instance Variables
+    /**
+     * The suffix that is added to log file filenames.
+     */
+    private String suffix;
+    /**
+     * Determines whether the log file is rotatable
+     */
+    private Boolean rotatable;
+    /**
+     * Maximum number of days to keep the log files
+     */
+    private Integer maxDays;
+    /**
+     * The PrintWriter to which we are currently logging, if any.
+     */
+    private volatile PrintWriter writer = null;
+    /**
+     * Log buffer size.
+     */
+    private Integer bufferSize;
+    /**
+     * Represents a file name pattern of type {prefix}{date}{suffix}.
+     * The date is YYYY-MM-DD
+     */
+    private Pattern pattern;
 
 
     public FileHandler() {
@@ -167,7 +202,7 @@ public class FileHandler extends Handler {
 
 
     public FileHandler(String directory, String prefix, String suffix, Integer maxDays,
-            Boolean rotatable, Integer bufferSize) {
+                       Boolean rotatable, Integer bufferSize) {
         this.directory = directory;
         this.prefix = prefix;
         this.suffix = suffix;
@@ -179,78 +214,12 @@ public class FileHandler extends Handler {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The as-of date for the currently open log file, or null if there is no
-     * open log file.
-     */
-    private volatile String date = null;
-
-
-    /**
-     * The directory in which log files are created.
-     */
-    private String directory;
-
-
-    /**
-     * The prefix that is added to log file filenames.
-     */
-    private String prefix;
-
-
-    /**
-     * The suffix that is added to log file filenames.
-     */
-    private String suffix;
-
-
-    /**
-     * Determines whether the log file is rotatable
-     */
-    private Boolean rotatable;
-
-
-    /**
-     * Maximum number of days to keep the log files
-     */
-    private Integer maxDays;
-
-
-    /**
-     * The PrintWriter to which we are currently logging, if any.
-     */
-    private volatile PrintWriter writer = null;
-
-
-    /**
-     * Lock used to control access to the writer.
-     */
-    protected final ReadWriteLock writerLock = new ReentrantReadWriteLock();
-
-
-    /**
-     * Log buffer size.
-     */
-    private Integer bufferSize;
-
-
-    /**
-     * Represents a file name pattern of type {prefix}{date}{suffix}.
-     * The date is YYYY-MM-DD
-     */
-    private Pattern pattern;
-
-
     // --------------------------------------------------------- Public Methods
-
 
     /**
      * Format and publish a <code>LogRecord</code>.
      *
-     * @param  record  description of the log event
+     * @param record description of the log event
      */
     @Override
     public void publish(LogRecord record) {
@@ -264,7 +233,8 @@ public class FileHandler extends Handler {
             // Construct the timestamp we will use
             Timestamp ts = new Timestamp(System.currentTimeMillis());
             tsDate = ts.toString().substring(0, 10);
-        } else {
+        }
+        else {
             tsDate = "";
         }
 
@@ -305,7 +275,8 @@ public class FileHandler extends Handler {
                     if (bufferSize.intValue() < 0) {
                         writer.flush();
                     }
-                } else {
+                }
+                else {
                     reportError("FileHandler is closed or not yet initialized, unable to log ["
                             + result + "]", null, ErrorManager.WRITE_FAILURE);
                 }
@@ -458,7 +429,8 @@ public class FileHandler extends Handler {
                 // Ignore and fallback to defaults
                 setFormatter(new OneLineFormatter());
             }
-        } else {
+        }
+        else {
             setFormatter(new OneLineFormatter());
         }
 
@@ -471,7 +443,8 @@ public class FileHandler extends Handler {
         String value = LogManager.getLogManager().getProperty(name);
         if (value == null) {
             value = defaultValue;
-        } else {
+        }
+        else {
             value = value.trim();
         }
         return value;
@@ -513,7 +486,7 @@ public class FileHandler extends Handler {
             os = bufferSize.intValue() > 0 ? new BufferedOutputStream(fos, bufferSize.intValue()) : fos;
             writer = new PrintWriter(
                     (encoding != null) ? new OutputStreamWriter(os, encoding)
-                                       : new OutputStreamWriter(os), false);
+                            : new OutputStreamWriter(os), false);
             writer.write(getFormatter().getHead(this));
         } catch (Exception e) {
             reportError(null, e, ErrorManager.OPEN_FAILURE);
@@ -579,7 +552,8 @@ public class FileHandler extends Handler {
         if (pattern.matcher(date).matches()) {
             date = date.substring(prefix.length());
             return date.substring(0, date.length() - suffix.length());
-        } else {
+        }
+        else {
             return null;
         }
     }

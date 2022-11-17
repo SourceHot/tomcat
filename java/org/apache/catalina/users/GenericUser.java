@@ -17,26 +17,42 @@
 package org.apache.catalina.users;
 
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.apache.catalina.Group;
 import org.apache.catalina.Role;
 import org.apache.catalina.UserDatabase;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * <p>Concrete implementation of {@link org.apache.catalina.User} for a
  * {@link UserDatabase}.</p>
  *
  * @param <UD> The specific type of UserDase with which this role is associated
- *
  * @author Craig R. McClanahan
  */
 public class GenericUser<UD extends UserDatabase> extends AbstractUser {
 
 
     // ----------------------------------------------------------- Constructors
+
+
+    /**
+     * The {@link UserDatabase} that owns this user.
+     */
+    protected final UD database;
+
+
+    // ----------------------------------------------------- Instance Variables
+    /**
+     * The set of {@link Group}s that this user is a member of.
+     */
+    protected final CopyOnWriteArrayList<Group> groups = new CopyOnWriteArrayList<>();
+    /**
+     * The set of {@link Role}s associated with this user.
+     */
+    protected final CopyOnWriteArrayList<Role> roles = new CopyOnWriteArrayList<>();
 
 
     /**
@@ -47,12 +63,12 @@ public class GenericUser<UD extends UserDatabase> extends AbstractUser {
      * @param username Logon username of the new user
      * @param password Logon password of the new user
      * @param fullName Full name of the new user
-     * @param groups The groups of this user
-     * @param roles The roles of this user
+     * @param groups   The groups of this user
+     * @param roles    The roles of this user
      */
     GenericUser(UD database, String username,
-               String password, String fullName, List<Group> groups,
-               List<Role> roles) {
+                String password, String fullName, List<Group> groups,
+                List<Role> roles) {
 
         super();
         this.database = database;
@@ -69,29 +85,7 @@ public class GenericUser<UD extends UserDatabase> extends AbstractUser {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The {@link UserDatabase} that owns this user.
-     */
-    protected final UD database;
-
-
-    /**
-     * The set of {@link Group}s that this user is a member of.
-     */
-    protected final CopyOnWriteArrayList<Group> groups = new CopyOnWriteArrayList<>();
-
-
-    /**
-     * The set of {@link Role}s associated with this user.
-     */
-    protected final CopyOnWriteArrayList<Role> roles = new CopyOnWriteArrayList<>();
-
-
     // ------------------------------------------------------------- Properties
-
 
     /**
      * Return the set of {@link Group}s to which this user belongs.

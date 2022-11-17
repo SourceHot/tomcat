@@ -16,16 +16,11 @@
  */
 package org.apache.el.lang;
 
+import jakarta.el.*;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELResolver;
-import jakarta.el.EvaluationListener;
-import jakarta.el.FunctionMapper;
-import jakarta.el.ImportHandler;
-import jakarta.el.VariableMapper;
 
 public final class EvaluationContext extends ELContext {
 
@@ -36,7 +31,7 @@ public final class EvaluationContext extends ELContext {
     private final VariableMapper varMapper;
 
     public EvaluationContext(ELContext elContext, FunctionMapper fnMapper,
-            VariableMapper varMapper) {
+                             VariableMapper varMapper) {
         this.elContext = elContext;
         this.fnMapper = fnMapper;
         this.varMapper = varMapper;
@@ -72,19 +67,19 @@ public final class EvaluationContext extends ELContext {
     }
 
     @Override
-    public void putContext(Class<?> key, Object contextObject) {
-        elContext.putContext(key, contextObject);
-    }
-
-    @Override
     public void setPropertyResolved(boolean resolved) {
         elContext.setPropertyResolved(resolved);
     }
 
     @Override
+    public void putContext(Class<?> key, Object contextObject) {
+        elContext.putContext(key, contextObject);
+    }
+
+    @Override
     public Locale getLocale() {
         return elContext.getLocale();
-        }
+    }
 
     @Override
     public void setLocale(Locale locale) {

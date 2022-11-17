@@ -17,10 +17,10 @@
 package org.apache.catalina.ha;
 
 
-import java.io.IOException;
-
 import org.apache.catalina.Manager;
 import org.apache.catalina.tribes.io.ReplicationStream;
+
+import java.io.IOException;
 
 
 /**
@@ -32,65 +32,70 @@ import org.apache.catalina.tribes.io.ReplicationStream;
  */
 public interface ClusterManager extends Manager {
 
-   /**
-    * A message was received from another node, this
-    * is the callback method to implement if you are interested in
-    * receiving replication messages.
-    * @param msg - the message received.
-    */
-   public void messageDataReceived(ClusterMessage msg);
+    /**
+     * A message was received from another node, this
+     * is the callback method to implement if you are interested in
+     * receiving replication messages.
+     *
+     * @param msg - the message received.
+     */
+    void messageDataReceived(ClusterMessage msg);
 
-   /**
-    * When the request has been completed, the replication valve
-    * will notify the manager, and the manager will decide whether
-    * any replication is needed or not.
-    * If there is a need for replication, the manager will
-    * create a session message and that will be replicated.
-    * The cluster determines where it gets sent.
-    * @param sessionId - the sessionId that just completed.
-    * @return a SessionMessage to be sent.
-    */
-   public ClusterMessage requestCompleted(String sessionId);
+    /**
+     * When the request has been completed, the replication valve
+     * will notify the manager, and the manager will decide whether
+     * any replication is needed or not.
+     * If there is a need for replication, the manager will
+     * create a session message and that will be replicated.
+     * The cluster determines where it gets sent.
+     *
+     * @param sessionId - the sessionId that just completed.
+     * @return a SessionMessage to be sent.
+     */
+    ClusterMessage requestCompleted(String sessionId);
 
-   /**
-    * When the manager expires session not tied to a request.
-    * The cluster will periodically ask for a list of sessions
-    * that should expire and that should be sent across the wire.
-    * @return String[] The invalidated sessions
-    */
-   public String[] getInvalidatedSessions();
+    /**
+     * When the manager expires session not tied to a request.
+     * The cluster will periodically ask for a list of sessions
+     * that should expire and that should be sent across the wire.
+     *
+     * @return String[] The invalidated sessions
+     */
+    String[] getInvalidatedSessions();
 
-   /**
-    * Return the name of the manager, at host /context name and at engine hostname+/context.
-    * @return String
-    * @since 5.5.10
-    */
-   public String getName();
+    /**
+     * Return the name of the manager, at host /context name and at engine hostname+/context.
+     *
+     * @return String
+     * @since 5.5.10
+     */
+    String getName();
 
-   /**
-    * Set the name of the manager, at host /context name and at engine hostname+/context
-    * @param name The manager name
-    * @since 5.5.10
-    */
-   public void setName(String name);
+    /**
+     * Set the name of the manager, at host /context name and at engine hostname+/context
+     *
+     * @param name The manager name
+     * @since 5.5.10
+     */
+    void setName(String name);
 
-   public CatalinaCluster getCluster();
+    CatalinaCluster getCluster();
 
-   public void setCluster(CatalinaCluster cluster);
+    void setCluster(CatalinaCluster cluster);
 
-   /**
-    * Open stream and use correct ClassLoader (Container), switching thread
-    * context class loader.
-    *
-    * @param data The data
-    * @return The object input stream
-    * @throws IOException An error occurred
-    */
-   public ReplicationStream getReplicationStream(byte[] data) throws IOException;
+    /**
+     * Open stream and use correct ClassLoader (Container), switching thread
+     * context class loader.
+     *
+     * @param data The data
+     * @return The object input stream
+     * @throws IOException An error occurred
+     */
+    ReplicationStream getReplicationStream(byte[] data) throws IOException;
 
-   public ReplicationStream getReplicationStream(byte[] data, int offset, int length) throws IOException;
+    ReplicationStream getReplicationStream(byte[] data, int offset, int length) throws IOException;
 
-   public boolean isNotifyListenersOnReplication();
+    boolean isNotifyListenersOnReplication();
 
-   public ClusterManager cloneFromTemplate();
+    ClusterManager cloneFromTemplate();
 }

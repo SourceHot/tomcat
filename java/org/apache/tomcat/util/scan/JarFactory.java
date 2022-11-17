@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.util.scan;
 
+import org.apache.tomcat.Jar;
+import org.apache.tomcat.util.buf.UriUtil;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
-
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.util.buf.UriUtil;
 
 /**
  * Provide a mechanism to obtain objects that implement {@link Jar}.
@@ -39,15 +39,19 @@ public class JarFactory {
         if (urlString.startsWith("jar:file:")) {
             if (urlString.endsWith("!/")) {
                 return new JarFileUrlJar(url, true);
-            } else {
+            }
+            else {
                 return new JarFileUrlNestedJar(url);
             }
-        } else if (urlString.startsWith("war:file:")) {
+        }
+        else if (urlString.startsWith("war:file:")) {
             URL jarUrl = UriUtil.warToJar(url);
             return new JarFileUrlNestedJar(jarUrl);
-        } else if (urlString.startsWith("file:")) {
+        }
+        else if (urlString.startsWith("file:")) {
             return new JarFileUrlJar(url, false);
-        } else {
+        }
+        else {
             return new UrlJar(url);
         }
     }

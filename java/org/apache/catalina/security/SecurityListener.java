@@ -16,10 +16,6 @@
  */
 package org.apache.catalina.security;
 
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
@@ -29,6 +25,10 @@ import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.StringUtils;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
 /**
  * This listener must only be nested within {@link Server} elements.
  */
@@ -37,10 +37,10 @@ public class SecurityListener implements LifecycleListener {
     private static final Log log = LogFactory.getLog(SecurityListener.class);
 
     private static final StringManager sm =
-        StringManager.getManager(Constants.PACKAGE);
+            StringManager.getManager(Constants.PACKAGE);
 
     private static final String UMASK_PROPERTY_NAME =
-        Constants.PACKAGE + ".SecurityListener.UMASK";
+            Constants.PACKAGE + ".SecurityListener.UMASK";
 
     private static final String UMASK_FORMAT = "%04o";
 
@@ -73,6 +73,15 @@ public class SecurityListener implements LifecycleListener {
         }
     }
 
+    /**
+     * Returns the current list of operating system users not permitted to run
+     * Tomcat.
+     *
+     * @return A comma separated list of operating system user names.
+     */
+    public String getCheckedOsUsers() {
+        return StringUtils.join(checkedOsUsers);
+    }
 
     /**
      * Set the list of operating system users not permitted to run Tomcat. By
@@ -81,13 +90,14 @@ public class SecurityListener implements LifecycleListener {
      * effectively disables this check. User names will always be checked in a
      * case insensitive manner using the system default Locale.
      *
-     * @param userNameList  A comma separated list of operating system users not
-     *                      permitted to run Tomcat
+     * @param userNameList A comma separated list of operating system users not
+     *                     permitted to run Tomcat
      */
     public void setCheckedOsUsers(String userNameList) {
         if (userNameList == null || userNameList.length() == 0) {
             checkedOsUsers.clear();
-        } else {
+        }
+        else {
             String[] userNames = userNameList.split(",");
             for (String userName : userNames) {
                 if (userName.length() > 0) {
@@ -97,17 +107,14 @@ public class SecurityListener implements LifecycleListener {
         }
     }
 
-
     /**
-     * Returns the current list of operating system users not permitted to run
-     * Tomcat.
+     * Get the minimum umask that must be configured before Tomcat will start.
      *
-     * @return  A comma separated list of operating system user names.
+     * @return The 4-digit umask as used by the OS command <i>umask</i>
      */
-    public String getCheckedOsUsers() {
-        return StringUtils.join(checkedOsUsers);
+    public String getMinimumUmask() {
+        return String.format(UMASK_FORMAT, minimumUmask);
     }
-
 
     /**
      * Set the minimum umask that must be configured before Tomcat will start.
@@ -117,21 +124,11 @@ public class SecurityListener implements LifecycleListener {
     public void setMinimumUmask(String umask) {
         if (umask == null || umask.length() == 0) {
             minimumUmask = Integer.valueOf(0);
-        } else {
+        }
+        else {
             minimumUmask = Integer.valueOf(umask, 8);
         }
     }
-
-
-    /**
-     * Get the minimum umask that must be configured before Tomcat will start.
-     *
-     * @return  The 4-digit umask as used by the OS command <i>umask</i>
-     */
-    public String getMinimumUmask() {
-        return String.format(UMASK_FORMAT, minimumUmask);
-    }
-
 
     /**
      * Execute the security checks. Each check should be in a separate method.
@@ -161,7 +158,7 @@ public class SecurityListener implements LifecycleListener {
         Integer umask = null;
         if (prop != null) {
             try {
-                 umask = Integer.valueOf(prop, 8);
+                umask = Integer.valueOf(prop, 8);
             } catch (NumberFormatException nfe) {
                 log.warn(sm.getString("SecurityListener.checkUmaskParseFail",
                         prop));
@@ -174,7 +171,8 @@ public class SecurityListener implements LifecycleListener {
                     log.debug(sm.getString("SecurityListener.checkUmaskSkip"));
                 }
                 return;
-            } else {
+            }
+            else {
                 if (minimumUmask.intValue() > 0) {
                     log.warn(sm.getString(
                             "SecurityListener.checkUmaskNone",

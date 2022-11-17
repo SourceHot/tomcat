@@ -36,12 +36,10 @@ public class TokenList {
      *
      * @param inputs     The headers to parse
      * @param collection The Collection (usually a list or a set) to which the
-     *                       parsed tokens should be added
-     *
+     *                   parsed tokens should be added
      * @return {@code true} if the header values were parsed cleanly and at
-     *         least one token was found, otherwise {@code false} (e.g. if a
-     *         non-token value was encountered)
-     *
+     * least one token was found, otherwise {@code false} (e.g. if a
+     * non-token value was encountered)
      * @throws IOException If an I/O error occurs reading the header
      */
     public static boolean parseTokenList(Enumeration<String> inputs, Collection<String> collection) throws IOException {
@@ -64,12 +62,10 @@ public class TokenList {
      *
      * @param input      The header to parse
      * @param collection The Collection (usually a list or a set) to which the
-     *                       parsed tokens should be added
-     *
+     *                   parsed tokens should be added
      * @return {@code true} if the header values were parsed cleanly and at
-     *         least one token was found, otherwise {@code false} (e.g. if a
-     *         non-token value was encountered)
-     *
+     * least one token was found, otherwise {@code false} (e.g. if a
+     * non-token value was encountered)
      * @throws IOException If an I/O error occurs reading the header
      */
     public static boolean parseTokenList(Reader input, Collection<String> collection) throws IOException {
@@ -100,11 +96,13 @@ public class TokenList {
                 valid = true;
                 collection.add(element.toLowerCase(Locale.ENGLISH));
                 break;
-            } else if (skipResult == SkipResult.FOUND) {
+            }
+            else if (skipResult == SkipResult.FOUND) {
                 valid = true;
                 collection.add(element.toLowerCase(Locale.ENGLISH));
                 continue;
-            } else {
+            }
+            else {
                 // Not a token - ignore it
                 invalid = true;
                 HttpParser.skipUntil(input, 0, ',');

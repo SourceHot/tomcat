@@ -16,17 +16,12 @@
  */
 package org.apache.naming.factory;
 
+import org.apache.naming.EjbRef;
+
+import javax.naming.*;
+import javax.naming.spi.ObjectFactory;
 import java.util.Hashtable;
 import java.util.Properties;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.Name;
-import javax.naming.RefAddr;
-import javax.naming.Reference;
-import javax.naming.spi.ObjectFactory;
-
-import org.apache.naming.EjbRef;
 
 /**
  * Object factory for EJBs.
@@ -41,7 +36,7 @@ public class OpenEjbFactory implements ObjectFactory {
 
 
     protected static final String DEFAULT_OPENEJB_FACTORY =
-        "org.openejb.client.LocalInitialContextFactory";
+            "org.openejb.client.LocalInitialContextFactory";
 
 
     // -------------------------------------------------- ObjectFactory Methods
@@ -54,8 +49,8 @@ public class OpenEjbFactory implements ObjectFactory {
      */
     @Override
     public Object getObjectInstance(Object obj, Name name, Context nameCtx,
-                                    Hashtable<?,?> environment)
-        throws Exception {
+                                    Hashtable<?, ?> environment)
+            throws Exception {
 
         Object beanObj = null;
 

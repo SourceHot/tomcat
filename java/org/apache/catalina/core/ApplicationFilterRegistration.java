@@ -16,21 +16,15 @@
  */
 package org.apache.catalina.core;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterRegistration;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.*;
 
 public class ApplicationFilterRegistration implements FilterRegistration.Dynamic {
 
@@ -43,7 +37,7 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
     private final Context context;
 
     public ApplicationFilterRegistration(FilterDef filterDef,
-            Context context) {
+                                         Context context) {
         this.filterDef = filterDef;
         this.context = context;
 
@@ -71,7 +65,8 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
 
             if (isMatchAfter) {
                 context.addFilterMap(filterMap);
-            } else {
+            }
+            else {
                 context.addFilterMapBefore(filterMap);
             }
         }
@@ -101,7 +96,8 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
 
             if (isMatchAfter) {
                 context.addFilterMap(filterMap);
-            } else {
+            }
+            else {
                 context.addFilterMapBefore(filterMap);
             }
         }
@@ -140,7 +136,7 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
     @Override
     public String getClassName() {
         return filterDef.getFilterClass();
-   }
+    }
 
     @Override
     public String getInitParameter(String name) {
@@ -149,7 +145,7 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
 
     @Override
     public Map<String, String> getInitParameters() {
-        ParameterMap<String,String> result = new ParameterMap<>();
+        ParameterMap<String, String> result = new ParameterMap<>();
         result.putAll(filterDef.getParameterMap());
         result.setLocked(true);
         return result;
@@ -185,7 +181,7 @@ public class ApplicationFilterRegistration implements FilterRegistration.Dynamic
             if (entry.getKey() == null || entry.getValue() == null) {
                 throw new IllegalArgumentException(sm.getString(
                         "applicationFilterRegistration.nullInitParams",
-                                entry.getKey(), entry.getValue()));
+                        entry.getKey(), entry.getValue()));
             }
             if (getInitParameter(entry.getKey()) != null) {
                 conflicts.add(entry.getKey());

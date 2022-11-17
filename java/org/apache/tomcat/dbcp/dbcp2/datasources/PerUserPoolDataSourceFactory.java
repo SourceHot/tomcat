@@ -16,12 +16,11 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
+import javax.naming.RefAddr;
+import javax.naming.Reference;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
-
-import javax.naming.RefAddr;
-import javax.naming.Reference;
 
 /**
  * A JNDI ObjectFactory which creates <code>SharedPoolDataSource</code>s

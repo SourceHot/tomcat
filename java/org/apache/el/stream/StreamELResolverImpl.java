@@ -16,14 +16,14 @@
  */
 package org.apache.el.stream;
 
+import jakarta.el.ELContext;
+import jakarta.el.ELResolver;
+
 import java.beans.FeatureDescriptor;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELResolver;
 
 public class StreamELResolverImpl extends ELResolver {
 
@@ -39,7 +39,7 @@ public class StreamELResolverImpl extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         // NO-OP
     }
 
@@ -50,7 +50,7 @@ public class StreamELResolverImpl extends ELResolver {
 
     @Override
     public Iterator<FeatureDescriptor> getFeatureDescriptors(ELContext context,
-            Object base) {
+                                                             Object base) {
         return null;
     }
 
@@ -61,13 +61,14 @@ public class StreamELResolverImpl extends ELResolver {
 
     @Override
     public Object invoke(ELContext context, Object base, Object method,
-            Class<?>[] paramTypes, Object[] params) {
+                         Class<?>[] paramTypes, Object[] params) {
 
         if ("stream".equals(method) && params.length == 0) {
             if (base.getClass().isArray()) {
                 context.setPropertyResolved(true);
                 return new Stream(new ArrayIterator(base));
-            } else if (base instanceof Collection) {
+            }
+            else if (base instanceof Collection) {
                 context.setPropertyResolved(true);
                 @SuppressWarnings("unchecked")
                 Collection<Object> collection = (Collection<Object>) base;

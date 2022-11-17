@@ -16,11 +16,6 @@
  */
 package org.apache.catalina.core;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
@@ -32,6 +27,11 @@ import org.apache.tomcat.jni.LibraryNotFoundError;
 import org.apache.tomcat.jni.SSL;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implementation of <code>LifecycleListener</code> that will init and
@@ -49,39 +49,30 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class AprLifecycleListener implements LifecycleListener {
 
+    /**
+     * The string manager for this package.
+     */
+    protected static final StringManager sm = StringManager.getManager(AprLifecycleListener.class);
+    protected static final int TCN_REQUIRED_MAJOR = 1;
+    protected static final int TCN_REQUIRED_MINOR = 2;
+
+
+    // ---------------------------------------------- Constants
+    protected static final int TCN_REQUIRED_PATCH = 14;
+    protected static final int TCN_RECOMMENDED_MAJOR = 1;
+    protected static final int TCN_RECOMMENDED_MINOR = 2;
+    protected static final int TCN_RECOMMENDED_PV = 30;
+    protected static final Object lock = new Object();
     private static final Log log = LogFactory.getLog(AprLifecycleListener.class);
 
+
+    // ---------------------------------------------- Properties
     /**
      * Info messages during init() are cached until Lifecycle.BEFORE_INIT_EVENT
      * so that, in normal (non-error) cases, init() related log messages appear
      * at the expected point in the lifecycle.
      */
     private static final List<String> initInfoLogMessages = new ArrayList<>(3);
-
-    /**
-     * The string manager for this package.
-     */
-    protected static final StringManager sm = StringManager.getManager(AprLifecycleListener.class);
-
-
-    // ---------------------------------------------- Constants
-
-    protected static final int TCN_REQUIRED_MAJOR = 1;
-    protected static final int TCN_REQUIRED_MINOR = 2;
-    protected static final int TCN_REQUIRED_PATCH = 14;
-    protected static final int TCN_RECOMMENDED_MAJOR = 1;
-    protected static final int TCN_RECOMMENDED_MINOR = 2;
-    protected static final int TCN_RECOMMENDED_PV = 30;
-
-
-    // ---------------------------------------------- Properties
-
-    protected static String SSLEngine = "on"; //default on
-    protected static String FIPSMode = "off"; // default off, valid only when SSLEngine="on"
-    protected static String SSLRandomSeed = "builtin";
-    protected static boolean sslInitialized = false;
-    protected static boolean fipsModeActive = false;
-
     /**
      * The "FIPS mode" level that we use as the argument to OpenSSL method
      * <code>FIPS_mode_set()</code> to enable FIPS mode and that we expect as
@@ -91,14 +82,21 @@ public class AprLifecycleListener implements LifecycleListener {
      * non-zero "FIPS" modes that specify different allowed subsets of ciphers
      * or whatever, but nowadays only "1" is the supported value.
      * </p>
+     *
      * @see <a href="http://wiki.openssl.org/index.php/FIPS_mode_set%28%29">OpenSSL method FIPS_mode_set()</a>
      * @see <a href="http://wiki.openssl.org/index.php/FIPS_mode%28%29">OpenSSL method FIPS_mode()</a>
      */
     private static final int FIPS_ON = 1;
-
     private static final int FIPS_OFF = 0;
+    protected static String SSLEngine = "on"; //default on
+    protected static String FIPSMode = "off"; // default off, valid only when SSLEngine="on"
+    protected static String SSLRandomSeed = "builtin";
+    protected static boolean sslInitialized = false;
+    protected static boolean fipsModeActive = false;
 
-    protected static final Object lock = new Object();
+    public AprLifecycleListener() {
+        AprStatus.setInstanceCreated(true);
+    }
 
     public static boolean isAprAvailable() {
         //https://bz.apache.org/bugzilla/show_bug.cgi?id=48613
@@ -110,74 +108,15 @@ public class AprLifecycleListener implements LifecycleListener {
         return AprStatus.isAprAvailable();
     }
 
-    public AprLifecycleListener() {
-        AprStatus.setInstanceCreated(true);
-    }
-
     // ---------------------------------------------- LifecycleListener Methods
 
-    /**
-     * Primary entry point for startup and shutdown events.
-     *
-     * @param event The event that has occurred
-     */
-    @Override
-    public void lifecycleEvent(LifecycleEvent event) {
-
-        if (Lifecycle.BEFORE_INIT_EVENT.equals(event.getType())) {
-            synchronized (lock) {
-                if (!(event.getLifecycle() instanceof Server)) {
-                    log.warn(sm.getString("listener.notServer",
-                            event.getLifecycle().getClass().getSimpleName()));
-                }
-                init();
-                for (String msg : initInfoLogMessages) {
-                    log.info(msg);
-                }
-                initInfoLogMessages.clear();
-                if (AprStatus.isAprAvailable()) {
-                    try {
-                        initializeSSL();
-                    } catch (Throwable t) {
-                        t = ExceptionUtils.unwrapInvocationTargetException(t);
-                        ExceptionUtils.handleThrowable(t);
-                        log.error(sm.getString("aprListener.sslInit"), t);
-                    }
-                }
-                // Failure to initialize FIPS mode is fatal
-                if (!(null == FIPSMode || "off".equalsIgnoreCase(FIPSMode)) && !isFIPSModeActive()) {
-                    String errorMessage = sm.getString("aprListener.initializeFIPSFailed");
-                    Error e = new Error(errorMessage);
-                    // Log here, because thrown error might be not logged
-                    log.fatal(errorMessage, e);
-                    throw e;
-                }
-            }
-        } else if (Lifecycle.AFTER_DESTROY_EVENT.equals(event.getType())) {
-            synchronized (lock) {
-                if (!AprStatus.isAprAvailable()) {
-                    return;
-                }
-                try {
-                    terminateAPR();
-                } catch (Throwable t) {
-                    t = ExceptionUtils.unwrapInvocationTargetException(t);
-                    ExceptionUtils.handleThrowable(t);
-                    log.info(sm.getString("aprListener.aprDestroy"));
-                }
-            }
-        }
-
-    }
-
     private static void terminateAPR()
-        throws ClassNotFoundException, NoSuchMethodException,
-               IllegalAccessException, InvocationTargetException
-    {
+            throws ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
         String methodName = "terminate";
         Method method = Class.forName("org.apache.tomcat.jni.Library")
-            .getMethod(methodName, (Class [])null);
-        method.invoke(null, (Object []) null);
+                .getMethod(methodName, (Class[]) null);
+        method.invoke(null, (Object[]) null);
         AprStatus.setAprAvailable(false);
         AprStatus.setAprInitialized(false);
         sslInitialized = false; // Well we cleaned the pool in terminate.
@@ -185,8 +124,7 @@ public class AprLifecycleListener implements LifecycleListener {
     }
 
     @SuppressWarnings("deprecation")
-    private static void init()
-    {
+    private static void init() {
         int major = 0;
         int minor = 0;
         int patch = 0;
@@ -237,8 +175,8 @@ public class AprLifecycleListener implements LifecycleListener {
             log.error(sm.getString("aprListener.tcnInvalid",
                     Library.versionString(),
                     TCN_REQUIRED_MAJOR + "." +
-                    TCN_REQUIRED_MINOR + "." +
-                    TCN_REQUIRED_PATCH));
+                            TCN_REQUIRED_MINOR + "." +
+                            TCN_REQUIRED_PATCH));
             try {
                 // Terminate the APR in case the version
                 // is below required.
@@ -253,8 +191,8 @@ public class AprLifecycleListener implements LifecycleListener {
             initInfoLogMessages.add(sm.getString("aprListener.tcnVersion",
                     Library.versionString(),
                     TCN_REQUIRED_MAJOR + "." +
-                    TCN_RECOMMENDED_MINOR + "." +
-                    TCN_RECOMMENDED_PV));
+                            TCN_RECOMMENDED_MINOR + "." +
+                            TCN_RECOMMENDED_PV));
         }
 
         initInfoLogMessages.add(sm.getString("aprListener.tcnValid",
@@ -278,16 +216,16 @@ public class AprLifecycleListener implements LifecycleListener {
             return;
         }
         if (sslInitialized) {
-             //only once per VM
+            //only once per VM
             return;
         }
 
         sslInitialized = true;
 
         String methodName = "randSet";
-        Class<?> paramTypes[] = new Class[1];
+        Class<?>[] paramTypes = new Class[1];
         paramTypes[0] = String.class;
-        Object paramValues[] = new Object[1];
+        Object[] paramValues = new Object[1];
         paramValues[0] = SSLRandomSeed;
         Class<?> clazz = Class.forName("org.apache.tomcat.jni.SSL");
         Method method = clazz.getMethod(methodName, paramTypes);
@@ -295,7 +233,7 @@ public class AprLifecycleListener implements LifecycleListener {
 
 
         methodName = "initialize";
-        paramValues[0] = "on".equalsIgnoreCase(SSLEngine)?null:SSLEngine;
+        paramValues[0] = "on".equalsIgnoreCase(SSLEngine) ? null : SSLEngine;
         method = clazz.getMethod(methodName, paramTypes);
         method.invoke(null, paramValues);
 
@@ -306,9 +244,9 @@ public class AprLifecycleListener implements LifecycleListener {
             final boolean enterFipsMode;
             int fipsModeState = SSL.fipsModeGet();
 
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug(sm.getString("aprListener.currentFIPSMode",
-                                       Integer.valueOf(fipsModeState)));
+                        Integer.valueOf(fipsModeState)));
             }
 
             if ("on".equalsIgnoreCase(FIPSMode)) {
@@ -316,26 +254,32 @@ public class AprLifecycleListener implements LifecycleListener {
                     log.info(sm.getString("aprListener.skipFIPSInitialization"));
                     fipsModeActive = true;
                     enterFipsMode = false;
-                } else {
+                }
+                else {
                     enterFipsMode = true;
                 }
-            } else if ("require".equalsIgnoreCase(FIPSMode)) {
+            }
+            else if ("require".equalsIgnoreCase(FIPSMode)) {
                 if (fipsModeState == FIPS_ON) {
                     fipsModeActive = true;
                     enterFipsMode = false;
-                } else {
+                }
+                else {
                     throw new IllegalStateException(
                             sm.getString("aprListener.requireNotInFIPSMode"));
                 }
-            } else if ("enter".equalsIgnoreCase(FIPSMode)) {
+            }
+            else if ("enter".equalsIgnoreCase(FIPSMode)) {
                 if (fipsModeState == FIPS_OFF) {
                     enterFipsMode = true;
-                } else {
+                }
+                else {
                     throw new IllegalStateException(sm.getString(
                             "aprListener.enterAlreadyInFIPSMode",
                             Integer.valueOf(fipsModeState)));
                 }
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString(
                         "aprListener.wrongFIPSMode", FIPSMode));
             }
@@ -358,6 +302,75 @@ public class AprLifecycleListener implements LifecycleListener {
         }
 
         log.info(sm.getString("aprListener.initializedOpenSSL", SSL.versionString()));
+    }
+
+    public static boolean getUseOpenSSL() {
+        return AprStatus.getUseOpenSSL();
+    }
+
+    public void setUseOpenSSL(boolean useOpenSSL) {
+        if (useOpenSSL != AprStatus.getUseOpenSSL()) {
+            AprStatus.setUseOpenSSL(useOpenSSL);
+        }
+    }
+
+    public static boolean isInstanceCreated() {
+        return AprStatus.isInstanceCreated();
+    }
+
+    /**
+     * Primary entry point for startup and shutdown events.
+     *
+     * @param event The event that has occurred
+     */
+    @Override
+    public void lifecycleEvent(LifecycleEvent event) {
+
+        if (Lifecycle.BEFORE_INIT_EVENT.equals(event.getType())) {
+            synchronized (lock) {
+                if (!(event.getLifecycle() instanceof Server)) {
+                    log.warn(sm.getString("listener.notServer",
+                            event.getLifecycle().getClass().getSimpleName()));
+                }
+                init();
+                for (String msg : initInfoLogMessages) {
+                    log.info(msg);
+                }
+                initInfoLogMessages.clear();
+                if (AprStatus.isAprAvailable()) {
+                    try {
+                        initializeSSL();
+                    } catch (Throwable t) {
+                        t = ExceptionUtils.unwrapInvocationTargetException(t);
+                        ExceptionUtils.handleThrowable(t);
+                        log.error(sm.getString("aprListener.sslInit"), t);
+                    }
+                }
+                // Failure to initialize FIPS mode is fatal
+                if (!(null == FIPSMode || "off".equalsIgnoreCase(FIPSMode)) && !isFIPSModeActive()) {
+                    String errorMessage = sm.getString("aprListener.initializeFIPSFailed");
+                    Error e = new Error(errorMessage);
+                    // Log here, because thrown error might be not logged
+                    log.fatal(errorMessage, e);
+                    throw e;
+                }
+            }
+        }
+        else if (Lifecycle.AFTER_DESTROY_EVENT.equals(event.getType())) {
+            synchronized (lock) {
+                if (!AprStatus.isAprAvailable()) {
+                    return;
+                }
+                try {
+                    terminateAPR();
+                } catch (Throwable t) {
+                    t = ExceptionUtils.unwrapInvocationTargetException(t);
+                    ExceptionUtils.handleThrowable(t);
+                    log.info(sm.getString("aprListener.aprDestroy"));
+                }
+            }
+        }
+
     }
 
     public String getSSLEngine() {
@@ -410,20 +423,6 @@ public class AprLifecycleListener implements LifecycleListener {
 
     public boolean isFIPSModeActive() {
         return fipsModeActive;
-    }
-
-    public void setUseOpenSSL(boolean useOpenSSL) {
-        if (useOpenSSL != AprStatus.getUseOpenSSL()) {
-            AprStatus.setUseOpenSSL(useOpenSSL);
-        }
-    }
-
-    public static boolean getUseOpenSSL() {
-        return AprStatus.getUseOpenSSL();
-    }
-
-    public static boolean isInstanceCreated() {
-        return AprStatus.isInstanceCreated();
     }
 
 }

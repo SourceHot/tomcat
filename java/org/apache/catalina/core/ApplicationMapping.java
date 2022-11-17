@@ -18,7 +18,6 @@ package org.apache.catalina.core;
 
 import jakarta.servlet.http.HttpServletMapping;
 import jakarta.servlet.http.MappingMatch;
-
 import org.apache.catalina.mapper.MappingData;
 
 public class ApplicationMapping {
@@ -36,12 +35,14 @@ public class ApplicationMapping {
             String servletName;
             if (mappingData.wrapper == null) {
                 servletName = "";
-            } else {
+            }
+            else {
                 servletName = mappingData.wrapper.getName();
             }
             if (mappingData.matchType == null) {
                 mapping = new MappingImpl("", "", null, servletName);
-            } else {
+            }
+            else {
                 switch (mappingData.matchType) {
                     case CONTEXT_ROOT:
                         mapping = new MappingImpl("", "", mappingData.matchType, servletName);
@@ -63,10 +64,11 @@ public class ApplicationMapping {
                         String matchValue;
                         if (mappingData.pathInfo.isNull()) {
                             matchValue = null;
-                        } else {
+                        }
+                        else {
                             matchValue = mappingData.pathInfo.toString().substring(1);
                         }
-                        mapping = new MappingImpl(matchValue, mappingData.wrapperPath.toString() + "/*",
+                        mapping = new MappingImpl(matchValue, mappingData.wrapperPath + "/*",
                                 mappingData.matchType, servletName);
                         break;
                 }
@@ -88,7 +90,7 @@ public class ApplicationMapping {
         private final String servletName;
 
         public MappingImpl(String matchValue, String pattern, MappingMatch mappingType,
-                String servletName) {
+                           String servletName) {
             this.matchValue = matchValue;
             this.pattern = pattern;
             this.mappingType = mappingType;

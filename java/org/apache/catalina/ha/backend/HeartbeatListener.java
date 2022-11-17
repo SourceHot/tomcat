@@ -38,6 +38,22 @@ public class HeartbeatListener implements LifecycleListener {
     /* To allow to select the connector */
     protected int port = 8009;
     protected String host = null;
+    /* for multicasting stuff */
+    protected String ip = "224.0.1.105"; /* Multicast IP */
+    protected int multiport = 23364;     /* Multicast Port */
+    protected int ttl = 16;
+    /**
+     * Proxy list, format "address:port,address:port".
+     */
+    protected String proxyList = null;
+    /**
+     * URL prefix.
+     */
+    protected String proxyURL = "/HeartbeatListener";
+    private CollectedInfo coll = null;
+    private Sender sender = null;
+
+    /* corresponding setters and getters */
 
     /**
      * @return the host corresponding to the connector
@@ -72,58 +88,60 @@ public class HeartbeatListener implements LifecycleListener {
         this.port = port;
     }
 
-    /* for multicasting stuff */
-    protected String ip = "224.0.1.105"; /* Multicast IP */
-    protected int multiport = 23364;     /* Multicast Port */
-    protected int ttl = 16;
-
-    /* corresponding setters and getters */
-
     /**
      * @return the Multicast IP we are using for Multicast
      */
-    public String getGroup() { return ip; }
+    public String getGroup() {
+        return ip;
+    }
 
     /**
      * Set the Multicast IP to use for Multicast
      *
      * @param group the multi address to use.
      */
-    public void setGroup(String group) { this.ip = group; }
+    public void setGroup(String group) {
+        this.ip = group;
+    }
 
     /**
      * @return the Multicast Port we are using for Multicast.
      */
-    public int getMultiport() { return multiport; }
+    public int getMultiport() {
+        return multiport;
+    }
 
     /**
      * Set the Port to use for Multicast
      *
      * @param port the port to use.
      */
-    public void setMultiport(int port) { this.multiport=port; }
+    public void setMultiport(int port) {
+        this.multiport = port;
+    }
 
     /**
      * @return the TTL for Multicast packets.
      */
-    public int getTtl() { return ttl; }
+    public int getTtl() {
+        return ttl;
+    }
 
     /**
      * Set the TTL for Multicast packets.
      *
      * @param ttl value for TTL.
      */
-    public void setTtl(int ttl) { this.ttl=ttl; }
-
-    /**
-     * Proxy list, format "address:port,address:port".
-     */
-    protected String proxyList = null;
+    public void setTtl(int ttl) {
+        this.ttl = ttl;
+    }
 
     /**
      * @return the list of proxies that send us requests.
      */
-    public String getProxyList() { return proxyList; }
+    public String getProxyList() {
+        return proxyList;
+    }
 
     /**
      * Set the list of Proxies that send is requests, when not empty it toggles
@@ -131,17 +149,16 @@ public class HeartbeatListener implements LifecycleListener {
      *
      * @param proxyList the list of proxy, format "address:port,address:port".
      */
-    public void setProxyList(String proxyList) { this.proxyList = proxyList; }
-
-    /**
-     * URL prefix.
-     */
-    protected String proxyURL = "/HeartbeatListener";
+    public void setProxyList(String proxyList) {
+        this.proxyList = proxyList;
+    }
 
     /**
      * @return the URL specified in &lt;Location/&gt; for the SetHandler heartbeat.
      */
-    public String getProxyURL() { return proxyURL; }
+    public String getProxyURL() {
+        return proxyURL;
+    }
 
     /**
      * Set the URL of receiver in httpd. That is the location used in
@@ -154,11 +171,9 @@ public class HeartbeatListener implements LifecycleListener {
      *
      * @param proxyURL a String with the URL starting with /
      */
-    public void setProxyURLString(String proxyURL) { this.proxyURL = proxyURL; }
-
-    private CollectedInfo coll = null;
-
-    private Sender sender = null;
+    public void setProxyURLString(String proxyURL) {
+        this.proxyURL = proxyURL;
+    }
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
@@ -167,7 +182,8 @@ public class HeartbeatListener implements LifecycleListener {
             if (sender == null) {
                 if (proxyList == null) {
                     sender = new MultiCastSender();
-                } else {
+                }
+                else {
                     sender = new TcpSender();
                 }
             }

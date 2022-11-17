@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.util.descriptor.tld;
 
+import org.apache.tomcat.Jar;
+import org.apache.tomcat.util.scan.JarFactory;
+import org.apache.tomcat.util.scan.ReferenceCountedJar;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Objects;
-
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.util.scan.JarFactory;
-import org.apache.tomcat.util.scan.ReferenceCountedJar;
 
 /**
  * A TLD Resource Path as defined in JSP 7.3.2.
@@ -82,7 +82,7 @@ public class TldResourcePath {
      * returned by {@link #getUrl()} was obtained from.
      *
      * @return the web application path or @null if the the resource is not
-     *         located within a web application
+     * located within a web application
      */
     public String getWebappPath() {
         return webappPath;
@@ -108,7 +108,8 @@ public class TldResourcePath {
     public String toExternalForm() {
         if (entryName == null) {
             return url.toExternalForm();
-        } else {
+        }
+        else {
             return "jar:" + url.toExternalForm() + "!/" + entryName;
         }
     }
@@ -122,7 +123,8 @@ public class TldResourcePath {
     public InputStream openStream() throws IOException {
         if (entryName == null) {
             return url.openStream();
-        } else {
+        }
+        else {
             URL entryUrl = JarFactory.getJarEntryURL(url, entryName);
             return entryUrl.openStream();
         }
@@ -131,7 +133,8 @@ public class TldResourcePath {
     public Jar openJar() throws IOException {
         if (entryName == null) {
             return null;
-        } else {
+        }
+        else {
             // Bug 62976
             // Jar files containing tags are typically opened during initial
             // compilation and then closed when compilation is complete. The

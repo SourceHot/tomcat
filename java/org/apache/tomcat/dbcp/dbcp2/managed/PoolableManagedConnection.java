@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.managed;
 
+import org.apache.tomcat.dbcp.dbcp2.PoolableConnection;
+import org.apache.tomcat.dbcp.pool2.ObjectPool;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
-
-import org.apache.tomcat.dbcp.dbcp2.PoolableConnection;
-import org.apache.tomcat.dbcp.pool2.ObjectPool;
 
 /**
  * PoolableConnection that unregisters from TransactionRegistry on Connection real destroy.
@@ -35,36 +35,28 @@ public class PoolableManagedConnection extends PoolableConnection {
     /**
      * Create a PoolableManagedConnection.
      *
-     * @param transactionRegistry
-     *            transaction registry
-     * @param conn
-     *            underlying connection
-     * @param pool
-     *            connection pool
+     * @param transactionRegistry transaction registry
+     * @param conn                underlying connection
+     * @param pool                connection pool
      */
     public PoolableManagedConnection(final TransactionRegistry transactionRegistry, final Connection conn,
-            final ObjectPool<PoolableConnection> pool) {
+                                     final ObjectPool<PoolableConnection> pool) {
         this(transactionRegistry, conn, pool, null, true);
     }
 
     /**
      * Create a PoolableManagedConnection.
      *
-     * @param transactionRegistry
-     *            transaction registry
-     * @param conn
-     *            underlying connection
-     * @param pool
-     *            connection pool
-     * @param disconnectSqlCodes
-     *            SQL_STATE codes considered fatal disconnection errors
-     * @param fastFailValidation
-     *            true means fatal disconnection errors cause subsequent validations to fail immediately (no attempt to
-     *            run query or isValid)
+     * @param transactionRegistry transaction registry
+     * @param conn                underlying connection
+     * @param pool                connection pool
+     * @param disconnectSqlCodes  SQL_STATE codes considered fatal disconnection errors
+     * @param fastFailValidation  true means fatal disconnection errors cause subsequent validations to fail immediately (no attempt to
+     *                            run query or isValid)
      */
     public PoolableManagedConnection(final TransactionRegistry transactionRegistry, final Connection conn,
-            final ObjectPool<PoolableConnection> pool, final Collection<String> disconnectSqlCodes,
-            final boolean fastFailValidation) {
+                                     final ObjectPool<PoolableConnection> pool, final Collection<String> disconnectSqlCodes,
+                                     final boolean fastFailValidation) {
         super(conn, pool, null, disconnectSqlCodes, fastFailValidation);
         this.transactionRegistry = transactionRegistry;
     }

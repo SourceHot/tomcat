@@ -16,11 +16,8 @@
  */
 package org.apache.coyote.http11.upgrade;
 
-import java.io.IOException;
-
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
-
 import org.apache.coyote.Request;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -28,6 +25,8 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.net.DispatchType;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
 
 public class UpgradeServletInputStream extends ServletInputStream {
 
@@ -47,7 +46,7 @@ public class UpgradeServletInputStream extends ServletInputStream {
 
 
     public UpgradeServletInputStream(UpgradeProcessorBase processor, SocketWrapperBase<?> socketWrapper,
-            UpgradeInfo upgradeInfo) {
+                                     UpgradeInfo upgradeInfo) {
         this.processor = processor;
         this.socketWrapper = socketWrapper;
         this.upgradeInfo = upgradeInfo;
@@ -109,7 +108,8 @@ public class UpgradeServletInputStream extends ServletInputStream {
         Request request = processor.getRequest();
         if (request != null && request.isRequestThread()) {
             processor.addDispatch(DispatchType.NON_BLOCKING_READ);
-        } else {
+        }
+        else {
             socketWrapper.registerReadInterest();
         }
 
@@ -146,7 +146,8 @@ public class UpgradeServletInputStream extends ServletInputStream {
         if (count > 0) {
             upgradeInfo.addBytesReceived(count);
             return count;
-        } else {
+        }
+        else {
             return -1;
         }
     }
@@ -160,7 +161,8 @@ public class UpgradeServletInputStream extends ServletInputStream {
             int result = socketWrapper.read(listener == null, b, off, len);
             if (result == -1) {
                 eof = true;
-            } else {
+            }
+            else {
                 upgradeInfo.addBytesReceived(result);
             }
             return result;
@@ -169,7 +171,6 @@ public class UpgradeServletInputStream extends ServletInputStream {
             throw ioe;
         }
     }
-
 
 
     @Override
@@ -204,10 +205,12 @@ public class UpgradeServletInputStream extends ServletInputStream {
         }
         if (result == 0) {
             return -1;
-        } else if (result == -1) {
+        }
+        else if (result == -1) {
             eof = true;
             return -1;
-        } else {
+        }
+        else {
             upgradeInfo.addBytesReceived(1);
             return b[0] & 0xFF;
         }

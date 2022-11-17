@@ -16,21 +16,20 @@
  */
 package org.apache.naming.factory;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Properties;
+import jakarta.mail.Authenticator;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
 
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-
-import jakarta.mail.Authenticator;
-import jakarta.mail.PasswordAuthentication;
-import jakarta.mail.Session;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Properties;
 
 /**
  * <p>Factory class that creates a JNDI named JavaMail Session factory,
@@ -77,19 +76,18 @@ public class MailSessionFactory implements ObjectFactory {
      * Create and return an object instance based on the specified
      * characteristics.
      *
-     * @param refObj Reference information containing our parameters, or null
-     *  if there are no parameters
-     * @param name The name of this object, relative to context, or null
-     *  if there is no name
+     * @param refObj  Reference information containing our parameters, or null
+     *                if there are no parameters
+     * @param name    The name of this object, relative to context, or null
+     *                if there is no name
      * @param context The context to which name is relative, or null if name
-     *  is relative to the default initial context
-     * @param env Environment variables, or null if there are none
-     *
-     * @exception Exception if an error occurs during object creation
+     *                is relative to the default initial context
+     * @param env     Environment variables, or null if there are none
+     * @throws Exception if an error occurs during object creation
      */
     @Override
     public Object getObjectInstance(Object refObj, Name name, Context context,
-            Hashtable<?,?> env) throws Exception {
+                                    Hashtable<?, ?> env) throws Exception {
 
         // Return null if we cannot create an object of the requested type
         final Reference ref = (Reference) refObj;
@@ -129,18 +127,18 @@ public class MailSessionFactory implements ObjectFactory {
             Authenticator auth = null;
             if (password != null) {
                 String user = props.getProperty("mail.smtp.user");
-                if(user == null) {
+                if (user == null) {
                     user = props.getProperty("mail.user");
                 }
 
-                if(user != null) {
+                if (user != null) {
                     final PasswordAuthentication pa = new PasswordAuthentication(user, password);
                     auth = new Authenticator() {
-                            @Override
-                            protected PasswordAuthentication getPasswordAuthentication() {
-                                return pa;
-                            }
-                        };
+                        @Override
+                        protected PasswordAuthentication getPasswordAuthentication() {
+                            return pa;
+                        }
+                    };
                 }
             }
 

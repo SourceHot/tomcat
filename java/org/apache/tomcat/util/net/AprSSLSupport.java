@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.util.net;
 
+import org.apache.tomcat.jni.SSL;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-
-import org.apache.tomcat.jni.SSL;
 
 /**
  * Implementation of SSLSupport for APR.
@@ -29,8 +29,8 @@ import org.apache.tomcat.jni.SSL;
  * TODO: Add a mechanism (or figure out how to use what we already have) to
  *       invalidate the session.
  *
- * @deprecated  The APR/Native Connector will be removed in Tomcat 10.1.x
- *              onwards.
+ * @deprecated The APR/Native Connector will be removed in Tomcat 10.1.x
+ * onwards.
  */
 @Deprecated
 public class AprSSLSupport implements SSLSupport {
@@ -73,13 +73,14 @@ public class AprSSLSupport implements SSLSupport {
                 CertificateFactory cf;
                 if (clientCertProvider == null) {
                     cf = CertificateFactory.getInstance("X.509");
-                } else {
+                }
+                else {
                     cf = CertificateFactory.getInstance("X.509", clientCertProvider);
                 }
                 certs[0] = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(clientCert));
                 for (int i = 0; i < certLength; i++) {
                     byte[] data = socketWrapper.getSSLInfoB(SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
-                    certs[i+1] = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data));
+                    certs[i + 1] = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data));
                 }
             }
             return certs;
@@ -116,7 +117,7 @@ public class AprSSLSupport implements SSLSupport {
         } catch (Exception e) {
             throw new IOException(e);
         }
-   }
+    }
 
 
     @Override

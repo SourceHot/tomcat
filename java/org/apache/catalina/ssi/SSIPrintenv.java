@@ -32,13 +32,14 @@ public class SSIPrintenv implements SSICommand {
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer) {
+                        String[] paramNames, String[] paramValues, PrintWriter writer) {
         long lastModified = 0;
         //any arguments should produce an error
         if (paramNames.length > 0) {
             String errorMessage = ssiMediator.getConfigErrMsg();
             writer.write(errorMessage);
-        } else {
+        }
+        else {
             Collection<String> variableNames = ssiMediator.getVariableNames();
             for (String variableName : variableNames) {
                 String variableValue = ssiMediator.getVariableValue(variableName, SSIMediator.ENCODING_ENTITY);

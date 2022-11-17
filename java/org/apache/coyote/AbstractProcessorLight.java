@@ -16,16 +16,16 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler.SocketState;
 import org.apache.tomcat.util.net.DispatchType;
 import org.apache.tomcat.util.net.SocketEvent;
 import org.apache.tomcat.util.net.SocketWrapperBase;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * This is a light-weight abstract processor implementation that is intended as
@@ -34,7 +34,7 @@ import org.apache.tomcat.util.net.SocketWrapperBase;
  */
 public abstract class AbstractProcessorLight implements Processor {
 
-    private Set<DispatchType> dispatches = new CopyOnWriteArraySet<>();
+    private final Set<DispatchType> dispatches = new CopyOnWriteArraySet<>();
 
 
     @Override
@@ -53,19 +53,25 @@ public abstract class AbstractProcessorLight implements Processor {
                 if (!dispatches.hasNext()) {
                     state = checkForPipelinedData(state, socketWrapper);
                 }
-            } else if (status == SocketEvent.DISCONNECT) {
+            }
+            else if (status == SocketEvent.DISCONNECT) {
                 // Do nothing here, just wait for it to get recycled
-            } else if (isAsync() || isUpgrade() || state == SocketState.ASYNC_END) {
+            }
+            else if (isAsync() || isUpgrade() || state == SocketState.ASYNC_END) {
                 state = dispatch(status);
                 state = checkForPipelinedData(state, socketWrapper);
-            } else if (status == SocketEvent.OPEN_WRITE) {
+            }
+            else if (status == SocketEvent.OPEN_WRITE) {
                 // Extra write event likely after async, ignore
                 state = SocketState.LONG;
-            } else if (status == SocketEvent.OPEN_READ) {
+            }
+            else if (status == SocketEvent.OPEN_READ) {
                 state = service(socketWrapper);
-            } else if (status == SocketEvent.CONNECT_FAIL) {
+            }
+            else if (status == SocketEvent.CONNECT_FAIL) {
                 logAccess(socketWrapper);
-            } else {
+            }
+            else {
                 // Default to closing the socket if the SocketEvent passed in
                 // is not consistent with the current state of the Processor
                 state = SocketState.CLOSED;
@@ -106,7 +112,8 @@ public abstract class AbstractProcessorLight implements Processor {
             // buffer) deleting any pipe-lined data. To avoid this,
             // process it now.
             return service(socketWrapper);
-        } else {
+        }
+        else {
             return inState;
         }
     }
@@ -130,7 +137,8 @@ public abstract class AbstractProcessorLight implements Processor {
             result = dispatches.iterator();
             if (result.hasNext()) {
                 dispatches.clear();
-            } else {
+            }
+            else {
                 result = null;
             }
         }
@@ -149,9 +157,8 @@ public abstract class AbstractProcessorLight implements Processor {
      * Add an entry to the access log for a failed connection attempt.
      *
      * @param socketWrapper The connection to process
-     *
      * @throws IOException If an I/O error occurs during the processing of the
-     *         request
+     *                     request
      */
     protected void logAccess(SocketWrapperBase<?> socketWrapper) throws IOException {
         // NO-OP by default
@@ -167,12 +174,10 @@ public abstract class AbstractProcessorLight implements Processor {
      * calls to {@link #dispatch(SocketEvent)}. Requests may be pipe-lined.
      *
      * @param socketWrapper The connection to process
-     *
      * @return The state the caller should put the socket in when this method
-     *         returns
-     *
+     * returns
      * @throws IOException If an I/O error occurs during the processing of the
-     *         request
+     *                     request
      */
     protected abstract SocketState service(SocketWrapperBase<?> socketWrapper) throws IOException;
 
@@ -183,12 +188,10 @@ public abstract class AbstractProcessorLight implements Processor {
      * HTTP requests.
      *
      * @param status The event to process
-     *
      * @return The state the caller should put the socket in when this method
-     *         returns
-     *
+     * returns
      * @throws IOException If an I/O error occurs during the processing of the
-     *         request
+     *                     request
      */
     protected abstract SocketState dispatch(SocketEvent status) throws IOException;
 

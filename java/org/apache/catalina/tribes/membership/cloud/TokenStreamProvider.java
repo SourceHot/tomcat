@@ -16,18 +16,17 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-
 public class TokenStreamProvider extends AbstractStreamProvider {
 
-    private String token;
-    private SSLSocketFactory factory;
+    private final String token;
+    private final SSLSocketFactory factory;
 
     TokenStreamProvider(String token, String caCertFile) throws Exception {
         this.token = token;

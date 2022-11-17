@@ -16,21 +16,13 @@
  */
 package org.apache.el.stream;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
-
 import jakarta.el.ELException;
 import jakarta.el.LambdaExpression;
-
 import org.apache.el.lang.ELArithmetic;
 import org.apache.el.lang.ELSupport;
 import org.apache.el.util.MessageFactory;
+
+import java.util.*;
 
 public class Stream {
 
@@ -104,7 +96,7 @@ public class Stream {
     public Stream distinct() {
         Iterator<Object> downStream = new OpIterator() {
 
-            private Set<Object> values = new HashSet<>();
+            private final Set<Object> values = new HashSet<>();
 
             @Override
             protected void findNext() {
@@ -138,8 +130,8 @@ public class Stream {
                 }
             }
 
-            @SuppressWarnings({ "rawtypes", "unchecked" })
-            private final void sort() {
+            @SuppressWarnings({"rawtypes", "unchecked"})
+            private void sort() {
                 List list = new ArrayList<>();
                 while (iterator.hasNext()) {
                     list.add(iterator.next());
@@ -168,8 +160,8 @@ public class Stream {
                 }
             }
 
-            @SuppressWarnings({ "rawtypes", "unchecked" })
-            private final void sort(LambdaExpression le) {
+            @SuppressWarnings({"rawtypes", "unchecked"})
+            private void sort(LambdaExpression le) {
                 List list = new ArrayList<>();
                 Comparator<Object> c = new LambdaExpressionComparator(le);
                 while (iterator.hasNext()) {
@@ -273,7 +265,8 @@ public class Stream {
 
         if (seed == null) {
             return Optional.EMPTY;
-        } else {
+        }
+        else {
             return new Optional(reduce(seed, le));
         }
     }
@@ -321,7 +314,8 @@ public class Stream {
 
         if (count == 0) {
             return Optional.EMPTY;
-        } else {
+        }
+        else {
             return new Optional(ELArithmetic.divide(sum, Long.valueOf(count)));
         }
     }
@@ -343,7 +337,7 @@ public class Stream {
 
         while (iterator.hasNext()) {
             iterator.next();
-            count ++;
+            count++;
         }
 
         return Long.valueOf(count);
@@ -398,13 +392,14 @@ public class Stream {
     public Optional findFirst() {
         if (iterator.hasNext()) {
             return new Optional(iterator.next());
-        } else {
+        }
+        else {
             return Optional.EMPTY;
         }
     }
 
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Optional compare(boolean isMax) {
         Comparable result = null;
 
@@ -412,7 +407,8 @@ public class Stream {
             Object obj = iterator.next();
             if ((obj instanceof Comparable)) {
                 result = (Comparable) obj;
-            } else {
+            }
+            else {
                 throw new ELException(
                         MessageFactory.get("stream.compare.notComparable"));
             }
@@ -423,10 +419,12 @@ public class Stream {
             if ((obj instanceof Comparable)) {
                 if (isMax && ((Comparable) obj).compareTo(result) > 0) {
                     result = (Comparable) obj;
-                } else if (!isMax && ((Comparable) obj).compareTo(result) < 0) {
+                }
+                else if (!isMax && ((Comparable) obj).compareTo(result) < 0) {
                     result = (Comparable) obj;
                 }
-            } else {
+            }
+            else {
                 throw new ELException(
                         MessageFactory.get("stream.compare.notComparable"));
             }
@@ -434,7 +432,8 @@ public class Stream {
 
         if (result == null) {
             return Optional.EMPTY;
-        } else {
+        }
+        else {
             return new Optional(result);
         }
     }
@@ -453,7 +452,8 @@ public class Stream {
             if (isMax && ELSupport.coerceToNumber(null, le.invoke(obj, result),
                     Integer.class).intValue() > 0) {
                 result = obj;
-            } else if (!isMax && ELSupport.coerceToNumber(null, le.invoke(obj, result),
+            }
+            else if (!isMax && ELSupport.coerceToNumber(null, le.invoke(obj, result),
                     Integer.class).intValue() < 0) {
                 result = obj;
             }
@@ -461,7 +461,8 @@ public class Stream {
 
         if (result == null) {
             return Optional.EMPTY;
-        } else {
+        }
+        else {
             return new Optional(result);
         }
     }
@@ -507,7 +508,8 @@ public class Stream {
             if (foundNext) {
                 foundNext = false;
                 return next;
-            } else {
+            }
+            else {
                 throw new NoSuchElementException();
             }
         }

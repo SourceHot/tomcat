@@ -16,19 +16,18 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
+import org.apache.tomcat.dbcp.pool2.impl.GenericKeyedObjectPool;
+import org.apache.tomcat.dbcp.pool2.impl.GenericKeyedObjectPoolConfig;
 
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.sql.ConnectionPoolDataSource;
-
-import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
-import org.apache.tomcat.dbcp.pool2.impl.GenericKeyedObjectPool;
-import org.apache.tomcat.dbcp.pool2.impl.GenericKeyedObjectPoolConfig;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * <p>
@@ -93,6 +92,16 @@ public class SharedPoolDataSource extends InstanceKeyDataSource {
     // Instrumentation Methods
 
     /**
+     * Sets {@link GenericKeyedObjectPool#getMaxTotal()} for this pool.
+     *
+     * @param maxTotal {@link GenericKeyedObjectPool#getMaxTotal()} for this pool.
+     */
+    public void setMaxTotal(final int maxTotal) {
+        assertInitializationAllowed();
+        this.maxTotal = maxTotal;
+    }
+
+    /**
      * Gets the number of active connections in the pool.
      *
      * @return The number of active connections in the pool.
@@ -144,12 +153,9 @@ public class SharedPoolDataSource extends InstanceKeyDataSource {
     /**
      * Supports Serialization interface.
      *
-     * @param in
-     *            a <code>java.io.ObjectInputStream</code> value
-     * @throws IOException
-     *             if an error occurs
-     * @throws ClassNotFoundException
-     *             if an error occurs
+     * @param in a <code>java.io.ObjectInputStream</code> value
+     * @throws IOException            if an error occurs
+     * @throws ClassNotFoundException if an error occurs
      */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         try {
@@ -190,17 +196,6 @@ public class SharedPoolDataSource extends InstanceKeyDataSource {
         final KeyedObjectPool<UserPassKey, PooledConnectionAndInfo> tmpPool = new GenericKeyedObjectPool<>(factory, config);
         factory.setPool(tmpPool);
         pool = tmpPool;
-    }
-
-    /**
-     * Sets {@link GenericKeyedObjectPool#getMaxTotal()} for this pool.
-     *
-     * @param maxTotal
-     *            {@link GenericKeyedObjectPool#getMaxTotal()} for this pool.
-     */
-    public void setMaxTotal(final int maxTotal) {
-        assertInitializationAllowed();
-        this.maxTotal = maxTotal;
     }
 
     @Override

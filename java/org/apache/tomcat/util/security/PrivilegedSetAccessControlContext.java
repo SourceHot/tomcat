@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.util.security;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.lang.reflect.Field;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 public class PrivilegedSetAccessControlContext implements PrivilegedAction<Void> {
 
@@ -57,7 +57,7 @@ public class PrivilegedSetAccessControlContext implements PrivilegedAction<Void>
     public Void run() {
         try {
             if (field != null) {
-                field.set(t,  acc);
+                field.set(t, acc);
             }
         } catch (IllegalArgumentException | IllegalAccessException e) {
             log.warn(sm.getString("privilegedSetAccessControlContext.setFailed"), e);

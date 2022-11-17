@@ -16,13 +16,13 @@
  */
 package jakarta.websocket.server;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import jakarta.websocket.Decoder;
 import jakarta.websocket.Encoder;
 import jakarta.websocket.Extension;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides the default configuration for WebSocket server endpoints.
@@ -36,7 +36,7 @@ final class DefaultServerEndpointConfig implements ServerEndpointConfig {
     private final List<Class<? extends Encoder>> encoders;
     private final List<Class<? extends Decoder>> decoders;
     private final Configurator serverEndpointConfigurator;
-    private final Map<String,Object> userProperties = new ConcurrentHashMap<>();
+    private final Map<String, Object> userProperties = new ConcurrentHashMap<>();
 
     DefaultServerEndpointConfig(
             Class<?> endpointClass, String path,
@@ -79,17 +79,17 @@ final class DefaultServerEndpointConfig implements ServerEndpointConfig {
     }
 
     @Override
-    public final Map<String, Object> getUserProperties() {
+    public Map<String, Object> getUserProperties() {
         return userProperties;
     }
 
     @Override
-    public final List<String> getSubprotocols() {
+    public List<String> getSubprotocols() {
         return subprotocols;
     }
 
     @Override
-    public final List<Extension> getExtensions() {
+    public List<Extension> getExtensions() {
         return extensions;
     }
 }

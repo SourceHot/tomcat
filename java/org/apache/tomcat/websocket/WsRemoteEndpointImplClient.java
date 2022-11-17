@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.websocket;
 
+import jakarta.websocket.SendHandler;
+import jakarta.websocket.SendResult;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import jakarta.websocket.SendHandler;
-import jakarta.websocket.SendResult;
 
 public class WsRemoteEndpointImplClient extends WsRemoteEndpointImplBase {
 
@@ -42,7 +42,7 @@ public class WsRemoteEndpointImplClient extends WsRemoteEndpointImplBase {
 
     @Override
     protected void doWrite(SendHandler handler, long blockingWriteTimeoutExpiry,
-            ByteBuffer... data) {
+                           ByteBuffer... data) {
         long timeout;
         for (ByteBuffer byteBuffer : data) {
             if (blockingWriteTimeoutExpiry == -1) {
@@ -50,7 +50,8 @@ public class WsRemoteEndpointImplClient extends WsRemoteEndpointImplBase {
                 if (timeout < 1) {
                     timeout = Long.MAX_VALUE;
                 }
-            } else {
+            }
+            else {
                 timeout = blockingWriteTimeoutExpiry - System.currentTimeMillis();
                 if (timeout < 0) {
                     SendResult sr = new SendResult(new IOException(sm.getString("wsRemoteEndpoint.writeTimeout")));

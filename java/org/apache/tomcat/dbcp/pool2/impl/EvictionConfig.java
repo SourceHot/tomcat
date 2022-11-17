@@ -39,13 +39,13 @@ public class EvictionConfig {
      * Creates a new eviction configuration with the specified parameters.
      * Instances are immutable.
      *
-     * @param idleEvictDuration Expected to be provided by
-     *        {@link BaseGenericObjectPool#getMinEvictableIdleDuration()}
+     * @param idleEvictDuration     Expected to be provided by
+     *                              {@link BaseGenericObjectPool#getMinEvictableIdleDuration()}
      * @param idleSoftEvictDuration Expected to be provided by
-     *        {@link BaseGenericObjectPool#getSoftMinEvictableIdleDuration()}
-     * @param minIdle Expected to be provided by
-     *        {@link GenericObjectPool#getMinIdle()} or
-     *        {@link GenericKeyedObjectPool#getMinIdlePerKey()}
+     *                              {@link BaseGenericObjectPool#getSoftMinEvictableIdleDuration()}
+     * @param minIdle               Expected to be provided by
+     *                              {@link GenericObjectPool#getMinIdle()} or
+     *                              {@link GenericKeyedObjectPool#getMinIdlePerKey()}
      * @since 2.10.0
      */
     public EvictionConfig(final Duration idleEvictDuration, final Duration idleSoftEvictDuration, final int minIdle) {
@@ -58,13 +58,13 @@ public class EvictionConfig {
      * Creates a new eviction configuration with the specified parameters.
      * Instances are immutable.
      *
-     * @param poolIdleEvictMillis Expected to be provided by
-     *        {@link BaseGenericObjectPool#getMinEvictableIdleDuration()}
+     * @param poolIdleEvictMillis     Expected to be provided by
+     *                                {@link BaseGenericObjectPool#getMinEvictableIdleDuration()}
      * @param poolIdleSoftEvictMillis Expected to be provided by
-     *        {@link BaseGenericObjectPool#getSoftMinEvictableIdleDuration()}
-     * @param minIdle Expected to be provided by
-     *        {@link GenericObjectPool#getMinIdle()} or
-     *        {@link GenericKeyedObjectPool#getMinIdlePerKey()}
+     *                                {@link BaseGenericObjectPool#getSoftMinEvictableIdleDuration()}
+     * @param minIdle                 Expected to be provided by
+     *                                {@link GenericObjectPool#getMinIdle()} or
+     *                                {@link GenericKeyedObjectPool#getMinIdlePerKey()}
      * @deprecated Use {@link #EvictionConfig(Duration, Duration, int)}.
      */
     @Deprecated
@@ -185,14 +185,13 @@ public class EvictionConfig {
      */
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("EvictionConfig [idleEvictDuration=");
-        builder.append(idleEvictDuration);
-        builder.append(", idleSoftEvictDuration=");
-        builder.append(idleSoftEvictDuration);
-        builder.append(", minIdle=");
-        builder.append(minIdle);
-        builder.append("]");
-        return builder.toString();
+        String builder = "EvictionConfig [idleEvictDuration=" +
+                idleEvictDuration +
+                ", idleSoftEvictDuration=" +
+                idleSoftEvictDuration +
+                ", minIdle=" +
+                minIdle +
+                "]";
+        return builder;
     }
 }

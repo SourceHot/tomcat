@@ -16,28 +16,22 @@
  */
 package org.apache.catalina.startup;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
 import jakarta.annotation.Resource;
 import jakarta.annotation.Resources;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RunAs;
 import jakarta.servlet.ServletSecurityElement;
 import jakarta.servlet.annotation.ServletSecurity;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.ApplicationServletRegistration;
 import org.apache.catalina.util.Introspection;
-import org.apache.tomcat.util.descriptor.web.ContextEnvironment;
-import org.apache.tomcat.util.descriptor.web.ContextResource;
-import org.apache.tomcat.util.descriptor.web.ContextResourceEnvRef;
-import org.apache.tomcat.util.descriptor.web.ContextService;
-import org.apache.tomcat.util.descriptor.web.FilterDef;
-import org.apache.tomcat.util.descriptor.web.MessageDestinationRef;
+import org.apache.tomcat.util.descriptor.web.*;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * <strong>AnnotationSet</strong> for processing the annotations of the web
@@ -46,14 +40,12 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class WebAnnotationSet {
 
-    private static final String SEPARATOR = "/";
-    private static final String MAPPED_NAME_PROPERTY = "mappedName";
-
-
     /**
      * The string resources for this package.
      */
     protected static final StringManager sm = StringManager.getManager(Constants.Package);
+    private static final String SEPARATOR = "/";
+    private static final String MAPPED_NAME_PROPERTY = "mappedName";
 
 
     // ---------------------------------------------------------- Public Methods
@@ -162,10 +154,10 @@ public class WebAnnotationSet {
      * Process the annotations on a context for a given className.
      *
      * @param context The context which will have its annotations processed
-     * @param clazz The class to examine for Servlet annotations
+     * @param clazz   The class to examine for Servlet annotations
      */
     protected static void loadClassAnnotation(Context context,
-            Class<?> clazz) {
+                                              Class<?> clazz) {
         /* Process Resource annotation.
          * Ref JSR 250
          */
@@ -308,7 +300,8 @@ public class WebAnnotationSet {
      * Ref JSR 250, equivalent to the resource-ref,
      * message-destination-ref, env-ref, resource-env-ref
      * or service-ref element in the deployment descriptor.
-     * @param context The context which will have its annotations processed
+     *
+     * @param context    The context which will have its annotations processed
      * @param annotation The annotation that was found
      */
     protected static void addResource(Context context, Resource annotation) {
@@ -317,7 +310,7 @@ public class WebAnnotationSet {
 
 
     protected static void addResource(Context context, Resource annotation, String defaultName,
-            Class<?> defaultType) {
+                                      Class<?> defaultType) {
         String name = getName(annotation, defaultName);
         String type = getType(annotation, defaultType);
 
@@ -342,7 +335,8 @@ public class WebAnnotationSet {
 
             context.getNamingResources().addEnvironment(resource);
 
-        } else if (type.equals("javax.xml.rpc.Service")) {
+        }
+        else if (type.equals("javax.xml.rpc.Service")) {
 
             // service-ref element
             ContextService service = new ContextService();
@@ -355,7 +349,8 @@ public class WebAnnotationSet {
 
             context.getNamingResources().addService(service);
 
-        } else if (type.equals("javax.sql.DataSource") ||
+        }
+        else if (type.equals("javax.sql.DataSource") ||
                 type.equals("javax.jms.ConnectionFactory") ||
                 type.equals("javax.jms.QueueConnectionFactory") ||
                 type.equals("javax.jms.TopicConnectionFactory") ||
@@ -373,7 +368,8 @@ public class WebAnnotationSet {
 
             if (annotation.authenticationType() == Resource.AuthenticationType.CONTAINER) {
                 resource.setAuth("Container");
-            } else if (annotation.authenticationType() == Resource.AuthenticationType.APPLICATION) {
+            }
+            else if (annotation.authenticationType() == Resource.AuthenticationType.APPLICATION) {
                 resource.setAuth("Application");
             }
 
@@ -384,7 +380,8 @@ public class WebAnnotationSet {
 
             context.getNamingResources().addResource(resource);
 
-        } else if (type.equals("javax.jms.Queue") ||
+        }
+        else if (type.equals("javax.jms.Queue") ||
                 type.equals("javax.jms.Topic")) {
 
             // message-destination-ref
@@ -398,7 +395,8 @@ public class WebAnnotationSet {
 
             context.getNamingResources().addMessageDestinationRef(resource);
 
-        } else {
+        }
+        else {
             /*
              * General case. Also used for:
              * - javax.resource.cci.InteractionSpec

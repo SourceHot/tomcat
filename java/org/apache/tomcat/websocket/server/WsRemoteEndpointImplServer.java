@@ -16,17 +16,8 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.channels.CompletionHandler;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-
 import jakarta.websocket.SendHandler;
 import jakarta.websocket.SendResult;
-
 import org.apache.coyote.http11.upgrade.UpgradeInfo;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -35,6 +26,14 @@ import org.apache.tomcat.util.net.SocketWrapperBase.BlockingMode;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.Transformation;
 import org.apache.tomcat.websocket.WsRemoteEndpointImplBase;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.channels.CompletionHandler;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is the server side {@link jakarta.websocket.RemoteEndpoint} implementation
@@ -55,7 +54,7 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
     private volatile long timeoutExpiry = -1;
 
     public WsRemoteEndpointImplServer(SocketWrapperBase<?> socketWrapper, UpgradeInfo upgradeInfo,
-            WsServerContainer serverContainer) {
+                                      WsServerContainer serverContainer) {
         this.socketWrapper = socketWrapper;
         this.upgradeInfo = upgradeInfo;
         this.wsWriteTimeout = serverContainer.getTimeout();
@@ -70,7 +69,7 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
 
     @Override
     protected void doWrite(SendHandler handler, long blockingWriteTimeoutExpiry,
-            ByteBuffer... buffers) {
+                           ByteBuffer... buffers) {
         if (socketWrapper.hasAsyncIO()) {
             final boolean block = (blockingWriteTimeoutExpiry != -1);
             long timeout = -1;
@@ -81,7 +80,8 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
                     handler.onResult(sr);
                     return;
                 }
-            } else {
+            }
+            else {
                 this.handler = handler;
                 timeout = getSendTimeout();
                 if (timeout > 0) {
@@ -99,34 +99,40 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
                                 long timeout = blockingWriteTimeoutExpiry - System.currentTimeMillis();
                                 if (timeout <= 0) {
                                     failed(new SocketTimeoutException(), null);
-                                } else {
+                                }
+                                else {
                                     handler.onResult(SENDRESULT_OK);
                                 }
-                            } else {
+                            }
+                            else {
                                 wsWriteTimeout.unregister(WsRemoteEndpointImplServer.this);
                                 clearHandler(null, true);
                             }
                         }
+
                         @Override
                         public void failed(Throwable exc, Void attachment) {
                             if (block) {
                                 SendResult sr = new SendResult(exc);
                                 handler.onResult(sr);
-                            } else {
+                            }
+                            else {
                                 wsWriteTimeout.unregister(WsRemoteEndpointImplServer.this);
                                 clearHandler(exc, true);
                                 close();
                             }
                         }
                     }, buffers);
-        } else {
+        }
+        else {
             if (blockingWriteTimeoutExpiry == -1) {
                 this.handler = handler;
                 this.buffers = buffers;
                 // This is definitely the same thread that triggered the write so a
                 // dispatch will be required.
                 onWritePossible(true);
-            } else {
+            }
+            else {
                 // Blocking
                 try {
                     for (ByteBuffer buffer : buffers) {
@@ -261,13 +267,12 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
 
 
     /**
-     *
-     * @param t             The throwable associated with any error that
-     *                      occurred
-     * @param useDispatch   Should {@link SendHandler#onResult(SendResult)} be
-     *                      called from a new thread, keeping in mind the
-     *                      requirements of
-     *                      {@link jakarta.websocket.RemoteEndpoint.Async}
+     * @param t           The throwable associated with any error that
+     *                    occurred
+     * @param useDispatch Should {@link SendHandler#onResult(SendResult)} be
+     *                    called from a new thread, keeping in mind the
+     *                    requirements of
+     *                    {@link jakarta.websocket.RemoteEndpoint.Async}
      */
     private void clearHandler(Throwable t, boolean useDispatch) {
         // Setting the result marks this (partial) message as
@@ -293,10 +298,12 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
                     // the separate thread requirement in the specification.
                     r.run();
                 }
-            } else {
+            }
+            else {
                 if (t == null) {
                     sh.onResult(new SendResult());
-                } else {
+                }
+                else {
                     sh.onResult(new SendResult(t));
                 }
             }
@@ -318,7 +325,8 @@ public class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBase {
         public void run() {
             if (t == null) {
                 sh.onResult(new SendResult());
-            } else {
+            }
+            else {
                 sh.onResult(new SendResult(t));
             }
         }

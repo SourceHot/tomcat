@@ -42,7 +42,7 @@ public interface Pipeline extends Contained {
      * @return the Valve instance that has been distinguished as the basic
      * Valve for this Pipeline (if any).
      */
-    public Valve getBasic();
+    Valve getBasic();
 
 
     /**
@@ -57,7 +57,7 @@ public interface Pipeline extends Contained {
      *
      * @param valve Valve to be distinguished as the basic Valve
      */
-    public void setBasic(Valve valve);
+    void setBasic(Valve valve);
 
 
     /**
@@ -75,15 +75,14 @@ public interface Pipeline extends Contained {
      * call is successful.</p>
      *
      * @param valve Valve to be added
-     *
-     * @exception IllegalArgumentException if this Container refused to
-     *  accept the specified Valve
-     * @exception IllegalArgumentException if the specified Valve refuses to be
-     *  associated with this Container
-     * @exception IllegalStateException if the specified Valve is already
-     *  associated with a different Container
+     * @throws IllegalArgumentException if this Container refused to
+     *                                  accept the specified Valve
+     * @throws IllegalArgumentException if the specified Valve refuses to be
+     *                                  associated with this Container
+     * @throws IllegalStateException    if the specified Valve is already
+     *                                  associated with a different Container
      */
-    public void addValve(Valve valve);
+    void addValve(Valve valve);
 
 
     /**
@@ -91,7 +90,7 @@ public interface Pipeline extends Contained {
      * Container, including the basic Valve (if any).  If there are no
      * such Valves, a zero-length array is returned.
      */
-    public Valve[] getValves();
+    Valve[] getValves();
 
 
     /**
@@ -106,21 +105,22 @@ public interface Pipeline extends Contained {
      *
      * @param valve Valve to be removed
      */
-    public void removeValve(Valve valve);
+    void removeValve(Valve valve);
 
 
     /**
      * @return the Valve instance that has been distinguished as the basic
      * Valve for this Pipeline (if any).
      */
-    public Valve getFirst();
+    Valve getFirst();
 
 
     /**
      * Returns true if all the valves in this pipeline support async, false otherwise
+     *
      * @return true if all the valves in this pipeline support async, false otherwise
      */
-    public boolean isAsyncSupported();
+    boolean isAsyncSupported();
 
 
     /**
@@ -131,5 +131,5 @@ public interface Pipeline extends Contained {
      *               Valve in this Pipeline that does not support async will be
      *               added
      */
-    public void findNonAsyncValves(Set<String> result);
+    void findNonAsyncValves(Set<String> result);
 }

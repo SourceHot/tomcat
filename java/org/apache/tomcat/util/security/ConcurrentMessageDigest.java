@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.util.security;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * A thread safe wrapper around {@link MessageDigest} that does not make use
@@ -37,13 +37,8 @@ public class ConcurrentMessageDigest {
     private static final String MD5 = "MD5";
     private static final String SHA1 = "SHA-1";
 
-    private static final Map<String,Queue<MessageDigest>> queues =
+    private static final Map<String, Queue<MessageDigest>> queues =
             new HashMap<>();
-
-
-    private ConcurrentMessageDigest() {
-        // Hide default constructor for this utility class
-    }
 
     static {
         try {
@@ -53,6 +48,10 @@ public class ConcurrentMessageDigest {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(sm.getString("concurrentMessageDigest.noDigest"), e);
         }
+    }
+
+    private ConcurrentMessageDigest() {
+        // Hide default constructor for this utility class
     }
 
     public static byte[] digestMD5(byte[]... input) {
@@ -112,7 +111,6 @@ public class ConcurrentMessageDigest {
      * before using {@link #digest(String, byte[][])}.
      *
      * @param algorithm The message digest algorithm to be supported
-     *
      * @throws NoSuchAlgorithmException If the algorithm is not supported by the
      *                                  JVM
      */

@@ -16,28 +16,21 @@
  */
 package org.apache.catalina.tribes.util;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class ExecutorFactory {
     protected static final StringManager sm = StringManager.getManager(ExecutorFactory.class);
 
     public static ExecutorService newThreadPool(int minThreads, int maxThreads, long maxIdleTime, TimeUnit unit) {
         TaskQueue taskqueue = new TaskQueue();
-        ThreadPoolExecutor service = new TribesThreadPoolExecutor(minThreads, maxThreads, maxIdleTime, unit,taskqueue);
+        ThreadPoolExecutor service = new TribesThreadPoolExecutor(minThreads, maxThreads, maxIdleTime, unit, taskqueue);
         taskqueue.setParent(service);
         return service;
     }
 
     public static ExecutorService newThreadPool(int minThreads, int maxThreads, long maxIdleTime, TimeUnit unit, ThreadFactory threadFactory) {
         TaskQueue taskqueue = new TaskQueue();
-        ThreadPoolExecutor service = new TribesThreadPoolExecutor(minThreads, maxThreads, maxIdleTime, unit,taskqueue, threadFactory);
+        ThreadPoolExecutor service = new TribesThreadPoolExecutor(minThreads, maxThreads, maxIdleTime, unit, taskqueue, threadFactory);
         taskqueue.setParent(service);
         return service;
     }
@@ -50,7 +43,7 @@ public class ExecutorFactory {
         }
 
         public TribesThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
-                RejectedExecutionHandler handler) {
+                                        RejectedExecutionHandler handler) {
             super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
             prestartAllCoreThreads();
         }
@@ -71,7 +64,7 @@ public class ExecutorFactory {
                 super.execute(command);
             } catch (RejectedExecutionException rx) {
                 if (super.getQueue() instanceof TaskQueue) {
-                    TaskQueue queue = (TaskQueue)super.getQueue();
+                    TaskQueue queue = (TaskQueue) super.getQueue();
                     if (!queue.force(command)) {
                         throw new RejectedExecutionException(sm.getString("executorFactory.queue.full"));
                     }
@@ -80,7 +73,7 @@ public class ExecutorFactory {
         }
     }
 
-     // ---------------------------------------------- TaskQueue Inner Class
+    // ---------------------------------------------- TaskQueue Inner Class
     private static class TaskQueue extends LinkedBlockingQueue<Runnable> {
         private static final long serialVersionUID = 1L;
 
@@ -105,7 +98,7 @@ public class ExecutorFactory {
         @Override
         public boolean offer(Runnable o) {
             //we can't do any checks
-            if (parent==null) {
+            if (parent == null) {
                 return super.offer(o);
             }
             //we are maxed out on threads, simply queue the object
@@ -114,11 +107,11 @@ public class ExecutorFactory {
             }
             //we have idle threads, just add it to the queue
             //this is an approximation, so it could use some tuning
-            if (parent.getActiveCount()<(parent.getPoolSize())) {
+            if (parent.getActiveCount() < (parent.getPoolSize())) {
                 return super.offer(o);
             }
             //if we have less threads than maximum force creation of a new thread
-            if (parent.getPoolSize()<parent.getMaximumPoolSize()) {
+            if (parent.getPoolSize() < parent.getMaximumPoolSize()) {
                 return false;
             }
             //if we reached here, we need to add it to the queue

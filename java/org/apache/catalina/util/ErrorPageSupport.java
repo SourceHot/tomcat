@@ -16,12 +16,12 @@
  */
 package org.apache.catalina.util;
 
+import org.apache.tomcat.util.descriptor.web.ErrorPage;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.tomcat.util.descriptor.web.ErrorPage;
 
 /**
  * Provides support for tracking per exception type and per HTTP status code
@@ -31,17 +31,18 @@ import org.apache.tomcat.util.descriptor.web.ErrorPage;
 public class ErrorPageSupport {
 
     // Fully qualified class name to error page
-    private Map<String, ErrorPage> exceptionPages = new ConcurrentHashMap<>();
+    private final Map<String, ErrorPage> exceptionPages = new ConcurrentHashMap<>();
 
     // HTTP status code to error page
-    private Map<Integer, ErrorPage> statusPages = new ConcurrentHashMap<>();
+    private final Map<Integer, ErrorPage> statusPages = new ConcurrentHashMap<>();
 
 
     public void add(ErrorPage errorPage) {
         String exceptionType = errorPage.getExceptionType();
         if (exceptionType == null) {
             statusPages.put(Integer.valueOf(errorPage.getErrorCode()), errorPage);
-        } else {
+        }
+        else {
             exceptionPages.put(exceptionType, errorPage);
         }
     }
@@ -51,7 +52,8 @@ public class ErrorPageSupport {
         String exceptionType = errorPage.getExceptionType();
         if (exceptionType == null) {
             statusPages.remove(Integer.valueOf(errorPage.getErrorCode()), errorPage);
-        } else {
+        }
+        else {
             exceptionPages.remove(exceptionType, errorPage);
         }
     }
@@ -66,9 +68,8 @@ public class ErrorPageSupport {
      * Find the ErrorPage, if any, for the named exception type.
      *
      * @param exceptionType The fully qualified class name of the exception type
-     *
      * @return The ErrorPage for the named exception type, or {@code null} if
-     *         none is configured
+     * none is configured
      */
     public ErrorPage find(String exceptionType) {
         return exceptionPages.get(exceptionType);

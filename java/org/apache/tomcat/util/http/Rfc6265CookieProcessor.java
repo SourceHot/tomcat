@@ -16,20 +16,19 @@
  */
 package org.apache.tomcat.util.http;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.text.FieldPosition;
-import java.util.BitSet;
-import java.util.Date;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.parser.Cookie;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.text.FieldPosition;
+import java.util.BitSet;
+import java.util.Date;
 
 public class Rfc6265CookieProcessor extends CookieProcessorBase {
 
@@ -63,7 +62,7 @@ public class Rfc6265CookieProcessor extends CookieProcessorBase {
 
     @Override
     public void parseCookieHeader(MimeHeaders headers,
-            ServerCookies serverCookies) {
+                                  ServerCookies serverCookies) {
 
         if (headers == null) {
             // nothing to process
@@ -75,8 +74,8 @@ public class Rfc6265CookieProcessor extends CookieProcessorBase {
         while (pos >= 0) {
             MessageBytes cookieValue = headers.getValue(pos);
 
-            if (cookieValue != null && !cookieValue.isNull() ) {
-                if (cookieValue.getType() != MessageBytes.T_BYTES ) {
+            if (cookieValue != null && !cookieValue.isNull()) {
+                if (cookieValue.getType() != MessageBytes.T_BYTES) {
                     if (log.isDebugEnabled()) {
                         Exception e = new Exception();
                         // TODO: Review this in light of HTTP/2
@@ -85,7 +84,7 @@ public class Rfc6265CookieProcessor extends CookieProcessorBase {
                     cookieValue.toBytes();
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("Cookies: Parsing b[]: " + cookieValue.toString());
+                    log.debug("Cookies: Parsing b[]: " + cookieValue);
                 }
                 ByteChunk bc = cookieValue.getByteChunk();
 
@@ -130,11 +129,12 @@ public class Rfc6265CookieProcessor extends CookieProcessorBase {
             // browsers. See http://tomcat.markmail.org/thread/g6sipbofsjossacn
 
             // Wdy, DD-Mon-YY HH:MM:SS GMT ( Expires Netscape format )
-            header.append ("; Expires=");
+            header.append("; Expires=");
             // To expire immediately we need to set the time in past
             if (maxAge == 0) {
                 header.append(ANCIENT_DATE);
-            } else {
+            }
+            else {
                 COOKIE_DATE_FORMAT.get().format(
                         new Date(System.currentTimeMillis() + maxAge * 1000L),
                         header,

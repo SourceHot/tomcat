@@ -16,23 +16,8 @@
  */
 package org.apache.coyote.http2;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.coyote.AbstractProcessor;
-import org.apache.coyote.ActionCode;
-import org.apache.coyote.Adapter;
-import org.apache.coyote.ContinueResponseTiming;
-import org.apache.coyote.ErrorState;
-import org.apache.coyote.Request;
-import org.apache.coyote.RequestGroupInfo;
-import org.apache.coyote.Response;
+import org.apache.coyote.*;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http11.filters.GzipOutputFilter;
 import org.apache.juli.logging.Log;
@@ -48,17 +33,19 @@ import org.apache.tomcat.util.net.SocketEvent;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 class StreamProcessor extends AbstractProcessor {
 
     private static final Log log = LogFactory.getLog(StreamProcessor.class);
     private static final StringManager sm = StringManager.getManager(StreamProcessor.class);
 
     private static final Set<String> H2_PSEUDO_HEADERS_REQUEST = new HashSet<>();
-
-    private final Http2UpgradeHandler handler;
-    private final Stream stream;
-    private SendfileData sendfileData = null;
-    private SendfileState sendfileState = null;
 
     static {
         H2_PSEUDO_HEADERS_REQUEST.add(":method");
@@ -67,111 +54,23 @@ class StreamProcessor extends AbstractProcessor {
         H2_PSEUDO_HEADERS_REQUEST.add(":path");
     }
 
+    private final Http2UpgradeHandler handler;
+    private final Stream stream;
+    private SendfileData sendfileData = null;
+    private SendfileState sendfileState = null;
+
     StreamProcessor(Http2UpgradeHandler handler, Stream stream, Adapter adapter,
-            SocketWrapperBase<?> socketWrapper) {
+                    SocketWrapperBase<?> socketWrapper) {
         super(adapter, stream.getCoyoteRequest(), stream.getCoyoteResponse());
         this.handler = handler;
         this.stream = stream;
         setSocketWrapper(socketWrapper);
     }
 
-
-    final void process(SocketEvent event) {
-        try {
-            // FIXME: the regular processor syncs on socketWrapper, but here this deadlocks
-            synchronized (this) {
-                // HTTP/2 equivalent of AbstractConnectionHandler#process() without the
-                // socket <-> processor mapping
-                SocketState state = SocketState.CLOSED;
-                try {
-                    state = process(socketWrapper, event);
-
-                    if (state == SocketState.LONG) {
-                        handler.getProtocol().getHttp11Protocol().addWaitingProcessor(this);
-                    } else if (state == SocketState.CLOSED) {
-                        handler.getProtocol().getHttp11Protocol().removeWaitingProcessor(this);
-                        if (!stream.isInputFinished() && getErrorState().isIoAllowed()) {
-                            // The request has been processed but the request body has not been
-                            // fully read. This typically occurs when Tomcat rejects an upload
-                            // of some form (e.g. PUT or POST). Need to tell the client not to
-                            // send any more data on this stream (reset).
-                            StreamException se = new StreamException(
-                                    sm.getString("streamProcessor.cancel", stream.getConnectionId(),
-                                            stream.getIdAsString()), Http2Error.CANCEL, stream.getIdAsInt());
-                            stream.close(se);
-                        } else if (!getErrorState().isConnectionIoAllowed()) {
-                            ConnectionException ce = new ConnectionException(sm.getString(
-                                    "streamProcessor.error.connection", stream.getConnectionId(),
-                                    stream.getIdAsString()), Http2Error.INTERNAL_ERROR);
-                            stream.close(ce);
-                        } else if (!getErrorState().isIoAllowed()) {
-                            StreamException se = stream.getResetException();
-                            if (se == null) {
-                                se = new StreamException(sm.getString(
-                                        "streamProcessor.error.stream", stream.getConnectionId(),
-                                        stream.getIdAsString()), Http2Error.INTERNAL_ERROR,
-                                        stream.getIdAsInt());
-                            }
-                            stream.close(se);
-                        } else {
-                            if (!stream.isActive()) {
-                                // stream.close() will call recycle so only need it here
-                                stream.recycle();
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    String msg = sm.getString("streamProcessor.error.connection",
-                            stream.getConnectionId(), stream.getIdAsString());
-                    if (log.isDebugEnabled()) {
-                        log.debug(msg, e);
-                    }
-                    ConnectionException ce = new ConnectionException(msg, Http2Error.INTERNAL_ERROR, e);
-                    stream.close(ce);
-                    state = SocketState.CLOSED;
-                } finally {
-                    if (state == SocketState.CLOSED) {
-                        recycle();
-                    }
-                }
-            }
-        } finally {
-            handler.executeQueuedStream();
-        }
-    }
-
-
-    @Override
-    protected final void prepareResponse() throws IOException {
-        response.setCommitted(true);
-        if (handler.hasAsyncIO() && handler.getProtocol().getUseSendfile()) {
-            prepareSendfile();
-        }
-        prepareHeaders(request, response, sendfileData == null, handler.getProtocol(), stream);
-        stream.writeHeaders();
-    }
-
-
-    private void prepareSendfile() {
-        String fileName = (String) stream.getCoyoteRequest().getAttribute(
-                org.apache.coyote.Constants.SENDFILE_FILENAME_ATTR);
-        if (fileName != null) {
-            sendfileData = new SendfileData();
-            sendfileData.path = new File(fileName).toPath();
-            sendfileData.pos = ((Long) stream.getCoyoteRequest().getAttribute(
-                    org.apache.coyote.Constants.SENDFILE_FILE_START_ATTR)).longValue();
-            sendfileData.end = ((Long) stream.getCoyoteRequest().getAttribute(
-                    org.apache.coyote.Constants.SENDFILE_FILE_END_ATTR)).longValue();
-            sendfileData.left = sendfileData.end - sendfileData.pos;
-            sendfileData.stream = stream;
-        }
-    }
-
-
     // Static so it can be used by Stream to build the MimeHeaders required for
     // an ACK. For that use case coyoteRequest, protocol and stream will be null.
     static void prepareHeaders(Request coyoteRequest, Response coyoteResponse, boolean noSendfile,
-            Http2Protocol protocol, Stream stream) {
+                               Http2Protocol protocol, Stream stream) {
         MimeHeaders headers = coyoteResponse.getMimeHeaders();
         int statusCode = coyoteResponse.getStatus();
 
@@ -205,12 +104,14 @@ class StreamProcessor extends AbstractProcessor {
             if (contentLength != -1 && headers.getValue("content-length") == null) {
                 headers.addValue("content-length").setLong(contentLength);
             }
-        } else {
+        }
+        else {
             if (statusCode == 205) {
                 // RFC 7231 requires the server to explicitly signal an empty
                 // response in this case
                 coyoteResponse.setContentLength(0);
-            } else {
+            }
+            else {
                 coyoteResponse.setContentLength(-1);
             }
         }
@@ -222,6 +123,98 @@ class StreamProcessor extends AbstractProcessor {
         }
     }
 
+    final void process(SocketEvent event) {
+        try {
+            // FIXME: the regular processor syncs on socketWrapper, but here this deadlocks
+            synchronized (this) {
+                // HTTP/2 equivalent of AbstractConnectionHandler#process() without the
+                // socket <-> processor mapping
+                SocketState state = SocketState.CLOSED;
+                try {
+                    state = process(socketWrapper, event);
+
+                    if (state == SocketState.LONG) {
+                        handler.getProtocol().getHttp11Protocol().addWaitingProcessor(this);
+                    }
+                    else if (state == SocketState.CLOSED) {
+                        handler.getProtocol().getHttp11Protocol().removeWaitingProcessor(this);
+                        if (!stream.isInputFinished() && getErrorState().isIoAllowed()) {
+                            // The request has been processed but the request body has not been
+                            // fully read. This typically occurs when Tomcat rejects an upload
+                            // of some form (e.g. PUT or POST). Need to tell the client not to
+                            // send any more data on this stream (reset).
+                            StreamException se = new StreamException(
+                                    sm.getString("streamProcessor.cancel", stream.getConnectionId(),
+                                            stream.getIdAsString()), Http2Error.CANCEL, stream.getIdAsInt());
+                            stream.close(se);
+                        }
+                        else if (!getErrorState().isConnectionIoAllowed()) {
+                            ConnectionException ce = new ConnectionException(sm.getString(
+                                    "streamProcessor.error.connection", stream.getConnectionId(),
+                                    stream.getIdAsString()), Http2Error.INTERNAL_ERROR);
+                            stream.close(ce);
+                        }
+                        else if (!getErrorState().isIoAllowed()) {
+                            StreamException se = stream.getResetException();
+                            if (se == null) {
+                                se = new StreamException(sm.getString(
+                                        "streamProcessor.error.stream", stream.getConnectionId(),
+                                        stream.getIdAsString()), Http2Error.INTERNAL_ERROR,
+                                        stream.getIdAsInt());
+                            }
+                            stream.close(se);
+                        }
+                        else {
+                            if (!stream.isActive()) {
+                                // stream.close() will call recycle so only need it here
+                                stream.recycle();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    String msg = sm.getString("streamProcessor.error.connection",
+                            stream.getConnectionId(), stream.getIdAsString());
+                    if (log.isDebugEnabled()) {
+                        log.debug(msg, e);
+                    }
+                    ConnectionException ce = new ConnectionException(msg, Http2Error.INTERNAL_ERROR, e);
+                    stream.close(ce);
+                    state = SocketState.CLOSED;
+                } finally {
+                    if (state == SocketState.CLOSED) {
+                        recycle();
+                    }
+                }
+            }
+        } finally {
+            handler.executeQueuedStream();
+        }
+    }
+
+    @Override
+    protected final void prepareResponse() throws IOException {
+        response.setCommitted(true);
+        if (handler.hasAsyncIO() && handler.getProtocol().getUseSendfile()) {
+            prepareSendfile();
+        }
+        prepareHeaders(request, response, sendfileData == null, handler.getProtocol(), stream);
+        stream.writeHeaders();
+    }
+
+    private void prepareSendfile() {
+        String fileName = (String) stream.getCoyoteRequest().getAttribute(
+                org.apache.coyote.Constants.SENDFILE_FILENAME_ATTR);
+        if (fileName != null) {
+            sendfileData = new SendfileData();
+            sendfileData.path = new File(fileName).toPath();
+            sendfileData.pos = ((Long) stream.getCoyoteRequest().getAttribute(
+                    org.apache.coyote.Constants.SENDFILE_FILE_START_ATTR)).longValue();
+            sendfileData.end = ((Long) stream.getCoyoteRequest().getAttribute(
+                    org.apache.coyote.Constants.SENDFILE_FILE_END_ATTR)).longValue();
+            sendfileData.left = sendfileData.end - sendfileData.pos;
+            sendfileData.stream = stream;
+        }
+    }
 
     @Override
     protected final void finishResponse() throws IOException {
@@ -290,7 +283,8 @@ class StreamProcessor extends AbstractProcessor {
     protected void processSocketEvent(SocketEvent event, boolean dispatch) {
         if (dispatch) {
             handler.processStreamOnContainerThread(this, event);
-        } else {
+        }
+        else {
             this.process(event);
         }
     }
@@ -385,7 +379,7 @@ class StreamProcessor extends AbstractProcessor {
 
     @Override
     protected Object getStreamID() {
-        return stream.getIdAsString().toString();
+        return stream.getIdAsString();
     }
 
 
@@ -424,7 +418,8 @@ class StreamProcessor extends AbstractProcessor {
         try {
             if (validateRequest()) {
                 adapter.service(request, response);
-            } else {
+            }
+            else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 adapter.log(request, response, 0);
                 setErrorState(ErrorState.CLOSE_CLEAN, null);
@@ -439,13 +434,16 @@ class StreamProcessor extends AbstractProcessor {
 
         if (sendfileState == SendfileState.PENDING) {
             return SocketState.SENDFILE;
-        } else if (getErrorState().isError()) {
+        }
+        else if (getErrorState().isError()) {
             action(ActionCode.CLOSE, null);
             request.updateCounters();
             return SocketState.CLOSED;
-        } else if (isAsync()) {
+        }
+        else if (isAsync()) {
             return SocketState.LONG;
-        } else {
+        }
+        else {
             action(ActionCode.CLOSE, null);
             request.updateCounters();
             return SocketState.CLOSED;
@@ -513,7 +511,8 @@ class StreamProcessor extends AbstractProcessor {
                 if (!previousHeaderWasPseudoHeader) {
                     return false;
                 }
-            } else if (!HttpParser.isToken(name)) {
+            }
+            else if (!HttpParser.isToken(name)) {
                 previousHeaderWasPseudoHeader = false;
                 return false;
             }

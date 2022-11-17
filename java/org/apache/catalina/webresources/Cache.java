@@ -16,6 +16,12 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.WebResource;
+import org.apache.catalina.WebResourceRoot.CacheStrategy;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -23,17 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot.CacheStrategy;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
-
 public class Cache {
 
-    private static final Log log = LogFactory.getLog(Cache.class);
     protected static final StringManager sm = StringManager.getManager(Cache.class);
-
+    private static final Log log = LogFactory.getLog(Cache.class);
     private static final long TARGET_FREE_PERCENT_GET = 5;
     private static final long TARGET_FREE_PERCENT_BACKGROUND = 10;
 
@@ -42,17 +41,14 @@ public class Cache {
 
     private final StandardRoot root;
     private final AtomicLong size = new AtomicLong(0);
-
+    private final ConcurrentMap<String, CachedResource> resourceCache =
+            new ConcurrentHashMap<>();
     private long ttl = 5000;
     private long maxSize = 10 * 1024 * 1024;
-    private int objectMaxSize = (int) maxSize/OBJECT_MAX_SIZE_FACTOR;
+    private int objectMaxSize = (int) maxSize / OBJECT_MAX_SIZE_FACTOR;
     private CacheStrategy cacheStrategy;
-
-    private AtomicLong lookupCount = new AtomicLong(0);
-    private AtomicLong hitCount = new AtomicLong(0);
-
-    private final ConcurrentMap<String,CachedResource> resourceCache =
-            new ConcurrentHashMap<>();
+    private final AtomicLong lookupCount = new AtomicLong(0);
+    private final AtomicLong hitCount = new AtomicLong(0);
 
     public Cache(StandardRoot root) {
         this.root = root;
@@ -115,7 +111,8 @@ public class Cache {
                         log.warn(sm.getString("cache.addFail", path, root.getContext().getName()));
                     }
                 }
-            } else {
+            }
+            else {
                 // Another thread added the entry to the cache
                 if (cacheEntry.usesClassLoaderResources() != useClassLoaderResources) {
                     // Race condition adding cache entries with the same path
@@ -138,7 +135,8 @@ public class Cache {
                 // Make sure it is validated
                 cacheEntry.validateResource(useClassLoaderResources);
             }
-        } else {
+        }
+        else {
             hitCount.incrementAndGet();
         }
 
@@ -191,12 +189,14 @@ public class Cache {
                         log.warn(sm.getString("cache.addFail", path));
                     }
                 }
-            } else {
+            }
+            else {
                 // Another thread added the entry to the cache
                 // Make sure it is validated
                 cacheEntry.validateResources(useClassLoaderResources);
             }
-        } else {
+        }
+        else {
             hitCount.incrementAndGet();
         }
 
@@ -228,13 +228,10 @@ public class Cache {
     private boolean noCache(String path) {
         // Don't cache classes. The class loader handles this.
         // Don't cache JARs. The ResourceSet handles this.
-        if ((path.endsWith(".class") &&
+        return (path.endsWith(".class") &&
                 (path.startsWith("/WEB-INF/classes/") || path.startsWith("/WEB-INF/lib/")))
                 ||
-                (path.startsWith("/WEB-INF/lib/") && path.endsWith(".jar"))) {
-            return true;
-        }
-        return false;
+                (path.startsWith("/WEB-INF/lib/") && path.endsWith(".jar"));
     }
 
     private long evict(long targetSize, Iterator<CachedResource> iter) {
@@ -304,6 +301,11 @@ public class Cache {
         return hitCount.get();
     }
 
+    public int getObjectMaxSize() {
+        // Internally bytes, externally kilobytes
+        return objectMaxSize / 1024;
+    }
+
     public void setObjectMaxSize(int objectMaxSize) {
         if (objectMaxSize * 1024L > Integer.MAX_VALUE) {
             log.warn(sm.getString("cache.objectMaxSizeTooBigBytes", Integer.valueOf(objectMaxSize)));
@@ -311,11 +313,6 @@ public class Cache {
         }
         // Internally bytes, externally kilobytes
         this.objectMaxSize = objectMaxSize * 1024;
-    }
-
-    public int getObjectMaxSize() {
-        // Internally bytes, externally kilobytes
-        return objectMaxSize / 1024;
     }
 
     public int getObjectMaxSizeBytes() {
@@ -329,7 +326,7 @@ public class Cache {
         }
         if (objectMaxSize > limit) {
             log.warn(sm.getString("cache.objectMaxSizeTooBig",
-                    Integer.valueOf(objectMaxSize / 1024), Integer.valueOf((int)limit / 1024)));
+                    Integer.valueOf(objectMaxSize / 1024), Integer.valueOf((int) limit / 1024)));
             objectMaxSize = (int) limit;
         }
     }
@@ -354,9 +351,11 @@ public class Cache {
             // youngest.
             if (nc1 == nc2) {
                 return 0;
-            } else if (nc1 > nc2) {
+            }
+            else if (nc1 > nc2) {
                 return -1;
-            } else {
+            }
+            else {
                 return 1;
             }
         }

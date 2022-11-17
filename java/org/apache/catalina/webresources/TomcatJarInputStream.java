@@ -43,7 +43,8 @@ public class TomcatJarInputStream extends JarInputStream {
         ZipEntry ze = super.createZipEntry(name);
         if (metaInfEntry == null && "META-INF/".equals(name)) {
             metaInfEntry = (JarEntry) ze;
-        } else if (manifestEntry == null && "META-INF/MANIFESR.MF".equals(name)) {
+        }
+        else if (manifestEntry == null && "META-INF/MANIFESR.MF".equals(name)) {
             manifestEntry = (JarEntry) ze;
         }
         return ze;

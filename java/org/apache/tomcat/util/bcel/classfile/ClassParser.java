@@ -17,15 +17,11 @@
  */
 package org.apache.tomcat.util.bcel.classfile;
 
-import java.io.BufferedInputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.tomcat.util.bcel.Const;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.tomcat.util.bcel.Const;
 
 /**
  * Wrapper class that parses a given Java .class file. The method <A
@@ -33,7 +29,7 @@ import org.apache.tomcat.util.bcel.Const;
  * JavaClass</A> object on success. When an I/O error or an
  * inconsistency occurs an appropriate exception is propagated back to
  * the caller.
- *
+ * <p>
  * The structure and the names comply, except for a few conveniences,
  * exactly with the <A href="http://docs.oracle.com/javase/specs/">
  * JVM specification 1.0</a>. See this paper for
@@ -42,7 +38,8 @@ import org.apache.tomcat.util.bcel.Const;
 public final class ClassParser {
 
     private static final int MAGIC = 0xCAFEBABE;
-
+    private static final int BUFSIZE = 8192;
+    private static final String[] INTERFACES_EMPTY_ARRAY = new String[0];
     private final DataInput dataInputStream;
     private String class_name, superclassName;
     private int accessFlags; // Access rights of parsed class
@@ -50,9 +47,6 @@ public final class ClassParser {
     private ConstantPool constantPool; // collection of constants
     private Annotations runtimeVisibleAnnotations; // "RuntimeVisibleAnnotations" attribute defined in the class
     private List<Annotations> runtimeVisibleFieldOrMethodAnnotations; // "RuntimeVisibleAnnotations" attribute defined elsewhere
-    private static final int BUFSIZE = 8192;
-
-    private static final String[] INTERFACES_EMPTY_ARRAY = new String[0];
 
     /**
      * Parses class from the given stream.
@@ -72,8 +66,8 @@ public final class ClassParser {
      * is performed by the java interpreter).
      *
      * @return Class object representing the parsed class file
-     * @throws  IOException If an I/O occurs reading the byte code
-     * @throws  ClassFormatException If the byte code is invalid
+     * @throws IOException          If an I/O occurs reading the byte code
+     * @throws ClassFormatException If the byte code is invalid
      */
     public JavaClass parse() throws IOException, ClassFormatException {
         /****************** Read headers ********************************/
@@ -105,9 +99,10 @@ public final class ClassParser {
 
     /**
      * Reads information about the attributes of the class.
+     *
      * @param fieldOrMethod false if processing a class
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readAttributes(boolean fieldOrMethod) throws IOException, ClassFormatException {
         final int attributes_count = dataInputStream.readUnsignedShort();
@@ -130,14 +125,16 @@ public final class ClassParser {
                         runtimeVisibleFieldOrMethodAnnotations = new ArrayList<>();
                     }
                     runtimeVisibleFieldOrMethodAnnotations.add(fieldOrMethodAnnotations);
-                } else {
+                }
+                else {
                     if (runtimeVisibleAnnotations != null) {
                         throw new ClassFormatException(
                                 "RuntimeVisibleAnnotations attribute is not allowed more than once in a class file");
                     }
                     runtimeVisibleAnnotations = new Annotations(dataInputStream, constantPool);
                 }
-            } else {
+            }
+            else {
                 // All other attributes are skipped
                 Utility.skipFully(dataInputStream, length);
             }
@@ -147,8 +144,9 @@ public final class ClassParser {
 
     /**
      * Reads information about the class and its super class.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readClassInfo() throws IOException, ClassFormatException {
         accessFlags = dataInputStream.readUnsignedShort();
@@ -170,7 +168,8 @@ public final class ClassParser {
         if (superclass_name_index > 0) {
             // May be zero -> class is java.lang.Object
             superclassName = Utility.getClassName(constantPool, superclass_name_index);
-        } else {
+        }
+        else {
             superclassName = "java.lang.Object";
         }
     }
@@ -178,8 +177,9 @@ public final class ClassParser {
 
     /**
      * Reads constant pool entries.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readConstantPool() throws IOException, ClassFormatException {
         constantPool = new ConstantPool(dataInputStream);
@@ -188,8 +188,9 @@ public final class ClassParser {
 
     /**
      * Reads information about the fields of the class, i.e., its variables.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readFields() throws IOException, ClassFormatException {
         final int fields_count = dataInputStream.readUnsignedShort();
@@ -208,8 +209,9 @@ public final class ClassParser {
     /**
      * Checks whether the header of the file is ok.
      * Of course, this has to be the first action on successive file reads.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readID() throws IOException, ClassFormatException {
         if (dataInputStream.readInt() != MAGIC) {
@@ -220,8 +222,9 @@ public final class ClassParser {
 
     /**
      * Reads information about the interfaces implemented by this class.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readInterfaces() throws IOException, ClassFormatException {
         final int interfaces_count = dataInputStream.readUnsignedShort();
@@ -231,7 +234,8 @@ public final class ClassParser {
                 int index = dataInputStream.readUnsignedShort();
                 interfaceNames[i] = Utility.getClassName(constantPool, index);
             }
-        } else {
+        }
+        else {
             interfaceNames = INTERFACES_EMPTY_ARRAY;
         }
     }
@@ -239,8 +243,9 @@ public final class ClassParser {
 
     /**
      * Reads information about the methods of the class.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readMethods() throws IOException, ClassFormatException {
         final int methods_count = dataInputStream.readUnsignedShort();
@@ -257,8 +262,9 @@ public final class ClassParser {
 
     /**
      * Reads major and minor version of compiler which created the file.
-     * @throws  IOException if an I/O occurs reading the the .class file
-     * @throws  ClassFormatException If the .class file is not valid
+     *
+     * @throws IOException          if an I/O occurs reading the the .class file
+     * @throws ClassFormatException If the .class file is not valid
      */
     private void readVersion() throws IOException, ClassFormatException {
         // file.readUnsignedShort(); // Unused minor

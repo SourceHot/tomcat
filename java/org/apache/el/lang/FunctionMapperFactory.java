@@ -16,19 +16,18 @@
  */
 package org.apache.el.lang;
 
-import java.lang.reflect.Method;
-
 import jakarta.el.FunctionMapper;
-
 import org.apache.el.util.MessageFactory;
+
+import java.lang.reflect.Method;
 
 /**
  * @author Jacob Hookom [jacob@hookom.net]
  */
 public class FunctionMapperFactory extends FunctionMapper {
 
-    protected FunctionMapperImpl memento = null;
     protected final FunctionMapper target;
+    protected FunctionMapperImpl memento = null;
 
     public FunctionMapperFactory(FunctionMapper mapper) {
         if (mapper == null) {

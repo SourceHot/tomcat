@@ -35,15 +35,15 @@ public class Param implements TagPlugin {
 
         //if the param tag has no parents, throw a exception
         TagPluginContext parent = ctxt.getParentContext();
-        if(parent == null){
+        if (parent == null) {
             ctxt.generateJavaSource(" throw new JspTagException" +
-            "(\"&lt;param&gt; outside &lt;import&gt; or &lt;urlEncode&gt;\");");
+                    "(\"&lt;param&gt; outside &lt;import&gt; or &lt;urlEncode&gt;\");");
             return;
         }
 
         //get the url string before adding this param
         ctxt.generateJavaSource("String " + urlName + " = " +
-        "(String)pageContext.getAttribute(\"url_without_param\");");
+                "(String)pageContext.getAttribute(\"url_without_param\");");
 
         //get the value of "name"
         ctxt.generateJavaSource("String " + nameName + " = ");
@@ -62,7 +62,7 @@ public class Param implements TagPlugin {
         ctxt.generateJavaSource("    " + nameName + " = java.net.URLEncoder.encode(" + nameName + ", " + encName + ");");
         ctxt.generateJavaSource("    " + valueName + " = java.net.URLEncoder.encode(" + valueName + ", " + encName + ");");
         ctxt.generateJavaSource("    int " + index + ";");
-        ctxt.generateJavaSource("    " + index + " = " + urlName + ".indexOf(\'?\');");
+        ctxt.generateJavaSource("    " + index + " = " + urlName + ".indexOf('?');");
         //if the current param is the first one, add a "?" ahead of it
         //else add a "&" ahead of it
         ctxt.generateJavaSource("    if(" + index + " == -1){");

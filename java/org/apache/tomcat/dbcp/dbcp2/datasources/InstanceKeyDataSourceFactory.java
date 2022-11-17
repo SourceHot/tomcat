@@ -16,26 +16,21 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.tomcat.dbcp.dbcp2.ListException;
+import org.apache.tomcat.dbcp.dbcp2.Utils;
 
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-
-import org.apache.tomcat.dbcp.dbcp2.ListException;
-import org.apache.tomcat.dbcp.dbcp2.Utils;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.time.Duration;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A JNDI ObjectFactory which creates <code>SharedPoolDataSource</code>s or <code>PerUserPoolDataSource</code>s
@@ -49,12 +44,11 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
     /**
      * Closes all pools associated with this class.
      *
-     * @throws Exception
-     *             a {@link ListException} containing all exceptions thrown by {@link InstanceKeyDataSource#close()}
+     * @throws Exception a {@link ListException} containing all exceptions thrown by {@link InstanceKeyDataSource#close()}
      * @see InstanceKeyDataSource#close()
      * @see ListException
      * @since 2.4.0 throws a {@link ListException} instead of, in 2.3.0 and before, the first exception thrown by
-     *        {@link InstanceKeyDataSource#close()}.
+     * {@link InstanceKeyDataSource#close()}.
      */
     public static void closeAll() throws Exception {
         // Get iterator to loop over all instances of this data source.
@@ -81,15 +75,10 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
     /**
      * Deserializes the provided byte array to create an object.
      *
-     * @param data
-     *            Data to deserialize to create the configuration parameter.
-     *
+     * @param data Data to deserialize to create the configuration parameter.
      * @return The Object created by deserializing the data.
-     *
-     * @throws ClassNotFoundException
-     *            If a class cannot be found during the deserialization of a configuration parameter.
-     * @throws IOException
-     *            If an I/O error occurs during the deserialization of a configuration parameter.
+     * @throws ClassNotFoundException If a class cannot be found during the deserialization of a configuration parameter.
+     * @throws IOException            If an I/O error occurs during the deserialization of a configuration parameter.
      */
     protected static final Object deserialize(final byte[] data) throws IOException, ClassNotFoundException {
         ObjectInputStream in = null;
@@ -128,15 +117,10 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
     /**
      * Creates an instance of the subclass and sets any properties contained in the Reference.
      *
-     * @param ref
-     *            The properties to be set on the created DataSource
-     *
+     * @param ref The properties to be set on the created DataSource
      * @return A configured DataSource of the appropriate type.
-     *
-     * @throws ClassNotFoundException
-     *            If a class cannot be found during the deserialization of a configuration parameter.
-     * @throws IOException
-     *            If an I/O error occurs during the deserialization of a configuration parameter.
+     * @throws ClassNotFoundException If a class cannot be found during the deserialization of a configuration parameter.
+     * @throws IOException            If an I/O error occurs during the deserialization of a configuration parameter.
      */
     protected abstract InstanceKeyDataSource getNewInstance(Reference ref) throws IOException, ClassNotFoundException;
 
@@ -145,7 +129,7 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
      */
     @Override
     public Object getObjectInstance(final Object refObj, final Name name, final Context context,
-            final Hashtable<?, ?> env) throws IOException, ClassNotFoundException {
+                                    final Hashtable<?, ?> env) throws IOException, ClassNotFoundException {
         // The spec says to return null if we can't create an instance
         // of the reference
         Object obj = null;
@@ -156,7 +140,8 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
                 if (refAddr != null && refAddr.getContent() != null) {
                     // object was bound to JNDI via Referenceable API.
                     obj = INSTANCE_MAP.get(refAddr.getContent());
-                } else {
+                }
+                else {
                     // Tomcat JNDI creates a Reference out of server.xml
                     // <ResourceParam> configuration and passes it to an
                     // instance of the factory given in server.xml.
@@ -182,9 +167,7 @@ abstract class InstanceKeyDataSourceFactory implements ObjectFactory {
     /**
      * Tests if className is the value returned from getClass().getName().toString().
      *
-     * @param className
-     *            The class name to test.
-     *
+     * @param className The class name to test.
      * @return true if and only if className is the value returned from getClass().getName().toString()
      */
     protected abstract boolean isCorrectClass(String className);

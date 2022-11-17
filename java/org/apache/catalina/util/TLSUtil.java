@@ -27,10 +27,9 @@ public class TLSUtil {
      * the standard request attributes defined by the Servlet specification and
      * Tomcat specific attributes are supported.
      *
-     * @param name  The attribute name to test
-     *
+     * @param name The attribute name to test
      * @return {@code true} if the attribute is used to pass TLS configuration
-     *         information, otherwise {@code false}
+     * information, otherwise {@code false}
      */
     public static boolean isTLSRequestAttribute(String name) {
         switch (name) {

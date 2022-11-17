@@ -16,14 +16,15 @@
  */
 package org.apache.coyote;
 
+import org.apache.tomcat.util.modeler.BaseModelMBean;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tomcat.util.modeler.BaseModelMBean;
-
-/** This can be moved to top level ( eventually with a better name ).
- *  It is currently used only as a JMX artifact, to aggregate the data
- *  collected from each RequestProcessor thread.
+/**
+ * This can be moved to top level ( eventually with a better name ).
+ * It is currently used only as a JMX artifact, to aggregate the data
+ * collected from each RequestProcessor thread.
  */
 public class RequestGroupInfo extends BaseModelMBean {
     private final List<RequestInfo> processors = new ArrayList<>();
@@ -34,13 +35,13 @@ public class RequestGroupInfo extends BaseModelMBean {
     private long deadBytesReceived = 0;
     private long deadBytesSent = 0;
 
-    public synchronized void addRequestProcessor( RequestInfo rp ) {
-        processors.add( rp );
+    public synchronized void addRequestProcessor(RequestInfo rp) {
+        processors.add(rp);
     }
 
-    public synchronized void removeRequestProcessor( RequestInfo rp ) {
-        if( rp != null ) {
-            if( deadMaxTime < rp.getMaxTime() ) {
+    public synchronized void removeRequestProcessor(RequestInfo rp) {
+        if (rp != null) {
+            if (deadMaxTime < rp.getMaxTime()) {
                 deadMaxTime = rp.getMaxTime();
             }
             deadProcessingTime += rp.getProcessingTime();
@@ -49,7 +50,7 @@ public class RequestGroupInfo extends BaseModelMBean {
             deadBytesReceived += rp.getBytesReceived();
             deadBytesSent += rp.getBytesSent();
 
-            processors.remove( rp );
+            processors.remove(rp);
         }
     }
 
@@ -57,7 +58,7 @@ public class RequestGroupInfo extends BaseModelMBean {
         long maxTime = deadMaxTime;
         for (RequestInfo rp : processors) {
             if (maxTime < rp.getMaxTime()) {
-                maxTime=rp.getMaxTime();
+                maxTime = rp.getMaxTime();
             }
         }
         return maxTime;
@@ -82,7 +83,7 @@ public class RequestGroupInfo extends BaseModelMBean {
     public synchronized void setProcessingTime(long totalTime) {
         deadProcessingTime = totalTime;
         for (RequestInfo rp : processors) {
-            rp.setProcessingTime( totalTime );
+            rp.setProcessingTime(totalTime);
         }
     }
 
@@ -97,7 +98,7 @@ public class RequestGroupInfo extends BaseModelMBean {
     public synchronized void setRequestCount(int requestCount) {
         deadRequestCount = requestCount;
         for (RequestInfo rp : processors) {
-            rp.setRequestCount( requestCount );
+            rp.setRequestCount(requestCount);
         }
     }
 
@@ -112,7 +113,7 @@ public class RequestGroupInfo extends BaseModelMBean {
     public synchronized void setErrorCount(int errorCount) {
         deadErrorCount = errorCount;
         for (RequestInfo rp : processors) {
-            rp.setErrorCount( errorCount);
+            rp.setErrorCount(errorCount);
         }
     }
 
@@ -127,12 +128,12 @@ public class RequestGroupInfo extends BaseModelMBean {
     public synchronized void setBytesReceived(long bytesReceived) {
         deadBytesReceived = bytesReceived;
         for (RequestInfo rp : processors) {
-            rp.setBytesReceived( bytesReceived );
+            rp.setBytesReceived(bytesReceived);
         }
     }
 
     public synchronized long getBytesSent() {
-        long bytes=deadBytesSent;
+        long bytes = deadBytesSent;
         for (RequestInfo rp : processors) {
             bytes += rp.getBytesSent();
         }
@@ -142,7 +143,7 @@ public class RequestGroupInfo extends BaseModelMBean {
     public synchronized void setBytesSent(long bytesSent) {
         deadBytesSent = bytesSent;
         for (RequestInfo rp : processors) {
-            rp.setBytesSent( bytesSent );
+            rp.setBytesSent(bytesSent);
         }
     }
 

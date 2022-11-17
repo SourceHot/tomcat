@@ -16,6 +16,10 @@
  */
 package org.apache.el.lang;
 
+import jakarta.el.FunctionMapper;
+import org.apache.el.util.MessageFactory;
+import org.apache.el.util.ReflectionUtil;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -23,11 +27,6 @@ import java.io.ObjectOutput;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import jakarta.el.FunctionMapper;
-
-import org.apache.el.util.MessageFactory;
-import org.apache.el.util.ReflectionUtil;
 
 
 /**
@@ -60,7 +59,8 @@ public class FunctionMapperImpl extends FunctionMapper implements
         String key = prefix + ":" + localName;
         if (m == null) {
             functions.remove(key);
-        } else {
+        }
+        else {
             Function f = new Function(prefix, localName, m);
             functions.put(key, f);
         }
@@ -126,7 +126,8 @@ public class FunctionMapperImpl extends FunctionMapper implements
                 out.writeUTF(this.owner);
                 out.writeUTF(this.name);
                 out.writeObject(this.types);
-            } else {
+            }
+            else {
                 out.writeUTF(this.m.getDeclaringClass().getName());
                 out.writeUTF(this.m.getName());
                 out.writeObject(ReflectionUtil.toTypeNameArray(this.m.getParameterTypes()));

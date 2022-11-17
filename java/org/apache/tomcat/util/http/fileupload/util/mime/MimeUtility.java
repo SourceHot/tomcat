@@ -16,6 +16,8 @@
  */
 package org.apache.tomcat.util.http.fileupload.util.mime;
 
+import org.apache.tomcat.util.codec.binary.Base64;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -23,8 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.apache.tomcat.util.codec.binary.Base64;
 
 /**
  * Utility class to decode MIME texts.
@@ -89,8 +89,7 @@ public final class MimeUtility {
      * string of tokens, some of which may be encoded using
      * base64 encoding.
      *
-     * @param text   The text to decode.
-     *
+     * @param text The text to decode.
      * @return The decoded text string.
      * @throws UnsupportedEncodingException if the detected encoding in the input text is not supported.
      */
@@ -128,7 +127,8 @@ public final class MimeUtility {
                     }
                     offset++;
                 }
-            } else {
+            }
+            else {
                 // we have a word token.  We need to scan over the word and then try to parse it.
                 final int wordStart = offset;
 
@@ -185,13 +185,12 @@ public final class MimeUtility {
     /**
      * Parse a string using the RFC 2047 rules for an "encoded-word"
      * type.  This encoding has the syntax:
-     *
+     * <p>
      * encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
      *
-     * @param word   The possibly encoded word value.
-     *
+     * @param word The possibly encoded word value.
      * @return The decoded word.
-     * @throws ParseException in case of a parse error of the RFC 2047
+     * @throws ParseException               in case of a parse error of the RFC 2047
      * @throws UnsupportedEncodingException Thrown when Invalid RFC 2047 encoding was found
      */
     private static String decodeWord(final String word) throws ParseException, UnsupportedEncodingException {
@@ -239,11 +238,13 @@ public final class MimeUtility {
             // Base64 encoded?
             if (encoding.equals(BASE64_ENCODING_MARKER)) {
                 decodedData = Base64.decodeBase64(encodedText);
-            } else if (encoding.equals(QUOTEDPRINTABLE_ENCODING_MARKER)) { // maybe quoted printable.
+            }
+            else if (encoding.equals(QUOTEDPRINTABLE_ENCODING_MARKER)) { // maybe quoted printable.
                 byte[] encodedData = encodedText.getBytes(StandardCharsets.US_ASCII);
                 QuotedPrintableDecoder.decode(encodedData, out);
                 decodedData = out.toByteArray();
-            } else {
+            }
+            else {
                 throw new UnsupportedEncodingException("Unknown RFC 2047 encoding: " + encoding);
             }
             // Convert decoded byte data into a string.
@@ -258,7 +259,6 @@ public final class MimeUtility {
      * equivalent.
      *
      * @param charset The MIME standard name.
-     *
      * @return The Java equivalent for this name.
      */
     private static String javaCharset(final String charset) {

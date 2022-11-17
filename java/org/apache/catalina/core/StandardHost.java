@@ -16,36 +16,20 @@
  */
 package org.apache.catalina.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.regex.Pattern;
-
-import javax.management.ObjectName;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Host;
-import org.apache.catalina.JmxEnabled;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Valve;
+import org.apache.catalina.*;
 import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.catalina.util.ContextName;
 import org.apache.catalina.valves.ErrorReportValve;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
+
+import javax.management.ObjectName;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 /**
  * Standard implementation of the <b>Host</b> interface.  Each
@@ -60,34 +44,25 @@ public class StandardHost extends ContainerBase implements Host {
     private static final Log log = LogFactory.getLog(StandardHost.class);
 
     // ----------------------------------------------------------- Constructors
-
-
-    /**
-     * Create a new StandardHost component with the default basic Valve.
-     */
-    public StandardHost() {
-
-        super();
-        pipeline.setBasic(new StandardHostValve());
-
-    }
-
-
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The set of aliases for this Host.
-     * 别名列表
-     */
-    private String[] aliases = new String[0];
-
     /**
      * 别名锁
      */
     private final Object aliasesLock = new Object();
 
 
+    // ----------------------------------------------------- Instance Variables
+    /**
+     * Track the class loaders for the child web applications so memory leaks
+     * can be detected.
+     * 应用的类加载器容器
+     */
+    private final Map<ClassLoader, String> childClassLoaders =
+            new WeakHashMap<>();
+    /**
+     * The set of aliases for this Host.
+     * 别名列表
+     */
+    private String[] aliases = new String[0];
     /**
      * The application root for this Host.
      * 应用根路径
@@ -132,11 +107,11 @@ public class StandardHost extends ContainerBase implements Host {
     /**
      * The Java class name of the default context configuration class
      * for deployed web applications.
-     *
+     * <p>
      * 配置类类名
      */
     private String configClass =
-        "org.apache.catalina.startup.ContextConfig";
+            "org.apache.catalina.startup.ContextConfig";
 
 
     /**
@@ -145,7 +120,7 @@ public class StandardHost extends ContainerBase implements Host {
      * 上下文类名
      */
     private String contextClass =
-        "org.apache.catalina.core.StandardContext";
+            "org.apache.catalina.core.StandardContext";
 
 
     /**
@@ -177,7 +152,7 @@ public class StandardHost extends ContainerBase implements Host {
      * 异常报告实现类类名
      */
     private String errorReportValveClass =
-        "org.apache.catalina.valves.ErrorReportValve";
+            "org.apache.catalina.valves.ErrorReportValve";
 
 
     /**
@@ -199,36 +174,32 @@ public class StandardHost extends ContainerBase implements Host {
      * 是否创建 appbase 和 xmlbase 目录
      */
     private boolean createDirs = true;
-
-
-    /**
-     * Track the class loaders for the child web applications so memory leaks
-     * can be detected.
-     * 应用的类加载器容器
-     */
-    private final Map<ClassLoader, String> childClassLoaders =
-            new WeakHashMap<>();
-
-
     /**
      * Any file or directory in {@link #appBase} that this pattern matches will
      * be ignored by the automatic deployment process (both
      * {@link #deployOnStartup} and {@link #autoDeploy}).
-     *
+     * <p>
      * 部署时所需忽略文件的正则表达式对象
      */
     private Pattern deployIgnore = null;
-
-
     /**
      * 是否取消历史版本部署
      */
     private boolean undeployOldVersions = false;
-
     /**
      * 是否servlet启动失败
      */
     private boolean failCtxIfServletStartFails = false;
+
+    /**
+     * Create a new StandardHost component with the default basic Valve.
+     */
+    public StandardHost() {
+
+        super();
+        pipeline.setBasic(new StandardHostValve());
+
+    }
 
 
     // ------------------------------------------------------------- Properties
@@ -256,6 +227,16 @@ public class StandardHost extends ContainerBase implements Host {
         return this.appBase;
     }
 
+    @Override
+    public void setAppBase(String appBase) {
+        if (appBase.trim().equals("")) {
+            log.warn(sm.getString("standardHost.problematicAppBase", getName()));
+        }
+        String oldAppBase = this.appBase;
+        this.appBase = appBase;
+        support.firePropertyChange("appBase", oldAppBase, this.appBase);
+        this.appBaseFile = null;
+    }
 
     @Override
     public File getAppBaseFile() {
@@ -282,24 +263,21 @@ public class StandardHost extends ContainerBase implements Host {
         return file;
     }
 
-
-    @Override
-    public void setAppBase(String appBase) {
-        if (appBase.trim().equals("")) {
-            log.warn(sm.getString("standardHost.problematicAppBase", getName()));
-        }
-        String oldAppBase = this.appBase;
-        this.appBase = appBase;
-        support.firePropertyChange("appBase", oldAppBase, this.appBase);
-        this.appBaseFile = null;
-    }
-
-
     @Override
     public String getLegacyAppBase() {
         return this.legacyAppBase;
     }
 
+    @Override
+    public void setLegacyAppBase(String legacyAppBase) {
+        if (legacyAppBase.trim().equals("")) {
+            log.warn(sm.getString("standardHost.problematicLegacyAppBase", getName()));
+        }
+        String oldLegacyAppBase = this.legacyAppBase;
+        this.legacyAppBase = legacyAppBase;
+        support.firePropertyChange("legacyAppBase", oldLegacyAppBase, this.legacyAppBase);
+        this.legacyAppBaseFile = null;
+    }
 
     @Override
     public File getLegacyAppBaseFile() {
@@ -324,19 +302,6 @@ public class StandardHost extends ContainerBase implements Host {
         this.legacyAppBaseFile = file;
         return file;
     }
-
-
-    @Override
-    public void setLegacyAppBase(String legacyAppBase) {
-        if (legacyAppBase.trim().equals("")) {
-            log.warn(sm.getString("standardHost.problematicLegacyAppBase", getName()));
-        }
-        String oldLegacyAppBase = this.legacyAppBase;
-        this.legacyAppBase = legacyAppBase;
-        support.firePropertyChange("legacyAppBase", oldLegacyAppBase, this.legacyAppBase);
-        this.legacyAppBaseFile = null;
-    }
-
 
     /**
      * ({@inheritDoc}
@@ -367,9 +332,10 @@ public class StandardHost extends ContainerBase implements Host {
             return hostConfigBase;
         }
         String path = null;
-        if (getXmlBase()!=null) {
+        if (getXmlBase() != null) {
             path = getXmlBase();
-        } else {
+        }
+        else {
             StringBuilder xmlDir = new StringBuilder("conf");
             Container parent = getParent();
             if (parent instanceof Engine) {
@@ -404,6 +370,7 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * Set to <code>true</code> if the Host should attempt to create directories for xmlBase and appBase upon startup
+     *
      * @param createDirs the new flag value
      */
     @Override
@@ -432,7 +399,7 @@ public class StandardHost extends ContainerBase implements Host {
         boolean oldAutoDeploy = this.autoDeploy;
         this.autoDeploy = autoDeploy;
         support.firePropertyChange("autoDeploy", oldAutoDeploy,
-                                   this.autoDeploy);
+                this.autoDeploy);
 
     }
 
@@ -459,7 +426,7 @@ public class StandardHost extends ContainerBase implements Host {
         String oldConfigClass = this.configClass;
         this.configClass = configClass;
         support.firePropertyChange("configClass",
-                                   oldConfigClass, this.configClass);
+                oldConfigClass, this.configClass);
 
     }
 
@@ -484,7 +451,7 @@ public class StandardHost extends ContainerBase implements Host {
         String oldContextClass = this.contextClass;
         this.contextClass = contextClass;
         support.firePropertyChange("contextClass",
-                                   oldContextClass, this.contextClass);
+                oldContextClass, this.contextClass);
 
     }
 
@@ -511,7 +478,7 @@ public class StandardHost extends ContainerBase implements Host {
         boolean oldDeployOnStartup = this.deployOnStartup;
         this.deployOnStartup = deployOnStartup;
         support.firePropertyChange("deployOnStartup", oldDeployOnStartup,
-                                   this.deployOnStartup);
+                this.deployOnStartup);
 
     }
 
@@ -572,8 +539,8 @@ public class StandardHost extends ContainerBase implements Host {
         String oldErrorReportValveClassClass = this.errorReportValveClass;
         this.errorReportValveClass = errorReportValveClass;
         support.firePropertyChange("errorReportValveClass",
-                                   oldErrorReportValveClassClass,
-                                   this.errorReportValveClass);
+                oldErrorReportValveClassClass,
+                this.errorReportValveClass);
 
     }
 
@@ -593,15 +560,14 @@ public class StandardHost extends ContainerBase implements Host {
      * this Container represents.
      *
      * @param name Virtual host name
-     *
-     * @exception IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if name is null
      */
     @Override
     public void setName(String name) {
 
         if (name == null) {
             throw new IllegalArgumentException
-                (sm.getString("standardHost.nullName"));
+                    (sm.getString("standardHost.nullName"));
         }
 
         name = name.toLowerCase(Locale.ENGLISH);      // Internally all names are lower case
@@ -662,18 +628,6 @@ public class StandardHost extends ContainerBase implements Host {
         return this.deployIgnore.toString();
     }
 
-
-    /**
-     * @return the compiled regular expression that defines the files and
-     * directories in the host's {@link #getAppBase} that will be ignored by the
-     * automatic deployment process.
-     */
-    @Override
-    public Pattern getDeployIgnorePattern() {
-        return this.deployIgnore;
-    }
-
-
     /**
      * Set the regular expression that defines the files and directories in
      * the host's {@link #getAppBase} that will be ignored by the automatic
@@ -686,19 +640,30 @@ public class StandardHost extends ContainerBase implements Host {
         String oldDeployIgnore;
         if (this.deployIgnore == null) {
             oldDeployIgnore = null;
-        } else {
+        }
+        else {
             oldDeployIgnore = this.deployIgnore.toString();
         }
         if (deployIgnore == null) {
             this.deployIgnore = null;
-        } else {
+        }
+        else {
             this.deployIgnore = Pattern.compile(deployIgnore);
         }
         support.firePropertyChange("deployIgnore",
-                                   oldDeployIgnore,
-                                   deployIgnore);
+                oldDeployIgnore,
+                deployIgnore);
     }
 
+    /**
+     * @return the compiled regular expression that defines the files and
+     * directories in the host's {@link #getAppBase} that will be ignored by the
+     * automatic deployment process.
+     */
+    @Override
+    public Pattern getDeployIgnorePattern() {
+        return this.deployIgnore;
+    }
 
     /**
      * @return <code>true</code> if a webapp start should fail if a Servlet startup fails
@@ -710,8 +675,9 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * Change the behavior of Servlet startup errors on web application starts.
+     *
      * @param failCtxIfServletStartFails <code>false</code> to ignore errors on Servlets which
-     *    are stated when the web application starts
+     *                                   are stated when the web application starts
      */
     public void setFailCtxIfServletStartFails(
             boolean failCtxIfServletStartFails) {
@@ -744,7 +710,7 @@ public class StandardHost extends ContainerBase implements Host {
                 }
             }
             // Add this alias to the list
-            String newAliases[] = Arrays.copyOf(aliases, aliases.length + 1);
+            String[] newAliases = Arrays.copyOf(aliases, aliases.length + 1);
             newAliases[aliases.length] = alias;
             aliases = newAliases;
         }
@@ -765,7 +731,7 @@ public class StandardHost extends ContainerBase implements Host {
 
         if (!(child instanceof Context)) {
             throw new IllegalArgumentException
-                (sm.getString("standardHost.notContext"));
+                    (sm.getString("standardHost.notContext"));
         }
 
         child.addLifecycleListener(new MemoryLeakTrackingListener());
@@ -781,25 +747,6 @@ public class StandardHost extends ContainerBase implements Host {
         super.addChild(child);
 
     }
-
-
-    /**
-     * Used to ensure the regardless of {@link Context} implementation, a record
-     * is kept of the class loader used every time a context starts.
-     */
-    private class MemoryLeakTrackingListener implements LifecycleListener {
-        @Override
-        public void lifecycleEvent(LifecycleEvent event) {
-            if (event.getType().equals(Lifecycle.AFTER_START_EVENT)) {
-                if (event.getSource() instanceof Context) {
-                    Context context = ((Context) event.getSource());
-                    childClassLoaders.put(context.getLoader().getClassLoader(),
-                            context.getServletContext().getContextPath());
-                }
-            }
-        }
-    }
-
 
     /**
      * Attempt to identify the contexts that have a class loader memory leak.
@@ -841,7 +788,6 @@ public class StandardHost extends ContainerBase implements Host {
         }
     }
 
-
     /**
      * Remove the specified alias name from the aliases for this Host.
      *
@@ -868,7 +814,7 @@ public class StandardHost extends ContainerBase implements Host {
 
             // Remove the specified alias
             int j = 0;
-            String results[] = new String[aliases.length - 1];
+            String[] results = new String[aliases.length - 1];
             for (int i = 0; i < aliases.length; i++) {
                 if (i != n) {
                     results[j++] = aliases[i];
@@ -883,13 +829,12 @@ public class StandardHost extends ContainerBase implements Host {
 
     }
 
-
     /**
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -913,7 +858,7 @@ public class StandardHost extends ContainerBase implements Host {
                     }
                 }
                 // 如果没有找到
-                if(!found) {
+                if (!found) {
                     // 根据异常报告名称获取Value接口
                     Valve valve = ErrorReportValve.class.getName().equals(errorValve) ?
                             new ErrorReportValve() :
@@ -932,16 +877,13 @@ public class StandardHost extends ContainerBase implements Host {
         super.startInternal();
     }
 
-
-    // -------------------- JMX  --------------------
     /**
      * @return the MBean Names of the Valves associated with this Host
-     *
-     * @exception Exception if an MBean cannot be created or registered
+     * @throws Exception if an MBean cannot be created or registered
      */
     public String[] getValveNames() throws Exception {
-        Valve [] valves = this.getPipeline().getValves();
-        String [] mbeanNames = new String[valves.length];
+        Valve[] valves = this.getPipeline().getValves();
+        String[] mbeanNames = new String[valves.length];
         for (int i = 0; i < valves.length; i++) {
             if (valves[i] instanceof JmxEnabled) {
                 ObjectName oname = ((JmxEnabled) valves[i]).getObjectName();
@@ -954,6 +896,9 @@ public class StandardHost extends ContainerBase implements Host {
         return mbeanNames;
     }
 
+
+    // -------------------- JMX  --------------------
+
     public String[] getAliases() {
         synchronized (aliasesLock) {
             return aliases;
@@ -963,10 +908,24 @@ public class StandardHost extends ContainerBase implements Host {
     @Override
     protected String getObjectNameKeyProperties() {
 
-        StringBuilder keyProperties = new StringBuilder("type=Host");
-        keyProperties.append(getMBeanKeyProperties());
+        return "type=Host" + getMBeanKeyProperties();
+    }
 
-        return keyProperties.toString();
+    /**
+     * Used to ensure the regardless of {@link Context} implementation, a record
+     * is kept of the class loader used every time a context starts.
+     */
+    private class MemoryLeakTrackingListener implements LifecycleListener {
+        @Override
+        public void lifecycleEvent(LifecycleEvent event) {
+            if (event.getType().equals(Lifecycle.AFTER_START_EVENT)) {
+                if (event.getSource() instanceof Context) {
+                    Context context = ((Context) event.getSource());
+                    childClassLoaders.put(context.getLoader().getClassLoader(),
+                            context.getServletContext().getContextPath());
+                }
+            }
+        }
     }
 
 }

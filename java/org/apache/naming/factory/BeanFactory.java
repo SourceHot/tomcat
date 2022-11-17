@@ -16,24 +16,19 @@
  */
 package org.apache.naming.factory;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.naming.ResourceRef;
+import org.apache.naming.StringManager;
+
+import javax.naming.*;
+import javax.naming.spi.ObjectFactory;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.Hashtable;
-
-import javax.naming.Context;
-import javax.naming.Name;
-import javax.naming.NamingException;
-import javax.naming.RefAddr;
-import javax.naming.Reference;
-import javax.naming.spi.ObjectFactory;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.naming.ResourceRef;
-import org.apache.naming.StringManager;
 
 /**
  * Object factory for any Resource conforming to the JavaBean spec.
@@ -98,7 +93,7 @@ public class BeanFactory implements ObjectFactory {
      * @param obj The reference object describing the Bean
      */
     @Override
-    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable<?,?> environment)
+    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable<?, ?> environment)
             throws NamingException {
 
         if (obj instanceof ResourceRef) {
@@ -111,10 +106,11 @@ public class BeanFactory implements ObjectFactory {
                 try {
                     if (tcl != null) {
                         beanClass = tcl.loadClass(beanClassName);
-                    } else {
+                    }
+                    else {
                         beanClass = Class.forName(beanClassName);
                     }
-                } catch(ClassNotFoundException cnfe) {
+                } catch (ClassNotFoundException cnfe) {
                     NamingException ne = new NamingException(sm.getString("beanFactory.classNotFound", beanClassName));
                     ne.initCause(cnfe);
                     throw ne;
@@ -140,13 +136,13 @@ public class BeanFactory implements ObjectFactory {
                     String propName = ra.getType();
 
                     if (propName.equals(Constants.FACTORY) ||
-                        propName.equals("scope") || propName.equals("auth") ||
-                        propName.equals("forceString") ||
-                        propName.equals("singleton")) {
+                            propName.equals("scope") || propName.equals("auth") ||
+                            propName.equals("forceString") ||
+                            propName.equals("singleton")) {
                         continue;
                     }
 
-                    value = (String)ra.getContent();
+                    value = (String) ra.getContent();
 
                     Object[] valueArray = new Object[1];
 
@@ -160,23 +156,32 @@ public class BeanFactory implements ObjectFactory {
 
                             if (propType.equals(String.class)) {
                                 valueArray[0] = value;
-                            } else if (propType.equals(Character.class) || propType.equals(char.class)) {
+                            }
+                            else if (propType.equals(Character.class) || propType.equals(char.class)) {
                                 valueArray[0] = Character.valueOf(value.charAt(0));
-                            } else if (propType.equals(Byte.class) || propType.equals(byte.class)) {
+                            }
+                            else if (propType.equals(Byte.class) || propType.equals(byte.class)) {
                                 valueArray[0] = Byte.valueOf(value);
-                            } else if (propType.equals(Short.class) || propType.equals(short.class)) {
+                            }
+                            else if (propType.equals(Short.class) || propType.equals(short.class)) {
                                 valueArray[0] = Short.valueOf(value);
-                            } else if (propType.equals(Integer.class) || propType.equals(int.class)) {
+                            }
+                            else if (propType.equals(Integer.class) || propType.equals(int.class)) {
                                 valueArray[0] = Integer.valueOf(value);
-                            } else if (propType.equals(Long.class) || propType.equals(long.class)) {
+                            }
+                            else if (propType.equals(Long.class) || propType.equals(long.class)) {
                                 valueArray[0] = Long.valueOf(value);
-                            } else if (propType.equals(Float.class) || propType.equals(float.class)) {
+                            }
+                            else if (propType.equals(Float.class) || propType.equals(float.class)) {
                                 valueArray[0] = Float.valueOf(value);
-                            } else if (propType.equals(Double.class) || propType.equals(double.class)) {
+                            }
+                            else if (propType.equals(Double.class) || propType.equals(double.class)) {
                                 valueArray[0] = Double.valueOf(value);
-                            } else if (propType.equals(Boolean.class) || propType.equals(boolean.class)) {
+                            }
+                            else if (propType.equals(Boolean.class) || propType.equals(boolean.class)) {
                                 valueArray[0] = Boolean.valueOf(value);
-                            } else if (setProp != null) {
+                            }
+                            else if (setProp != null) {
                                 // This is a Tomcat specific extension and is not part of the
                                 // Java Bean specification.
                                 String setterName = setProp.getName();
@@ -187,14 +192,16 @@ public class BeanFactory implements ObjectFactory {
                                     throw new NamingException(sm.getString(
                                             "beanFactory.noStringConversion", propName, propType.getName()));
                                 }
-                            } else {
+                            }
+                            else {
                                 throw new NamingException(sm.getString(
                                         "beanFactory.noStringConversion", propName, propType.getName()));
                             }
 
                             if (setProp != null) {
                                 setProp.invoke(bean, valueArray);
-                            } else {
+                            }
+                            else {
                                 throw new NamingException(sm.getString("beanFactory.readOnlyProperty", propName));
                             }
 
@@ -226,7 +233,8 @@ public class BeanFactory implements ObjectFactory {
                 throw ne;
             }
 
-        } else {
+        }
+        else {
             return null;
         }
     }

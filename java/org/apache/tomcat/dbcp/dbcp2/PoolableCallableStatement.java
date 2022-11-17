@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.dbcp.dbcp2;
 
+import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
+
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
 
 /**
  * A {@link DelegatingCallableStatement} that cooperates with {@link PoolingConnection} to implement a pool of
@@ -49,18 +49,14 @@ public class PoolableCallableStatement extends DelegatingCallableStatement {
     /**
      * Constructor.
      *
-     * @param callableStatement
-     *            the underlying {@link CallableStatement}
-     * @param key
-     *            the key for this statement in the {@link KeyedObjectPool}
-     * @param pool
-     *            the {@link KeyedObjectPool} from which this CallableStatement was obtained
-     * @param connection
-     *            the {@link DelegatingConnection} that created this CallableStatement
+     * @param callableStatement the underlying {@link CallableStatement}
+     * @param key               the key for this statement in the {@link KeyedObjectPool}
+     * @param pool              the {@link KeyedObjectPool} from which this CallableStatement was obtained
+     * @param connection        the {@link DelegatingConnection} that created this CallableStatement
      */
     public PoolableCallableStatement(final CallableStatement callableStatement, final PStmtKey key,
-            final KeyedObjectPool<PStmtKey, DelegatingPreparedStatement> pool,
-            final DelegatingConnection<Connection> connection) {
+                                     final KeyedObjectPool<PStmtKey, DelegatingPreparedStatement> pool,
+                                     final DelegatingConnection<Connection> connection) {
         super(connection, callableStatement);
         this.pool = pool;
         this.key = key;

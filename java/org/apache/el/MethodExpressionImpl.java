@@ -16,24 +16,16 @@
  */
 package org.apache.el;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELException;
-import jakarta.el.FunctionMapper;
-import jakarta.el.MethodExpression;
-import jakarta.el.MethodInfo;
-import jakarta.el.MethodNotFoundException;
-import jakarta.el.PropertyNotFoundException;
-import jakarta.el.VariableMapper;
-
+import jakarta.el.*;
 import org.apache.el.lang.EvaluationContext;
 import org.apache.el.lang.ExpressionBuilder;
 import org.apache.el.parser.Node;
 import org.apache.el.util.ReflectionUtil;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 
 /**
@@ -65,12 +57,11 @@ import org.apache.el.util.ReflectionUtil;
  * <p>See the notes about comparison, serialization and immutability in
  * the {@link jakarta.el.Expression} javadocs.
  *
+ * @author Jacob Hookom [jacob@hookom.net]
  * @see jakarta.el.ELResolver
  * @see jakarta.el.Expression
  * @see jakarta.el.ExpressionFactory
  * @see jakarta.el.MethodExpression
- *
- * @author Jacob Hookom [jacob@hookom.net]
  */
 public final class MethodExpressionImpl extends MethodExpression implements
         Externalizable {
@@ -92,8 +83,8 @@ public final class MethodExpressionImpl extends MethodExpression implements
     }
 
     public MethodExpressionImpl(String expr, Node node,
-            FunctionMapper fnMapper, VariableMapper varMapper,
-            Class<?> expectedType, Class<?>[] paramTypes) {
+                                FunctionMapper fnMapper, VariableMapper varMapper,
+                                Class<?> expectedType, Class<?>[] paramTypes) {
         super();
         this.expr = expr;
         this.node = node;
@@ -123,10 +114,9 @@ public final class MethodExpressionImpl extends MethodExpression implements
      * <code>fn2:foo</code> to the same method.
      * </p>
      *
-     * @param obj
-     *            the <code>Object</code> to test for equality.
+     * @param obj the <code>Object</code> to test for equality.
      * @return <code>true</code> if <code>obj</code> equals this
-     *         <code>Expression</code>; <code>false</code> otherwise.
+     * <code>Expression</code>; <code>false</code> otherwise.
      * @see java.util.Hashtable
      * @see java.lang.Object#equals(java.lang.Object)
      */
@@ -154,7 +144,6 @@ public final class MethodExpressionImpl extends MethodExpression implements
      * </p>
      *
      * @return The original expression String.
-     *
      * @see jakarta.el.Expression#getExpressionString()
      */
     @Override
@@ -166,22 +155,17 @@ public final class MethodExpressionImpl extends MethodExpression implements
      * Evaluates the expression relative to the provided context, and returns
      * information about the actual referenced method.
      *
-     * @param context
-     *            The context of this evaluation
+     * @param context The context of this evaluation
      * @return an instance of <code>MethodInfo</code> containing information
-     *         about the method the expression evaluated to.
-     * @throws NullPointerException
-     *             if context is <code>null</code> or the base object is
-     *             <code>null</code> on the last resolution.
-     * @throws PropertyNotFoundException
-     *             if one of the property resolutions failed because a specified
-     *             variable or property does not exist or is not readable.
-     * @throws MethodNotFoundException
-     *             if no suitable method can be found.
-     * @throws ELException
-     *             if an exception was thrown while performing property or
-     *             variable resolution. The thrown exception must be included as
-     *             the cause property of this exception, if available.
+     * about the method the expression evaluated to.
+     * @throws NullPointerException      if context is <code>null</code> or the base object is
+     *                                   <code>null</code> on the last resolution.
+     * @throws PropertyNotFoundException if one of the property resolutions failed because a specified
+     *                                   variable or property does not exist or is not readable.
+     * @throws MethodNotFoundException   if no suitable method can be found.
+     * @throws ELException               if an exception was thrown while performing property or
+     *                                   variable resolution. The thrown exception must be included as
+     *                                   the cause property of this exception, if available.
      * @see jakarta.el.MethodExpression#getMethodInfo(jakarta.el.ELContext)
      */
     @Override
@@ -231,30 +215,24 @@ public final class MethodExpressionImpl extends MethodExpression implements
      * method that was found using the supplied parameters, and returns the
      * result of the method invocation.
      *
-     * @param context
-     *            The context of this evaluation.
-     * @param params
-     *            The parameters to pass to the method, or <code>null</code>
-     *            if no parameters.
+     * @param context The context of this evaluation.
+     * @param params  The parameters to pass to the method, or <code>null</code>
+     *                if no parameters.
      * @return the result of the method invocation (<code>null</code> if the
-     *         method has a <code>void</code> return type).
-     * @throws NullPointerException
-     *             if context is <code>null</code> or the base object is
-     *             <code>null</code> on the last resolution.
-     * @throws PropertyNotFoundException
-     *             if one of the property resolutions failed because a specified
-     *             variable or property does not exist or is not readable.
-     * @throws MethodNotFoundException
-     *             if no suitable method can be found.
-     * @throws ELException
-     *             if an exception was thrown while performing property or
-     *             variable resolution. The thrown exception must be included as
-     *             the cause property of this exception, if available. If the
-     *             exception thrown is an <code>InvocationTargetException</code>,
-     *             extract its <code>cause</code> and pass it to the
-     *             <code>ELException</code> constructor.
+     * method has a <code>void</code> return type).
+     * @throws NullPointerException      if context is <code>null</code> or the base object is
+     *                                   <code>null</code> on the last resolution.
+     * @throws PropertyNotFoundException if one of the property resolutions failed because a specified
+     *                                   variable or property does not exist or is not readable.
+     * @throws MethodNotFoundException   if no suitable method can be found.
+     * @throws ELException               if an exception was thrown while performing property or
+     *                                   variable resolution. The thrown exception must be included as
+     *                                   the cause property of this exception, if available. If the
+     *                                   exception thrown is an <code>InvocationTargetException</code>,
+     *                                   extract its <code>cause</code> and pass it to the
+     *                                   <code>ELException</code> constructor.
      * @see jakarta.el.MethodExpression#invoke(jakarta.el.ELContext,
-     *      java.lang.Object[])
+     * java.lang.Object[])
      */
     @Override
     public Object invoke(ELContext context, Object[] params)

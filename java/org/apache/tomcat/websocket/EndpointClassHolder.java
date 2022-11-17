@@ -16,13 +16,12 @@
  */
 package org.apache.tomcat.websocket;
 
-import javax.naming.NamingException;
-
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Endpoint;
-
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.naming.NamingException;
 
 public class EndpointClassHolder implements ClientEndpointHolder {
 
@@ -47,7 +46,8 @@ public class EndpointClassHolder implements ClientEndpointHolder {
         try {
             if (instanceManager == null) {
                 return clazz.getConstructor().newInstance();
-            } else {
+            }
+            else {
                 return (Endpoint) instanceManager.newInstance(clazz);
             }
         } catch (ReflectiveOperationException | NamingException e) {

@@ -16,10 +16,10 @@
  */
 package org.apache.catalina.tribes.transport;
 
+import org.apache.catalina.tribes.Member;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.apache.catalina.tribes.Member;
 
 public class SenderState {
 
@@ -28,10 +28,24 @@ public class SenderState {
     public static final int FAILING = 2;
 
     protected static final ConcurrentMap<Member, SenderState> memberStates = new ConcurrentHashMap<>();
+    private volatile int state = READY;
+
+    private SenderState() {
+        this(READY);
+    }
+
+    private SenderState(int state) {
+        this.state = state;
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
 
     public static SenderState getSenderState(Member member) {
         return getSenderState(member, true);
     }
+
+    //  ----------------------------------------------------- Constructor
 
     public static SenderState getSenderState(Member member, boolean create) {
         SenderState state = memberStates.get(member);
@@ -49,24 +63,7 @@ public class SenderState {
         memberStates.remove(member);
     }
 
-
-    // ----------------------------------------------------- Instance Variables
-
-    private volatile int state = READY;
-
-    //  ----------------------------------------------------- Constructor
-
-
-    private SenderState() {
-        this(READY);
-    }
-
-    private SenderState(int state) {
-        this.state = state;
-    }
-
     /**
-     *
      * @return boolean
      */
     public boolean isSuspect() {

@@ -16,26 +16,24 @@
  */
 package org.apache.catalina.tribes.group.interceptors;
 
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.catalina.tribes.ChannelException;
 import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.group.AbsoluteOrder;
 import org.apache.catalina.tribes.group.ChannelInterceptorBase;
 
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * A dinky coordinator, just uses a sorted version of the member array.
  *
  * @author rnewson
- *
  */
 public class SimpleCoordinator extends ChannelInterceptorBase {
 
-    private Member[] view;
-
     private final AtomicBoolean membershipChanged = new AtomicBoolean();
+    private Member[] view;
 
     private void membershipChanged() {
         membershipChanged.set(true);
@@ -75,7 +73,8 @@ public class SimpleCoordinator extends ChannelInterceptorBase {
         while (stableCount < 10) {
             if (membershipChanged.compareAndSet(true, false)) {
                 stableCount = 0;
-            } else {
+            }
+            else {
                 stableCount++;
             }
             try {
@@ -86,7 +85,7 @@ public class SimpleCoordinator extends ChannelInterceptorBase {
         }
 
         final Member[] members = getMembers();
-        final Member[] view = new Member[members.length+1];
+        final Member[] view = new Member[members.length + 1];
         System.arraycopy(members, 0, view, 0, members.length);
         view[members.length] = getLocalMember(false);
         Arrays.sort(view, AbsoluteOrder.comp);
@@ -111,7 +110,7 @@ public class SimpleCoordinator extends ChannelInterceptorBase {
     }
 
     public boolean isCoordinator() {
-        return view == null ? false : getLocalMember(false).equals(
+        return view != null && getLocalMember(false).equals(
                 getCoordinator());
     }
 

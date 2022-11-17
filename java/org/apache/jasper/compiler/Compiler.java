@@ -16,18 +16,6 @@
  */
 package org.apache.jasper.compiler;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspCompilationContext;
 import org.apache.jasper.Options;
@@ -37,6 +25,13 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.Jar;
 import org.apache.tomcat.util.scan.JarFactory;
+
+import java.io.*;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Main JSP compiler class. This class uses Ant for compiling.
@@ -82,7 +77,7 @@ public abstract class Compiler {
 
     public SmapStratum getSmap(String className) {
 
-        Map<String,SmapStratum> smaps = ctxt.getRuntimeContext().getSmaps();
+        Map<String, SmapStratum> smaps = ctxt.getRuntimeContext().getSmaps();
         SmapStratum smap = smaps.get(className);
 
         if (smap == null && !options.isSmapSuppressed()) {
@@ -102,10 +97,9 @@ public abstract class Compiler {
      * Compile the jsp file into equivalent servlet in .java file
      *
      * @return A map of class names to JSR 045 source maps
-     *
      * @throws Exception Error generating Java source
      */
-    protected Map<String,SmapStratum> generateJava() throws Exception {
+    protected Map<String, SmapStratum> generateJava() throws Exception {
 
         long t1, t2, t3, t4;
 
@@ -199,7 +193,7 @@ public abstract class Compiler {
 
             // Pass 1 - the directives
             Node.Nodes directives =
-                parserCtl.parseDirectives(ctxt.getJspFile());
+                    parserCtl.parseDirectives(ctxt.getJspFile());
             Validator.validateDirectives(this, directives);
 
             // Pass 2 - the whole translation unit
@@ -281,7 +275,7 @@ public abstract class Compiler {
             throw e;
         }
 
-        Map<String,SmapStratum> smaps = null;
+        Map<String, SmapStratum> smaps = null;
 
         // JSR45 Support
         if (!options.isSmapSuppressed()) {
@@ -318,7 +312,8 @@ public abstract class Compiler {
 
         if (ctxt.getOptions().getTrimSpaces().equals(TrimSpacesOption.EXTENDED)) {
             writer = new NewlineReductionServletWriter(new PrintWriter(osw));
-        } else {
+        }
+        else {
             writer = new ServletWriter(new PrintWriter(osw));
         }
 
@@ -332,19 +327,19 @@ public abstract class Compiler {
      *
      * @param smaps The source maps for the class(es) generated from the source
      *              file
-     *
      * @throws FileNotFoundException Source files not found
-     * @throws JasperException Compilation error
-     * @throws Exception Some other error
+     * @throws JasperException       Compilation error
+     * @throws Exception             Some other error
      */
-    protected abstract void generateClass(Map<String,SmapStratum> smaps)
+    protected abstract void generateClass(Map<String, SmapStratum> smaps)
             throws FileNotFoundException, JasperException, Exception;
 
     /**
      * Compile the jsp file from the current engine context.
+     *
      * @throws FileNotFoundException Source files not found
-     * @throws JasperException Compilation error
-     * @throws Exception Some other error
+     * @throws JasperException       Compilation error
+     * @throws Exception             Some other error
      */
     public void compile() throws FileNotFoundException, JasperException,
             Exception {
@@ -355,12 +350,11 @@ public abstract class Compiler {
      * Compile the jsp file from the current engine context. As an side- effect,
      * tag files that are referenced by this page are also compiled.
      *
-     * @param compileClass
-     *            If true, generate both .java and .class file If false,
-     *            generate only .java file
+     * @param compileClass If true, generate both .java and .class file If false,
+     *                     generate only .java file
      * @throws FileNotFoundException Source files not found
-     * @throws JasperException Compilation error
-     * @throws Exception Some other error
+     * @throws JasperException       Compilation error
+     * @throws Exception             Some other error
      */
     public void compile(boolean compileClass) throws FileNotFoundException,
             JasperException, Exception {
@@ -371,14 +365,12 @@ public abstract class Compiler {
      * Compile the jsp file from the current engine context. As an side- effect,
      * tag files that are referenced by this page are also compiled.
      *
-     * @param compileClass
-     *            If true, generate both .java and .class file If false,
-     *            generate only .java file
-     * @param jspcMode
-     *            true if invoked from JspC, false otherwise
+     * @param compileClass If true, generate both .java and .class file If false,
+     *                     generate only .java file
+     * @param jspcMode     true if invoked from JspC, false otherwise
      * @throws FileNotFoundException Source files not found
-     * @throws JasperException Compilation error
-     * @throws Exception Some other error
+     * @throws JasperException       Compilation error
+     * @throws Exception             Some other error
      */
     public void compile(boolean compileClass, boolean jspcMode)
             throws FileNotFoundException, JasperException, Exception {
@@ -388,7 +380,7 @@ public abstract class Compiler {
 
         try {
             final Long jspLastModified = ctxt.getLastModified(ctxt.getJspFile());
-            Map<String,SmapStratum> smaps = generateJava();
+            Map<String, SmapStratum> smaps = generateJava();
             File javaFile = new File(ctxt.getServletJavaFileName());
             if (!javaFile.setLastModified(jspLastModified.longValue())) {
                 throw new JasperException(Localizer.getMessage("jsp.error.setLastModified", javaFile));
@@ -432,8 +424,9 @@ public abstract class Compiler {
     /**
      * This is a protected method intended to be overridden by subclasses of
      * Compiler. This is used by the compile method to do all the compilation.
+     *
      * @return <code>true</code> if the source generation and compilation
-     *  should occur
+     * should occur
      */
     public boolean isOutDated() {
         return isOutDated(true);
@@ -445,11 +438,10 @@ public abstract class Compiler {
      * has dependencies, the check is also extended to its dependents, and so
      * on. This method can by overridden by a subclasses of Compiler.
      *
-     * @param checkClass
-     *            If true, check against .class file, if false, check against
-     *            .java file.
+     * @param checkClass If true, check against .class file, if false, check against
+     *                   .java file.
      * @return <code>true</code> if the source generation and compilation
-     *  should occur
+     * should occur
      */
     public boolean isOutDated(boolean checkClass) {
 
@@ -457,7 +449,7 @@ public abstract class Compiler {
                 && (ctxt.getOptions().getModificationTestInterval() > 0)) {
 
             if (jsw.getLastModificationTest()
-                    + (ctxt.getOptions().getModificationTestInterval() * 1000) > System
+                    + (ctxt.getOptions().getModificationTestInterval() * 1000L) > System
                     .currentTimeMillis()) {
                 return false;
             }
@@ -471,7 +463,8 @@ public abstract class Compiler {
         File targetFile;
         if (checkClass) {
             targetFile = new File(ctxt.getClassFileName());
-        } else {
+        }
+        else {
             targetFile = new File(ctxt.getServletJavaFileName());
         }
         if (!targetFile.exists()) {
@@ -502,7 +495,7 @@ public abstract class Compiler {
             return false;
         }
 
-        Map<String,Long> depends = jsw.getDependants();
+        Map<String, Long> depends = jsw.getDependants();
         if (depends == null) {
             return false;
         }
@@ -519,10 +512,12 @@ public abstract class Compiler {
                     try (Jar jar = JarFactory.newInstance(new URL(key.substring(4, entryStart)))) {
                         includeLastModified = jar.getLastModified(entry);
                     }
-                } else {
+                }
+                else {
                     if (key.startsWith("jar:") || key.startsWith("file:")) {
                         includeUrl = new URL(key);
-                    } else {
+                    }
+                    else {
                         includeUrl = ctxt.getResource(include.getKey());
                     }
                     if (includeUrl == null) {
@@ -531,8 +526,9 @@ public abstract class Compiler {
                     URLConnection iuc = includeUrl.openConnection();
                     if (iuc instanceof JarURLConnection) {
                         includeLastModified =
-                            ((JarURLConnection) iuc).getJarEntry().getTime();
-                    } else {
+                                ((JarURLConnection) iuc).getJarEntry().getTime();
+                    }
+                    else {
                         includeLastModified = iuc.getLastModified();
                     }
                     iuc.getInputStream().close();
@@ -593,7 +589,7 @@ public abstract class Compiler {
         } catch (Exception e) {
             // Remove as much as possible, log possible exceptions
             log.warn(Localizer.getMessage("jsp.warning.compiler.classfile.delete.fail.unknown"),
-                     e);
+                    e);
         }
     }
 
@@ -613,7 +609,7 @@ public abstract class Compiler {
         } catch (Exception e) {
             // Remove as much as possible, log possible exceptions
             log.warn(Localizer.getMessage("jsp.warning.compiler.classfile.delete.fail.unknown"),
-                     e);
+                    e);
         }
     }
 }

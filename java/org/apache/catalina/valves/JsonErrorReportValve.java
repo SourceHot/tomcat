@@ -16,22 +16,21 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.coyote.ActionCode;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * <p>Implementation of a Valve that outputs error jsons.</p>
  *
  * <p>This Valve should be attached at the Host level, although it will work
  * if attached to a Context.</p>
- *
  */
 public class JsonErrorReportValve extends ErrorReportValve {
 
@@ -65,7 +64,8 @@ public class JsonErrorReportValve extends ErrorReportValve {
         String type = null;
         if (throwable != null) {
             type = smClient.getString("errorReportValve.exceptionReport");
-        } else {
+        }
+        else {
             type = smClient.getString("errorReportValve.statusReport");
         }
         String message = response.getMessage();
@@ -77,15 +77,16 @@ public class JsonErrorReportValve extends ErrorReportValve {
         if (description == null) {
             if (message == null || message.isEmpty()) {
                 return;
-            } else {
+            }
+            else {
                 description = smClient.getString("errorReportValve.noDescription");
             }
         }
         String jsonReport = "{\n" +
-                            "  \"type\": \"" + type + "\",\n" +
-                            "  \"message\": \"" + message + "\",\n" +
-                            "  \"description\": \"" + description + "\"\n" +
-                            "}";
+                "  \"type\": \"" + type + "\",\n" +
+                "  \"message\": \"" + message + "\",\n" +
+                "  \"description\": \"" + description + "\"\n" +
+                "}";
         try {
             try {
                 response.setContentType("application/json");
@@ -100,7 +101,6 @@ public class JsonErrorReportValve extends ErrorReportValve {
             if (writer != null) {
                 writer.write(jsonReport);
                 response.finishResponse();
-                return;
             }
         } catch (IOException | IllegalStateException e) {
             // Ignore

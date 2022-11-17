@@ -16,18 +16,17 @@
  */
 package org.apache.catalina.filters;
 
-import java.io.IOException;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Globals;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.http.Parameters.FailReason;
+
+import java.io.IOException;
 
 /**
  * Filter that will reject requests if there was a failure during parameter
@@ -55,7 +54,7 @@ public class FailedRequestFilter extends FilterBase {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+                         FilterChain chain) throws IOException, ServletException {
         if (!isGoodRequest(request)) {
             FailReason reason = (FailReason) request.getAttribute(
                     Globals.PARAMETER_PARSE_FAILED_REASON_ATTR);
@@ -75,8 +74,8 @@ public class FailedRequestFilter extends FilterBase {
                     // and/or URI could be well below any limits set. Use the
                     // default.
                 case UNKNOWN: // Assume the client is at fault
-                // Various things that the client can get wrong that don't have
-                // a specific status code so use the default.
+                    // Various things that the client can get wrong that don't have
+                    // a specific status code so use the default.
                 case INVALID_CONTENT_TYPE:
                 case MULTIPART_CONFIG_INVALID:
                 case NO_NAME:
@@ -101,10 +100,7 @@ public class FailedRequestFilter extends FilterBase {
         // Trigger parsing of parameters
         request.getParameter("none");
         // Detect failure
-        if (request.getAttribute(Globals.PARAMETER_PARSE_FAILED_ATTR) != null) {
-            return false;
-        }
-        return true;
+        return request.getAttribute(Globals.PARAMETER_PARSE_FAILED_ATTR) == null;
     }
 
     @Override

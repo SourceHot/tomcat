@@ -17,17 +17,10 @@
 package org.apache.catalina.authenticator;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import jakarta.servlet.http.Cookie;
-
 import org.apache.tomcat.util.buf.ByteChunk;
+
+import java.util.*;
 
 
 /**
@@ -47,6 +40,42 @@ public final class SavedRequest {
      * The set of Cookies associated with this Request.
      */
     private final List<Cookie> cookies = new ArrayList<>();
+    /**
+     * The set of Headers associated with this Request.  Each key is a header
+     * name, while the value is a List containing one or more actual
+     * values for this header.  The values are returned as an Iterator when
+     * you ask for them.
+     */
+    private final Map<String, List<String>> headers = new HashMap<>();
+    /**
+     * The set of Locales associated with this Request.
+     */
+    private final List<Locale> locales = new ArrayList<>();
+    /**
+     * The request method used on this Request.
+     */
+    private String method = null;
+    /**
+     * The query string associated with this Request.
+     */
+    private String queryString = null;
+    /**
+     * The request URI associated with this Request.
+     */
+    private String requestURI = null;
+    /**
+     * The decode request URI associated with this Request. Path parameters are
+     * also excluded
+     */
+    private String decodedRequestURI = null;
+    /**
+     * The body of this request.
+     */
+    private ByteChunk body = null;
+    /**
+     * The content type of the request, used if this is a POST.
+     */
+    private String contentType = null;
 
     public void addCookie(Cookie cookie) {
         cookies.add(cookie);
@@ -55,15 +84,6 @@ public final class SavedRequest {
     public Iterator<Cookie> getCookies() {
         return cookies.iterator();
     }
-
-
-    /**
-     * The set of Headers associated with this Request.  Each key is a header
-     * name, while the value is a List containing one or more actual
-     * values for this header.  The values are returned as an Iterator when
-     * you ask for them.
-     */
-    private final Map<String, List<String>> headers = new HashMap<>();
 
     public void addHeader(String name, String value) {
         List<String> values = headers.get(name);
@@ -82,16 +102,11 @@ public final class SavedRequest {
         List<String> values = headers.get(name);
         if (values == null) {
             return Collections.emptyIterator();
-        } else {
+        }
+        else {
             return values.iterator();
         }
     }
-
-
-    /**
-     * The set of Locales associated with this Request.
-     */
-    private final List<Locale> locales = new ArrayList<>();
 
     public void addLocale(Locale locale) {
         locales.add(locale);
@@ -101,12 +116,6 @@ public final class SavedRequest {
         return locales.iterator();
     }
 
-
-    /**
-     * The request method used on this Request.
-     */
-    private String method = null;
-
     public String getMethod() {
         return this.method;
     }
@@ -114,12 +123,6 @@ public final class SavedRequest {
     public void setMethod(String method) {
         this.method = method;
     }
-
-
-    /**
-     * The query string associated with this Request.
-     */
-    private String queryString = null;
 
     public String getQueryString() {
         return this.queryString;
@@ -129,12 +132,6 @@ public final class SavedRequest {
         this.queryString = queryString;
     }
 
-
-    /**
-     * The request URI associated with this Request.
-     */
-    private String requestURI = null;
-
     public String getRequestURI() {
         return this.requestURI;
     }
@@ -142,13 +139,6 @@ public final class SavedRequest {
     public void setRequestURI(String requestURI) {
         this.requestURI = requestURI;
     }
-
-
-    /**
-     * The decode request URI associated with this Request. Path parameters are
-     * also excluded
-     */
-    private String decodedRequestURI = null;
 
     public String getDecodedRequestURI() {
         return this.decodedRequestURI;
@@ -158,12 +148,6 @@ public final class SavedRequest {
         this.decodedRequestURI = decodedRequestURI;
     }
 
-
-    /**
-     * The body of this request.
-     */
-    private ByteChunk body = null;
-
     public ByteChunk getBody() {
         return this.body;
     }
@@ -171,11 +155,6 @@ public final class SavedRequest {
     public void setBody(ByteChunk body) {
         this.body = body;
     }
-
-    /**
-     * The content type of the request, used if this is a POST.
-     */
-    private String contentType = null;
 
     public String getContentType() {
         return this.contentType;

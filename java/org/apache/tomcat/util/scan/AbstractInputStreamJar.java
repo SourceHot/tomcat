@@ -16,6 +16,9 @@
  */
 package org.apache.tomcat.util.scan;
 
+import org.apache.tomcat.Jar;
+import org.apache.tomcat.util.compat.JreCompat;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -24,9 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
-
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.util.compat.JreCompat;
 
 /**
  * Base implementation of Jar for implementations that use a JarInputStream to
@@ -39,7 +39,7 @@ public abstract class AbstractInputStreamJar implements Jar {
     private NonClosingJarInputStream jarInputStream = null;
     private JarEntry entry = null;
     private Boolean multiRelease = null;
-    private Map<String,String> mrMap = null;
+    private Map<String, String> mrMap = null;
 
     public AbstractInputStreamJar(URL jarFileUrl) {
         this.jarFileURL = jarFileUrl;
@@ -68,12 +68,13 @@ public abstract class AbstractInputStreamJar implements Jar {
                 // Skip base entries where there is a multi-release entry
                 // Skip multi-release entries that are not being used
                 while (entry != null &&
-                        (mrMap.keySet().contains(entry.getName()) ||
+                        (mrMap.containsKey(entry.getName()) ||
                                 entry.getName().startsWith("META-INF/versions/") &&
-                                !mrMap.values().contains(entry.getName()))) {
+                                        !mrMap.containsValue(entry.getName()))) {
                     entry = jarInputStream.getNextJarEntry();
                 }
-            } else {
+            }
+            else {
                 // Skip multi-release entries
                 while (entry != null && entry.getName().startsWith("META-INF/versions/")) {
                     entry = jarInputStream.getNextJarEntry();
@@ -91,7 +92,8 @@ public abstract class AbstractInputStreamJar implements Jar {
         // the name for a multi-release entry to the corresponding base name.
         if (entry == null) {
             return null;
-        } else {
+        }
+        else {
             return entry.getName();
         }
     }
@@ -108,7 +110,8 @@ public abstract class AbstractInputStreamJar implements Jar {
         gotoEntry(name);
         if (entry == null) {
             return null;
-        } else {
+        }
+        else {
             // Clear the entry so that multiple calls to this method for the
             // same entry will result in a new InputStream for each call
             // (BZ 60798)
@@ -123,7 +126,8 @@ public abstract class AbstractInputStreamJar implements Jar {
         gotoEntry(name);
         if (entry == null) {
             return -1;
-        } else {
+        }
+        else {
             return entry.getTime();
         }
     }
@@ -138,12 +142,11 @@ public abstract class AbstractInputStreamJar implements Jar {
 
     @Override
     public String getURL(String entry) {
-        StringBuilder result = new StringBuilder("jar:");
-        result.append(getJarFileURL().toExternalForm());
-        result.append("!/");
-        result.append(entry);
+        String result = "jar:" + getJarFileURL().toExternalForm() +
+                "!/" +
+                entry;
 
-        return result.toString();
+        return result;
     }
 
 
@@ -165,15 +168,18 @@ public abstract class AbstractInputStreamJar implements Jar {
                 Manifest manifest = jarInputStream.getManifest();
                 if (manifest == null) {
                     multiRelease = Boolean.FALSE;
-                } else {
+                }
+                else {
                     String mrValue = manifest.getMainAttributes().getValue("Multi-Release");
                     if (mrValue == null) {
                         multiRelease = Boolean.FALSE;
-                    } else {
+                    }
+                    else {
                         multiRelease = Boolean.valueOf(mrValue);
                     }
                 }
-            } else {
+            }
+            else {
                 multiRelease = Boolean.FALSE;
             }
             if (multiRelease.booleanValue()) {
@@ -212,7 +218,8 @@ public abstract class AbstractInputStreamJar implements Jar {
             if (mrName != null) {
                 name = mrName;
             }
-        } else if (name.startsWith("META-INF/versions/")) {
+        }
+        else if (name.startsWith("META-INF/versions/")) {
             entry = null;
             return;
         }
@@ -238,7 +245,7 @@ public abstract class AbstractInputStreamJar implements Jar {
     private void populateMrMap() throws IOException {
         int targetVersion = JreCompat.getInstance().jarFileRuntimeMajorVersion();
 
-        Map<String,Integer> mrVersions = new HashMap<>();
+        Map<String, Integer> mrVersions = new HashMap<>();
 
         JarEntry jarEntry = jarInputStream.getNextJarEntry();
 
@@ -261,7 +268,8 @@ public abstract class AbstractInputStreamJar implements Jar {
                         if (mappedVersion == null) {
                             // No version found for this name. Create one.
                             mrVersions.put(baseName, Integer.valueOf(version));
-                        } else {
+                        }
+                        else {
                             // Ignore any entry for which we have already found
                             // a later version
                             if (version > mappedVersion.intValue()) {
@@ -277,9 +285,9 @@ public abstract class AbstractInputStreamJar implements Jar {
 
         mrMap = new HashMap<>();
 
-        for (Entry<String,Integer> mrVersion : mrVersions.entrySet()) {
-            mrMap.put(mrVersion.getKey() , "META-INF/versions/" + mrVersion.getValue().toString() +
-                    "/" +  mrVersion.getKey());
+        for (Entry<String, Integer> mrVersion : mrVersions.entrySet()) {
+            mrMap.put(mrVersion.getKey(), "META-INF/versions/" + mrVersion.getValue().toString() +
+                    "/" + mrVersion.getKey());
         }
 
         // Reset stream back to the beginning of the JAR

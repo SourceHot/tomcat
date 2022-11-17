@@ -16,39 +16,9 @@
  */
 package org.apache.jasper.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Enumeration;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.*;
 import jakarta.servlet.FilterRegistration.Dynamic;
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRegistration;
-import jakarta.servlet.SessionCookieConfig;
-import jakarta.servlet.SessionTrackingMode;
 import jakarta.servlet.descriptor.JspConfigDescriptor;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.jasper.compiler.Localizer;
@@ -61,6 +31,15 @@ import org.apache.tomcat.util.descriptor.web.WebXmlParser;
 import org.apache.tomcat.util.scan.JarFactory;
 import org.apache.tomcat.util.scan.StandardJarScanFilter;
 import org.apache.tomcat.util.scan.StandardJarScanner;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -79,13 +58,13 @@ public class JspCServletContext implements ServletContext {
     /**
      * Servlet context attributes.
      */
-    private final Map<String,Object> myAttributes;
+    private final Map<String, Object> myAttributes;
 
 
     /**
      * Servlet context initialization parameters.
      */
-    private final Map<String,String> myParameters = new ConcurrentHashMap<>();
+    private final Map<String, String> myParameters = new ConcurrentHashMap<>();
 
 
     /**
@@ -98,24 +77,16 @@ public class JspCServletContext implements ServletContext {
      * The base URL (document root) for this context.
      */
     private final URL myResourceBaseURL;
-
-
-    /**
-     * Merged web.xml for the application.
-     */
-    private WebXml webXml;
-
-
-    private List<URL> resourceJARs;
-
-
-    private JspConfigDescriptor jspConfigDescriptor;
-
-
     /**
      * Web application class loader.
      */
     private final ClassLoader loader;
+    /**
+     * Merged web.xml for the application.
+     */
+    private final WebXml webXml;
+    private List<URL> resourceJARs;
+    private final JspConfigDescriptor jspConfigDescriptor;
 
 
     // ----------------------------------------------------------- Constructors
@@ -123,16 +94,16 @@ public class JspCServletContext implements ServletContext {
     /**
      * Create a new instance of this ServletContext implementation.
      *
-     * @param aLogWriter PrintWriter which is used for <code>log()</code> calls
+     * @param aLogWriter       PrintWriter which is used for <code>log()</code> calls
      * @param aResourceBaseURL Resource base URL
-     * @param classLoader   Class loader for this {@link ServletContext}
-     * @param validate      Should a validating parser be used to parse web.xml?
-     * @param blockExternal Should external entities be blocked when parsing
-     *                      web.xml?
+     * @param classLoader      Class loader for this {@link ServletContext}
+     * @param validate         Should a validating parser be used to parse web.xml?
+     * @param blockExternal    Should external entities be blocked when parsing
+     *                         web.xml?
      * @throws JasperException An error occurred building the merged web.xml
      */
     public JspCServletContext(PrintWriter aLogWriter, URL aResourceBaseURL,
-            ClassLoader classLoader, boolean validate, boolean blockExternal)
+                              ClassLoader classLoader, boolean validate, boolean blockExternal)
             throws JasperException {
 
         myAttributes = new HashMap<>();
@@ -192,9 +163,7 @@ public class JspCServletContext implements ServletContext {
         // Build list of potential resource JARs. Use same ordering as ContextConfig
         Set<WebXml> resourceFragments = new LinkedHashSet<>(orderedFragments);
         for (WebXml fragment : fragments) {
-            if (!resourceFragments.contains(fragment)) {
-                resourceFragments.add(fragment);
-            }
+            resourceFragments.add(fragment);
         }
 
         for (WebXml resourceFragment : resourceFragments) {
@@ -372,9 +341,8 @@ public class JspCServletContext implements ServletContext {
      * specified context-relative path.
      *
      * @param path Context-relative path of the desired resource
-     *
-     * @exception MalformedURLException if the resource path is
-     *  not properly formed
+     * @throws MalformedURLException if the resource path is
+     *                               not properly formed
      */
     @Override
     public URL getResource(String path) throws MalformedURLException {
@@ -445,13 +413,14 @@ public class JspCServletContext implements ServletContext {
         if (basePath != null) {
             File theBaseDir = new File(basePath);
             if (theBaseDir.isDirectory()) {
-                String theFiles[] = theBaseDir.list();
+                String[] theFiles = theBaseDir.list();
                 if (theFiles != null) {
                     for (String theFile : theFiles) {
                         File testFile = new File(basePath + File.separator + theFile);
                         if (testFile.isFile()) {
                             thePaths.add(path + theFile);
-                        } else if (testFile.isDirectory()) {
+                        }
+                        else if (testFile.isDirectory()) {
                             thePaths.add(path + theFile + "/");
                         }
                     }
@@ -467,8 +436,8 @@ public class JspCServletContext implements ServletContext {
                 try (Jar jar = JarFactory.newInstance(jarUrl)) {
                     jar.nextEntry();
                     for (String entryName = jar.getEntryName();
-                            entryName != null;
-                            jar.nextEntry(), entryName = jar.getEntryName()) {
+                         entryName != null;
+                         jar.nextEntry(), entryName = jar.getEntryName()) {
                         if (entryName.startsWith(jarPath) &&
                                 entryName.length() > jarPath.length()) {
                             // Let the Set implementation handle duplicates
@@ -476,7 +445,8 @@ public class JspCServletContext implements ServletContext {
                             if (sep < 0) {
                                 // This is a file - strip leading "META-INF/resources"
                                 thePaths.add(entryName.substring(18));
-                            } else {
+                            }
+                            else {
                                 // This is a directory - strip leading "META-INF/resources"
                                 thePaths.add(entryName.substring(18, sep + 1));
                             }
@@ -505,7 +475,6 @@ public class JspCServletContext implements ServletContext {
      * Return a null reference for the specified servlet name.
      *
      * @param name Name of the requested servlet
-     *
      * @deprecated This method has been deprecated with no replacement
      */
     @Override
@@ -563,8 +532,7 @@ public class JspCServletContext implements ServletContext {
      * Log the specified message and exception.
      *
      * @param exception The exception to be logged
-     * @param message The message to be logged
-     *
+     * @param message   The message to be logged
      * @deprecated Use log(String,Throwable) instead
      */
     @Override
@@ -577,7 +545,7 @@ public class JspCServletContext implements ServletContext {
     /**
      * Log the specified message and exception.
      *
-     * @param message The message to be logged
+     * @param message   The message to be logged
      * @param exception The exception to be logged
      */
     @Override
@@ -601,7 +569,7 @@ public class JspCServletContext implements ServletContext {
     /**
      * Set or replace the specified context attribute.
      *
-     * @param name Name of the context attribute to set
+     * @param name  Name of the context attribute to set
      * @param value Corresponding attribute value
      */
     @Override
@@ -612,14 +580,14 @@ public class JspCServletContext implements ServletContext {
 
     @Override
     public FilterRegistration.Dynamic addFilter(String filterName,
-            String className) {
+                                                String className) {
         return null;
     }
 
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName,
-            String className) {
+                                                  String className) {
         return null;
     }
 
@@ -657,21 +625,21 @@ public class JspCServletContext implements ServletContext {
 
     @Override
     public Dynamic addFilter(String filterName,
-            Class<? extends Filter> filterClass) {
+                             Class<? extends Filter> filterClass) {
         return null;
     }
 
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName,
-            Servlet servlet) {
+                                                  Servlet servlet) {
         return null;
     }
 
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName,
-            Class<? extends Servlet> servletClass) {
+                                                  Class<? extends Servlet> servletClass) {
         return null;
     }
 

@@ -34,7 +34,7 @@ class ConnectionFactoryFactory {
      * @param basicDataSource Configures creation.
      * @param driver          The JDBC driver.
      * @return a new {@link DriverConnectionFactory} allowing for a {@link BasicDataSource#getDriverClassName()}
-     *         override.
+     * override.
      * @throws SQLException Thrown when instantiation fails.
      */
     static ConnectionFactory createConnectionFactory(final BasicDataSource basicDataSource, final Driver driver)
@@ -45,14 +45,16 @@ class ConnectionFactoryFactory {
         final String user = basicDataSource.getUsername();
         if (user != null) {
             connectionProperties.put(Constants.KEY_USER, user);
-        } else {
+        }
+        else {
             basicDataSource.log("DBCP DataSource configured without a 'username'");
         }
 
         final String pwd = basicDataSource.getPassword();
         if (pwd != null) {
             connectionProperties.put("password", pwd);
-        } else {
+        }
+        else {
             basicDataSource.log("DBCP DataSource configured without a 'password'");
         }
         final String connectionFactoryClassName = basicDataSource.getConnectionFactoryClassName();

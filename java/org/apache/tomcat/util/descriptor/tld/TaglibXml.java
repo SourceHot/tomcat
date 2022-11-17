@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.util.descriptor.tld;
 
+import jakarta.servlet.jsp.tagext.FunctionInfo;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import jakarta.servlet.jsp.tagext.FunctionInfo;
 
 /**
  * Common representation of a Tag Library Descriptor (TLD) XML file.
@@ -31,16 +31,16 @@ import jakarta.servlet.jsp.tagext.FunctionInfo;
  * tag library.
  */
 public class TaglibXml {
+    private final List<TagXml> tags = new ArrayList<>();
+    private final List<TagFileXml> tagFiles = new ArrayList<>();
+    private final List<String> listeners = new ArrayList<>();
+    private final List<FunctionInfo> functions = new ArrayList<>();
     private String tlibVersion;
     private String jspVersion;
     private String shortName;
     private String uri;
     private String info;
     private ValidatorXml validator;
-    private final List<TagXml> tags = new ArrayList<>();
-    private final List<TagFileXml> tagFiles = new ArrayList<>();
-    private final List<String> listeners = new ArrayList<>();
-    private final List<FunctionInfo> functions = new ArrayList<>();
 
     public String getTlibVersion() {
         return tlibVersion;

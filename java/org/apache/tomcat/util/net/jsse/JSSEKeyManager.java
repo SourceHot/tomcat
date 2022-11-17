@@ -16,14 +16,13 @@
  */
 package org.apache.tomcat.util.net.jsse;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedKeyManager;
+import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509KeyManager;
 
 /**
  * X509KeyManager which allows selection of a specific keypair and certificate
@@ -34,16 +33,16 @@ import javax.net.ssl.X509KeyManager;
  */
 public final class JSSEKeyManager extends X509ExtendedKeyManager {
 
-    private X509KeyManager delegate;
-    private String serverKeyAlias;
+    private final X509KeyManager delegate;
+    private final String serverKeyAlias;
 
 
     /**
      * Constructor.
      *
-     * @param mgr The X509KeyManager used as a delegate
+     * @param mgr            The X509KeyManager used as a delegate
      * @param serverKeyAlias The alias name of the server's keypair and
-     * supporting certificate chain
+     *                       supporting certificate chain
      */
     public JSSEKeyManager(X509KeyManager mgr, String serverKeyAlias) {
         super();
@@ -74,8 +73,8 @@ public final class JSSEKeyManager extends X509ExtendedKeyManager {
      */
     @Override
     public String chooseEngineServerAlias(String keyType, Principal[] issuers,
-            SSLEngine engine) {
-        if (serverKeyAlias!=null) {
+                                          SSLEngine engine) {
+        if (serverKeyAlias != null) {
             return serverKeyAlias;
         }
 
@@ -116,7 +115,7 @@ public final class JSSEKeyManager extends X509ExtendedKeyManager {
 
     @Override
     public String chooseEngineClientAlias(String[] keyType, Principal[] issuers,
-            SSLEngine engine) {
+                                          SSLEngine engine) {
         return delegate.chooseClientAlias(keyType, issuers, null);
     }
 }

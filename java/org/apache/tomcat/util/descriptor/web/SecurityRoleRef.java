@@ -37,6 +37,10 @@ public class SecurityRoleRef implements Serializable {
      * The (required) role name.
      */
     private String name = null;
+    /**
+     * The optional role link.
+     */
+    private String link = null;
 
     public String getName() {
         return this.name;
@@ -46,12 +50,6 @@ public class SecurityRoleRef implements Serializable {
         this.name = name;
     }
 
-
-    /**
-     * The optional role link.
-     */
-    private String link = null;
-
     public String getLink() {
         return this.link;
     }
@@ -59,7 +57,6 @@ public class SecurityRoleRef implements Serializable {
     public void setLink(String link) {
         this.link = link;
     }
-
 
 
     // --------------------------------------------------------- Public Methods

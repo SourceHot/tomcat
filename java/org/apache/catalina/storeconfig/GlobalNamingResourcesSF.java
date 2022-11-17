@@ -16,17 +16,17 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.PrintWriter;
 
 /**
  * store server.xml GlobalNamingResource.
  */
 public class GlobalNamingResourcesSF extends StoreFactoryBase {
-    private static Log log = LogFactory.getLog(GlobalNamingResourcesSF.class);
+    private static final Log log = LogFactory.getLog(GlobalNamingResourcesSF.class);
 
     /*
      * Store with NamingResource Factory
@@ -54,16 +54,19 @@ public class GlobalNamingResourcesSF extends StoreFactoryBase {
                 if (resourcesdesc != null) {
                     resourcesdesc.getStoreFactory().store(aWriter, indent + 2,
                             resources);
-                } else {
+                }
+                else {
                     log.warn(sm.getString("globalNamingResourcesSF.noFactory"));
                 }
 
                 getStoreAppender().printIndent(aWriter, indent + 2);
                 getStoreAppender().printCloseTag(aWriter, elementDesc);
-            } else {
+            }
+            else {
                 log.warn(sm.getString("storeFactory.noDescriptor", aElement.getClass(), "GlobalNamingResources"));
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("globalNamingResourcesSF.wrongElement", aElement.getClass()));
         }
     }

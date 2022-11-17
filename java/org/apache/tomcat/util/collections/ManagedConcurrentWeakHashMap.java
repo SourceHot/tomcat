@@ -19,13 +19,7 @@ package org.apache.tomcat.util.collections;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -57,53 +51,6 @@ public class ManagedConcurrentWeakHashMap<K, V> extends AbstractMap<K, V> implem
             }
             key.ackDeath();
             map.remove(key);
-        }
-    }
-
-    private static class Key extends WeakReference<Object> {
-        private final int hash;
-        private boolean dead;
-
-        public Key(Object key, ReferenceQueue<Object> queue) {
-            super(key, queue);
-            hash = key.hashCode();
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (dead) {
-                // Post-mortem cleanup looks for this specific Reference
-                // instance
-                return false;
-            }
-            if (!(obj instanceof Reference<?>)) {
-                return false;
-            }
-            Object oA = get();
-            Object oB = ((Reference<?>) obj).get();
-            if (oA == oB) {
-                return true;
-            }
-            if (oA == null || oB == null) {
-                return false;
-            }
-            return oA.equals(oB);
-        }
-
-        public void ackDeath() {
-            this.dead = true;
-        }
-
-        public boolean isDead() {
-            return dead;
         }
     }
 
@@ -267,5 +214,52 @@ public class ManagedConcurrentWeakHashMap<K, V> extends AbstractMap<K, V> implem
                 };
             }
         };
+    }
+
+    private static class Key extends WeakReference<Object> {
+        private final int hash;
+        private boolean dead;
+
+        public Key(Object key, ReferenceQueue<Object> queue) {
+            super(key, queue);
+            hash = key.hashCode();
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (dead) {
+                // Post-mortem cleanup looks for this specific Reference
+                // instance
+                return false;
+            }
+            if (!(obj instanceof Reference<?>)) {
+                return false;
+            }
+            Object oA = get();
+            Object oB = ((Reference<?>) obj).get();
+            if (oA == oB) {
+                return true;
+            }
+            if (oA == null || oB == null) {
+                return false;
+            }
+            return oA.equals(oB);
+        }
+
+        public void ackDeath() {
+            this.dead = true;
+        }
+
+        public boolean isDead() {
+            return dead;
+        }
     }
 }

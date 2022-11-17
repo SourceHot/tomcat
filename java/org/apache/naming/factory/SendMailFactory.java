@@ -16,22 +16,21 @@
  */
 package org.apache.naming.factory;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Properties;
+import jakarta.mail.Session;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimePartDataSource;
 
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-
-import jakarta.mail.Session;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.internet.MimePartDataSource;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Properties;
 
 /**
  * Factory class that creates a JNDI named javamail MimePartDataSource
@@ -72,16 +71,15 @@ import jakarta.mail.internet.MimePartDataSource;
  * @author Glenn Nielsen Rich Catlett
  */
 
-public class SendMailFactory implements ObjectFactory
-{
+public class SendMailFactory implements ObjectFactory {
     // The class name for the javamail MimeMessageDataSource
     protected static final String DataSourceClassName =
-        "jakarta.mail.internet.MimePartDataSource";
+            "jakarta.mail.internet.MimePartDataSource";
 
     @Override
     public Object getObjectInstance(Object refObj, Name name, Context ctx,
-            Hashtable<?,?> env) throws Exception {
-        final Reference ref = (Reference)refObj;
+                                    Hashtable<?, ?> env) throws Exception {
+        final Reference ref = (Reference) refObj;
 
         // Creation of the DataSource is wrapped inside a doPrivileged
         // so that javamail can read its default properties without
@@ -105,12 +103,12 @@ public class SendMailFactory implements ObjectFactory
                             props.put(refaddr.getType(), refaddr.getContent());
                         }
                         MimeMessage message = new MimeMessage(
-                            Session.getInstance(props));
+                                Session.getInstance(props));
                         try {
                             RefAddr fromAddr = ref.get("mail.from");
                             String from = null;
                             if (fromAddr != null) {
-                                from = (String)ref.get("mail.from").getContent();
+                                from = (String) ref.get("mail.from").getContent();
                             }
                             if (from != null) {
                                 message.setFrom(new InternetAddress(from));
@@ -120,7 +118,8 @@ public class SendMailFactory implements ObjectFactory
                         MimePartDataSource mds = new MimePartDataSource(message);
                         return mds;
                     });
-        } else { // We can't create an instance of the DataSource
+        }
+        else { // We can't create an instance of the DataSource
             return null;
         }
     }

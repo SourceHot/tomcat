@@ -30,26 +30,16 @@ import java.text.SimpleDateFormat;
  */
 public class ThrowableCallStack implements CallStack {
 
-    /**
-     * A snapshot of a throwable.
-     */
-    private static class Snapshot extends Throwable {
-        private static final long serialVersionUID = 1L;
-        private final long timestampMillis = System.currentTimeMillis();
-    }
-
     private final String messageFormat;
-
     //@GuardedBy("dateFormat")
     private final DateFormat dateFormat;
-
     private volatile Snapshot snapshot;
 
     /**
      * Creates a new instance.
      *
      * @param messageFormat message format
-     * @param useTimestamp whether to format the dates in the output message or not
+     * @param useTimestamp  whether to format the dates in the output message or not
      */
     public ThrowableCallStack(final String messageFormat, final boolean useTimestamp) {
         this.messageFormat = messageFormat;
@@ -75,7 +65,8 @@ public class ThrowableCallStack implements CallStack {
         final String message;
         if (dateFormat == null) {
             message = messageFormat;
-        } else {
+        }
+        else {
             synchronized (dateFormat) {
                 message = dateFormat.format(Long.valueOf(snapshotRef.timestampMillis));
             }
@@ -83,5 +74,13 @@ public class ThrowableCallStack implements CallStack {
         writer.println(message);
         snapshotRef.printStackTrace(writer);
         return true;
+    }
+
+    /**
+     * A snapshot of a throwable.
+     */
+    private static class Snapshot extends Throwable {
+        private static final long serialVersionUID = 1L;
+        private final long timestampMillis = System.currentTimeMillis();
     }
 }

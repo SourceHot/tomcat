@@ -18,14 +18,12 @@ package org.apache.el.stream;
 
 import jakarta.el.ELException;
 import jakarta.el.LambdaExpression;
-
 import org.apache.el.util.MessageFactory;
 
 public class Optional {
 
-    private final Object obj;
-
     static final Optional EMPTY = new Optional(null);
+    private final Object obj;
 
     Optional(Object obj) {
         this.obj = obj;
@@ -35,7 +33,8 @@ public class Optional {
     public Object get() throws ELException {
         if (obj == null) {
             throw new ELException(MessageFactory.get("stream.optional.empty"));
-        } else {
+        }
+        else {
             return obj;
         }
     }
@@ -51,7 +50,8 @@ public class Optional {
     public Object orElse(Object other) {
         if (obj == null) {
             return other;
-        } else {
+        }
+        else {
             return obj;
         }
     }
@@ -66,10 +66,12 @@ public class Optional {
 
             if (le instanceof LambdaExpression) {
                 return ((LambdaExpression) le).invoke((Object[]) null);
-            } else {
+            }
+            else {
                 return le;
             }
-        } else {
+        }
+        else {
             return obj;
         }
     }

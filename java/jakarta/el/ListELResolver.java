@@ -17,17 +17,12 @@
 package jakarta.el;
 
 import java.beans.FeatureDescriptor;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ListELResolver extends ELResolver {
 
-    private final boolean readOnly;
-
     private static final Class<?> UNMODIFIABLE = Collections.unmodifiableList(new ArrayList<>()).getClass();
+    private final boolean readOnly;
 
     public ListELResolver() {
         this.readOnly = false;
@@ -35,6 +30,23 @@ public class ListELResolver extends ELResolver {
 
     public ListELResolver(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    private static final int coerce(Object property) {
+        if (property instanceof Number) {
+            return ((Number) property).intValue();
+        }
+        if (property instanceof Character) {
+            return ((Character) property).charValue();
+        }
+        if (property instanceof Boolean) {
+            return ((Boolean) property).booleanValue() ? 1 : 0;
+        }
+        if (property instanceof String) {
+            return Integer.parseInt((String) property);
+        }
+        throw new IllegalArgumentException(property != null ?
+                property.toString() : "null");
     }
 
     @Override
@@ -74,7 +86,7 @@ public class ListELResolver extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         Objects.requireNonNull(context);
 
         if (base instanceof List<?>) {
@@ -132,22 +144,5 @@ public class ListELResolver extends ELResolver {
             return Integer.class;
         }
         return null;
-    }
-
-    private static final int coerce(Object property) {
-        if (property instanceof Number) {
-            return ((Number) property).intValue();
-        }
-        if (property instanceof Character) {
-            return ((Character) property).charValue();
-        }
-        if (property instanceof Boolean) {
-            return ((Boolean) property).booleanValue() ? 1 : 0;
-        }
-        if (property instanceof String) {
-            return Integer.parseInt((String) property);
-        }
-        throw new IllegalArgumentException(property != null ?
-                property.toString() : "null");
     }
 }

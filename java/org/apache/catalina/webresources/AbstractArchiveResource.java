@@ -36,7 +36,7 @@ public abstract class AbstractArchiveResource extends AbstractResource {
     private Certificate[] certificates;
 
     protected AbstractArchiveResource(AbstractArchiveResourceSet archiveResourceSet,
-            String webAppPath, String baseUrl, JarEntry jarEntry, String codeBaseUrl) {
+                                      String webAppPath, String baseUrl, JarEntry jarEntry, String codeBaseUrl) {
         super(archiveResourceSet.getRoot(), webAppPath);
         this.archiveResourceSet = archiveResourceSet;
         this.baseUrl = baseUrl;
@@ -51,11 +51,13 @@ public abstract class AbstractArchiveResource extends AbstractResource {
         if (internalPath.length() > 0 && resourceName.equals(
                 internalPath.subSequence(1, internalPath.length()))) {
             name = "";
-        } else {
+        }
+        else {
             int index = resourceName.lastIndexOf('/');
             if (index == -1) {
                 name = resourceName;
-            } else {
+            }
+            else {
                 name = resourceName.substring(index + 1);
             }
         }

@@ -16,15 +16,15 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.buf.UriUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.buf.UriUtil;
 
 /**
  * Represents a single resource (file or directory) that is located within a
@@ -37,7 +37,7 @@ public class JarWarResource extends AbstractArchiveResource {
     private final String archivePath;
 
     public JarWarResource(AbstractArchiveResourceSet archiveResourceSet, String webAppPath,
-            String baseUrl, JarEntry jarEntry, String archivePath) {
+                          String baseUrl, JarEntry jarEntry, String archivePath) {
 
         super(archiveResourceSet, webAppPath,
                 "jar:war:" + baseUrl + UriUtil.getWarSeparator() + archivePath + "!/",

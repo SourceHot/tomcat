@@ -16,22 +16,20 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.List;
-
-import javax.naming.NamingException;
-
 import jakarta.websocket.DecodeException;
 import jakarta.websocket.Decoder;
 import jakarta.websocket.Decoder.Text;
 import jakarta.websocket.Decoder.TextStream;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.Session;
-
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.Util;
+
+import javax.naming.NamingException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.Method;
+import java.util.List;
 
 
 /**
@@ -46,10 +44,10 @@ public class PojoMessageHandlerWholeText
     private final Class<?> primitiveType;
 
     public PojoMessageHandlerWholeText(Object pojo, Method method,
-            Session session, EndpointConfig config,
-            List<Class<? extends Decoder>> decoderClazzes, Object[] params,
-            int indexPayload, boolean convert, int indexSession,
-            long maxMessageSize) {
+                                       Session session, EndpointConfig config,
+                                       List<Class<? extends Decoder>> decoderClazzes, Object[] params,
+                                       int indexPayload, boolean convert, int indexSession,
+                                       long maxMessageSize) {
         super(pojo, method, session, params, indexPayload, convert,
                 indexSession, maxMessageSize);
 
@@ -67,7 +65,8 @@ public class PojoMessageHandlerWholeText
         if (Util.isPrimitive(type)) {
             primitiveType = type;
             return;
-        } else {
+        }
+        else {
             primitiveType = null;
         }
 
@@ -78,11 +77,13 @@ public class PojoMessageHandlerWholeText
                         Text<?> decoder = (Text<?>) createDecoderInstance(decoderClazz);
                         decoder.init(config);
                         decoders.add(decoder);
-                    } else if (TextStream.class.isAssignableFrom(decoderClazz)) {
+                    }
+                    else if (TextStream.class.isAssignableFrom(decoderClazz)) {
                         TextStream<?> decoder = (TextStream<?>) createDecoderInstance(decoderClazz);
                         decoder.init(config);
                         decoders.add(decoder);
-                    } else {
+                    }
+                    else {
                         // Binary decoder - ignore it
                     }
                 }
@@ -105,7 +106,8 @@ public class PojoMessageHandlerWholeText
                 if (((Text<?>) decoder).willDecode(message)) {
                     return ((Text<?>) decoder).decode(message);
                 }
-            } else {
+            }
+            else {
                 StringReader r = new StringReader(message);
                 try {
                     return ((TextStream<?>) decoder).decode(r);

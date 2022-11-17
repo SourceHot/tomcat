@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
+import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
+
 import java.io.Serializable;
 import java.util.Objects;
-
-import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
 
 /**
  * <p>

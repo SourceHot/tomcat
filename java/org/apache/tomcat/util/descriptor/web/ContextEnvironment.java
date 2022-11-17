@@ -17,7 +17,6 @@
 package org.apache.tomcat.util.descriptor.web;
 
 
-
 /**
  * Representation of an application environment entry, as represented in
  * an <code>&lt;env-entry&gt;</code> element in the deployment descriptor.
@@ -37,6 +36,10 @@ public class ContextEnvironment extends ResourceBase {
      * deployment descriptor?
      */
     private boolean override = true;
+    /**
+     * The value of this environment entry.
+     */
+    private String value = null;
 
     public boolean getOverride() {
         return this.override;
@@ -45,12 +48,6 @@ public class ContextEnvironment extends ResourceBase {
     public void setOverride(boolean override) {
         this.override = override;
     }
-
-
-    /**
-     * The value of this environment entry.
-     */
-    private String value = null;
 
     public String getValue() {
         return this.value;
@@ -119,12 +116,8 @@ public class ContextEnvironment extends ResourceBase {
             return false;
         }
         if (value == null) {
-            if (other.value != null) {
-                return false;
-            }
-        } else if (!value.equals(other.value)) {
-            return false;
+            return other.value == null;
         }
-        return true;
+        else return value.equals(other.value);
     }
 }

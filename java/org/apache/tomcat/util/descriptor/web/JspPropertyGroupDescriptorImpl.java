@@ -16,15 +16,14 @@
  */
 package org.apache.tomcat.util.descriptor.web;
 
+import jakarta.servlet.descriptor.JspPropertyGroupDescriptor;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jakarta.servlet.descriptor.JspPropertyGroupDescriptor;
-
-
 
 public class JspPropertyGroupDescriptorImpl
-        implements JspPropertyGroupDescriptor{
+        implements JspPropertyGroupDescriptor {
 
     private final JspPropertyGroup jspPropertyGroup;
 
@@ -77,7 +76,7 @@ public class JspPropertyGroupDescriptorImpl
 
         if (jspPropertyGroup.getErrorOnUndeclaredNamespace() != null) {
             result =
-                jspPropertyGroup.getErrorOnUndeclaredNamespace().toString();
+                    jspPropertyGroup.getErrorOnUndeclaredNamespace().toString();
         }
 
         return result;

@@ -16,11 +16,8 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -28,6 +25,8 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.util.LifecycleBase;
 import org.apache.tomcat.util.buf.MessageBytes;
+
+import java.io.IOException;
 
 
 /**
@@ -37,27 +36,24 @@ public class HealthCheckValve extends ValveBase {
 
     private static final String UP =
             "{\n" +
-            "  \"status\": \"UP\",\n" +
-            "  \"checks\": []\n" +
-            "}";
+                    "  \"status\": \"UP\",\n" +
+                    "  \"checks\": []\n" +
+                    "}";
 
     private static final String DOWN =
             "{\n" +
-            "  \"status\": \"DOWN\",\n" +
-            "  \"checks\": []\n" +
-            "}";
-
-    private String path = "/health";
-
+                    "  \"status\": \"DOWN\",\n" +
+                    "  \"checks\": []\n" +
+                    "}";
     /**
      * Will be set to true if the valve is associated with a context.
      */
     protected boolean context = false;
-
     /**
      * Check if all child containers are available.
      */
     protected boolean checkContainersAvailable = true;
+    private String path = "/health";
 
     public HealthCheckValve() {
         super(true);
@@ -94,11 +90,13 @@ public class HealthCheckValve extends ValveBase {
             response.setContentType("application/json");
             if (!checkContainersAvailable || isAvailable(getContainer())) {
                 response.getOutputStream().print(UP);
-            } else {
+            }
+            else {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 response.getOutputStream().print(DOWN);
             }
-        } else {
+        }
+        else {
             getNext().invoke(request, response);
         }
     }
@@ -110,8 +108,9 @@ public class HealthCheckValve extends ValveBase {
             }
         }
         if (container instanceof LifecycleBase) {
-            return ((LifecycleBase) container).getState().isAvailable();
-        } else {
+            return container.getState().isAvailable();
+        }
+        else {
             return true;
         }
     }

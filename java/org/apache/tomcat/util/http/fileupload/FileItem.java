@@ -16,12 +16,7 @@
  */
 package org.apache.tomcat.util.http.fileupload;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 
 /**
  * <p> This class represents a file or form item that was received within a
@@ -54,8 +49,7 @@ public interface FileItem extends FileItemHeadersSupport {
      * used to retrieve the contents of the file.
      *
      * @return An {@link java.io.InputStream InputStream} that can be
-     *         used to retrieve the contents of the file.
-     *
+     * used to retrieve the contents of the file.
      * @throws IOException if an error occurs.
      */
     InputStream getInputStream() throws IOException;
@@ -65,7 +59,7 @@ public interface FileItem extends FileItemHeadersSupport {
      * not defined.
      *
      * @return The content type passed by the browser or {@code null} if
-     *         not defined.
+     * not defined.
      */
     String getContentType();
 
@@ -77,9 +71,9 @@ public interface FileItem extends FileItemHeadersSupport {
      *
      * @return The original file name in the client's file system.
      * @throws InvalidFileNameException The file name contains a NUL character,
-     *   which might be an indicator of a security attack. If you intend to
-     *   use the file name anyways, catch the exception and use
-     *   InvalidFileNameException#getName().
+     *                                  which might be an indicator of a security attack. If you intend to
+     *                                  use the file name anyways, catch the exception and use
+     *                                  InvalidFileNameException#getName().
      */
     String getName();
 
@@ -90,7 +84,7 @@ public interface FileItem extends FileItemHeadersSupport {
      * from memory.
      *
      * @return {@code true} if the file contents will be read from memory;
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     boolean isInMemory();
 
@@ -105,7 +99,6 @@ public interface FileItem extends FileItemHeadersSupport {
      * Returns the contents of the file item as an array of bytes.
      *
      * @return The contents of the file item as an array of bytes.
-     *
      * @throws UncheckedIOException if an I/O error occurs
      */
     byte[] get() throws UncheckedIOException;
@@ -116,12 +109,10 @@ public interface FileItem extends FileItemHeadersSupport {
      * contents of the item.
      *
      * @param encoding The character encoding to use.
-     *
      * @return The contents of the item, as a string.
-     *
      * @throws UnsupportedEncodingException if the requested character
      *                                      encoding is not available.
-     * @throws IOException if an I/O error occurs
+     * @throws IOException                  if an I/O error occurs
      */
     String getString(String encoding) throws UnsupportedEncodingException, IOException;
 
@@ -147,7 +138,6 @@ public interface FileItem extends FileItemHeadersSupport {
      *
      * @param file The {@code File} into which the uploaded item should
      *             be stored.
-     *
      * @throws Exception if an error occurs.
      */
     void write(File file) throws Exception;
@@ -181,7 +171,7 @@ public interface FileItem extends FileItemHeadersSupport {
      * a simple form field.
      *
      * @return {@code true} if the instance represents a simple form
-     *         field; {@code false} if it represents an uploaded file.
+     * field; {@code false} if it represents an uploaded file.
      */
     boolean isFormField();
 
@@ -199,8 +189,7 @@ public interface FileItem extends FileItemHeadersSupport {
      * be used for storing the contents of the file.
      *
      * @return An {@link java.io.OutputStream OutputStream} that can be used
-     *         for storing the contents of the file.
-     *
+     * for storing the contents of the file.
      * @throws IOException if an error occurs.
      */
     OutputStream getOutputStream() throws IOException;

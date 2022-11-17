@@ -17,13 +17,9 @@
 package org.apache.catalina.ant.jmx;
 
 
-import javax.management.Attribute;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-
 import org.apache.tools.ant.BuildException;
+
+import javax.management.*;
 
 
 /**
@@ -65,7 +61,7 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
     private String attribute;
     private String value;
     private String type;
-    private boolean convert = false ;
+    private boolean convert = false;
 
     // ------------------------------------------------------------- Properties
 
@@ -89,6 +85,7 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
     public String getValue() {
         return value;
     }
+
     /**
      * @param value The value to set.
      */
@@ -118,6 +115,7 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
     public boolean isConvert() {
         return convert;
     }
+
     /**
      * @param convert The convert to set.
      */
@@ -128,7 +126,7 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
 
     @Override
     public String jmxExecute(MBeanServerConnection jmxServerConnection)
-        throws Exception {
+            throws Exception {
 
         if (getName() == null) {
             throw new BuildException("Must specify a 'name'");
@@ -137,28 +135,30 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
             throw new BuildException(
                     "Must specify a 'attribute' and 'value' for set");
         }
-        return  jmxSet(jmxServerConnection, getName());
-     }
+        return jmxSet(jmxServerConnection, getName());
+    }
 
     /**
      * Set property value.
      *
      * @param jmxServerConnection Connection to the JMX server
-     * @param name The MBean name
+     * @param name                The MBean name
      * @return null (no error message to report other than exception)
      * @throws Exception An error occurred
      */
     protected String jmxSet(MBeanServerConnection jmxServerConnection,
-            String name) throws Exception {
+                            String name) throws Exception {
         Object realValue;
         if (type != null) {
             realValue = convertStringToType(value, type);
-        } else {
+        }
+        else {
             if (isConvert()) {
                 String mType = getMBeanAttributeType(jmxServerConnection, name,
                         attribute);
                 realValue = convertStringToType(value, mType);
-            } else {
+            }
+            else {
                 realValue = value;
             }
         }
@@ -172,8 +172,8 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
      * Get MBean Attribute from Mbean Server
      *
      * @param jmxServerConnection The JMX connection name
-     * @param name The MBean name
-     * @param attribute The attribute name
+     * @param name                The MBean name
+     * @param attribute           The attribute name
      * @return The type of the attribute
      * @throws Exception An error occurred
      */
@@ -184,7 +184,7 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
         ObjectName oname = new ObjectName(name);
         String mattrType = null;
         MBeanInfo minfo = jmxServerConnection.getMBeanInfo(oname);
-        MBeanAttributeInfo attrs[] = minfo.getAttributes();
+        MBeanAttributeInfo[] attrs = minfo.getAttributes();
         for (int i = 0; mattrType == null && i < attrs.length; i++) {
             if (attribute.equals(attrs[i].getName())) {
                 mattrType = attrs[i].getType();
@@ -192,4 +192,4 @@ public class JMXAccessorSetTask extends JMXAccessorTask {
         }
         return mattrType;
     }
- }
+}

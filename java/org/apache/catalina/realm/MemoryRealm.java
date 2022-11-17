@@ -16,6 +16,12 @@
  */
 package org.apache.catalina.realm;
 
+import org.apache.catalina.LifecycleException;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.digester.Digester;
+import org.apache.tomcat.util.file.ConfigFileLoader;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
@@ -23,12 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.catalina.LifecycleException;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.digester.Digester;
-import org.apache.tomcat.util.file.ConfigFileLoader;
 
 
 /**
@@ -43,7 +43,7 @@ import org.apache.tomcat.util.file.ConfigFileLoader;
  *
  * @author Craig R. McClanahan
  */
-public class MemoryRealm  extends RealmBase {
+public class MemoryRealm extends RealmBase {
 
     private static final Log log = LogFactory.getLog(MemoryRealm.class);
 
@@ -54,25 +54,19 @@ public class MemoryRealm  extends RealmBase {
      * The Digester we will use to process in-memory database files.
      */
     private static Digester digester = null;
-
-
+    /**
+     * The set of valid Principals for this Realm, keyed by user name.
+     */
+    private final Map<String, GenericPrincipal> principals = new HashMap<>();
+    /**
+     * The set of credentials for this Realm, keyed by user name.
+     */
+    private final Map<String, String> credentials = new HashMap<>();
     /**
      * The pathname (absolute or relative to Catalina's current working
      * directory) of the XML file containing our database information.
      */
     private String pathname = "conf/tomcat-users.xml";
-
-
-    /**
-     * The set of valid Principals for this Realm, keyed by user name.
-     */
-    private final Map<String,GenericPrincipal> principals = new HashMap<>();
-
-
-    /**
-     * The set of credentials for this Realm, keyed by user name.
-     */
-    private final Map<String, String> credentials = new HashMap<>();
 
 
     // ------------------------------------------------------------- Properties
@@ -107,9 +101,9 @@ public class MemoryRealm  extends RealmBase {
      * Return the Principal associated with the specified username and
      * credentials, if there is one; otherwise return <code>null</code>.
      *
-     * @param username Username of the Principal to look up
+     * @param username    Username of the Principal to look up
      * @param credentials Password or other credentials to use in
-     *  authenticating this username
+     *                    authenticating this username
      * @return the associated principal, or <code>null</code> if there is none.
      */
     @Override
@@ -148,7 +142,8 @@ public class MemoryRealm  extends RealmBase {
                 log.debug(sm.getString("memoryRealm.authenticateSuccess", username));
             }
             return principal;
-        } else {
+        }
+        else {
             if (log.isDebugEnabled()) {
                 log.debug(sm.getString("memoryRealm.authenticateFailure", username));
             }
@@ -165,7 +160,7 @@ public class MemoryRealm  extends RealmBase {
      *
      * @param username User's username
      * @param password User's password (clear text)
-     * @param roles Comma-delimited set of roles associated with this user
+     * @param roles    Comma-delimited set of roles associated with this user
      */
     void addUser(String username, String password, String roles) {
 
@@ -241,8 +236,8 @@ public class MemoryRealm  extends RealmBase {
      * component and implement the requirements of
      * {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected void startInternal() throws LifecycleException {

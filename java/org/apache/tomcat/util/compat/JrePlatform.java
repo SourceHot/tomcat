@@ -22,6 +22,8 @@ import java.util.Locale;
 
 public class JrePlatform {
 
+    public static final boolean IS_MAC_OS;
+    public static final boolean IS_WINDOWS;
     private static final String OS_NAME_PROPERTY = "os.name";
 
     static {
@@ -40,7 +42,8 @@ public class JrePlatform {
         String osName;
         if (System.getSecurityManager() == null) {
             osName = System.getProperty(OS_NAME_PROPERTY);
-        } else {
+        }
+        else {
             osName = AccessController.doPrivileged(
                     (PrivilegedAction<String>) () -> System.getProperty(OS_NAME_PROPERTY));
         }
@@ -49,9 +52,4 @@ public class JrePlatform {
 
         IS_WINDOWS = osName.startsWith("Windows");
     }
-
-
-    public static final boolean IS_MAC_OS;
-
-    public static final boolean IS_WINDOWS;
 }

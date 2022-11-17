@@ -16,18 +16,18 @@
  */
 package org.apache.catalina.realm;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.apache.tomcat.util.security.ConcurrentMessageDigest;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 /**
  * This credential handler supports the following forms of stored passwords:
@@ -53,10 +53,8 @@ import org.apache.tomcat.util.security.ConcurrentMessageDigest;
  */
 public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase {
 
-    private static final Log log = LogFactory.getLog(MessageDigestCredentialHandler.class);
-
     public static final int DEFAULT_ITERATIONS = 1;
-
+    private static final Log log = LogFactory.getLog(MessageDigestCredentialHandler.class);
     private Charset encoding = StandardCharsets.UTF_8;
     private String algorithm = null;
 
@@ -69,7 +67,8 @@ public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase 
     public void setEncoding(String encodingName) {
         if (encodingName == null) {
             encoding = StandardCharsets.UTF_8;
-        } else {
+        }
+        else {
             try {
                 this.encoding = B2CConverter.getCharset(encodingName);
             } catch (UnsupportedEncodingException e) {
@@ -101,7 +100,8 @@ public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase 
         if (getAlgorithm() == null) {
             // No digests, compare directly
             return DigestCredentialHandlerBase.equals(inputCredentials, storedCredentials, false);
-        } else {
+        }
+        else {
             // Some directories and databases prefix the password with the hash
             // type. The string is in a format compatible with Base64.encode not
             // the normal hex encoding of the digest
@@ -114,7 +114,8 @@ public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase 
                 String base64UserDigest = Base64.encodeBase64String(userDigest);
 
                 return DigestCredentialHandlerBase.equals(base64UserDigest, base64ServerDigest, false);
-            } else if (storedCredentials.startsWith("{SSHA}")) {
+            }
+            else if (storedCredentials.startsWith("{SSHA}")) {
                 // "{SSHA}<sha-1 digest:20><salt:n>"
                 // Need to convert the salt to bytes to apply it to the user's
                 // digested password.
@@ -138,9 +139,11 @@ public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase 
                         serverSaltBytes);
 
                 return Arrays.equals(userDigestBytes, serverDigestBytes);
-            } else if (storedCredentials.indexOf('$') > -1) {
+            }
+            else if (storedCredentials.indexOf('$') > -1) {
                 return matchesSaltIterationsEncoded(inputCredentials, storedCredentials);
-            } else {
+            }
+            else {
                 // Hex hashes should be compared case-insensitively
                 String userDigest = mutate(inputCredentials, null, 1);
                 if (userDigest == null) {
@@ -158,12 +161,14 @@ public class MessageDigestCredentialHandler extends DigestCredentialHandlerBase 
     protected String mutate(String inputCredentials, byte[] salt, int iterations) {
         if (algorithm == null) {
             return inputCredentials;
-        } else {
+        }
+        else {
             byte[] inputCredentialbytes = inputCredentials.getBytes(encoding);
             byte[] userDigest;
             if (salt == null) {
                 userDigest = ConcurrentMessageDigest.digest(algorithm, iterations, inputCredentialbytes);
-            } else {
+            }
+            else {
                 userDigest = ConcurrentMessageDigest.digest(algorithm, iterations, salt, inputCredentialbytes);
             }
             return HexUtils.toHexString(userDigest);

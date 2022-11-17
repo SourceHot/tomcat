@@ -56,7 +56,7 @@ public class CoyoteWriter extends PrintWriter {
      */
     @Override
     protected Object clone()
-        throws CloneNotSupportedException {
+            throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }
 
@@ -106,7 +106,7 @@ public class CoyoteWriter extends PrintWriter {
         // so the stream can be reused. We close ob.
         try {
             ob.close();
-        } catch (IOException ex ) {
+        } catch (IOException ex) {
             // Ignore
         }
         error = false;
@@ -138,7 +138,7 @@ public class CoyoteWriter extends PrintWriter {
 
 
     @Override
-    public void write(char buf[], int off, int len) {
+    public void write(char[] buf, int off, int len) {
 
         if (error) {
             return;
@@ -154,7 +154,7 @@ public class CoyoteWriter extends PrintWriter {
 
 
     @Override
-    public void write(char buf[]) {
+    public void write(char[] buf) {
         write(buf, 0, buf.length);
     }
 
@@ -188,7 +188,8 @@ public class CoyoteWriter extends PrintWriter {
     public void print(boolean b) {
         if (b) {
             write("true");
-        } else {
+        }
+        else {
             write("false");
         }
     }
@@ -225,7 +226,7 @@ public class CoyoteWriter extends PrintWriter {
 
 
     @Override
-    public void print(char s[]) {
+    public void print(char[] s) {
         write(s);
     }
 
@@ -294,7 +295,7 @@ public class CoyoteWriter extends PrintWriter {
 
 
     @Override
-    public void println(char c[]) {
+    public void println(char[] c) {
         print(c);
         println();
     }

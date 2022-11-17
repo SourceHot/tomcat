@@ -16,18 +16,10 @@
  */
 package org.apache.catalina.authenticator;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.Principal;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Locale;
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
 import org.apache.catalina.connector.Request;
@@ -42,6 +34,13 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.http.MimeHeaders;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Principal;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Locale;
+
 /**
  * An <b>Authenticator</b> and <b>Valve</b> implementation of FORM BASED
  * Authentication, as described in the Servlet API Specification.
@@ -50,7 +49,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * @author Remy Maucherat
  */
 public class FormAuthenticator
-    extends AuthenticatorBase {
+        extends AuthenticatorBase {
 
     private final Log log = LogFactory.getLog(FormAuthenticator.class); // must not be static
 
@@ -124,10 +123,9 @@ public class FormAuthenticator
      * constraint has been satisfied, or <code>false</code> if we have
      * created a response challenge already.
      *
-     * @param request Request we are processing
+     * @param request  Request we are processing
      * @param response Response we are creating
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     protected boolean doAuthenticate(Request request, HttpServletResponse response)
@@ -174,7 +172,8 @@ public class FormAuthenticator
                     log.debug("Proceed to restored request");
                 }
                 return true;
-            } else {
+            }
+            else {
                 if (log.isDebugEnabled()) {
                     log.debug("Restore of original request failed");
                 }
@@ -269,7 +268,8 @@ public class FormAuthenticator
             if (landingPage == null) {
                 response.sendError(
                         HttpServletResponse.SC_REQUEST_TIMEOUT, sm.getString("authenticator.sessionExpired"));
-            } else {
+            }
+            else {
                 // Make the authenticator think the user originally requested
                 // the landing page
                 String uri = request.getContextPath() + landingPage;
@@ -294,7 +294,8 @@ public class FormAuthenticator
         if (requestURI == null) {
             if (landingPage == null) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, sm.getString("authenticator.formlogin"));
-            } else {
+            }
+            else {
                 // Make the authenticator think the user originally requested
                 // the landing page
                 String uri = request.getContextPath() + landingPage;
@@ -305,14 +306,16 @@ public class FormAuthenticator
                 session.setNote(Constants.FORM_REQUEST_NOTE, saved);
                 response.sendRedirect(response.encodeRedirectURL(uri));
             }
-        } else {
+        }
+        else {
             // Until the Servlet API allows specifying the type of redirect to
             // use.
             Response internalResponse = request.getResponse();
             String location = response.encodeRedirectURL(requestURI);
             if ("HTTP/1.1".equals(request.getProtocol())) {
                 internalResponse.sendRedirect(location, HttpServletResponse.SC_SEE_OTHER);
-            } else {
+            }
+            else {
                 internalResponse.sendRedirect(location, HttpServletResponse.SC_FOUND);
             }
         }
@@ -341,10 +344,8 @@ public class FormAuthenticator
         Session session = request.getSessionInternal(false);
         if (session != null) {
             SavedRequest savedRequest = (SavedRequest) session.getNote(Constants.FORM_REQUEST_NOTE);
-            if (savedRequest != null &&
-                    decodedRequestURI.equals(savedRequest.getDecodedRequestURI())) {
-                return true;
-            }
+            return savedRequest != null &&
+                    decodedRequestURI.equals(savedRequest.getDecodedRequestURI());
         }
 
         return false;
@@ -359,8 +360,8 @@ public class FormAuthenticator
 
     @Override
     protected void register(Request request, HttpServletResponse response,
-            Principal principal, String authType, String username,
-            String password, boolean alwaysUseSession, boolean cache) {
+                            Principal principal, String authType, String username,
+                            String password, boolean alwaysUseSession, boolean cache) {
 
         super.register(request, response, principal, authType, username, password, alwaysUseSession, cache);
 
@@ -371,12 +372,14 @@ public class FormAuthenticator
             if (session != null) {
                 if (username != null) {
                     session.setNote(Constants.SESS_USERNAME_NOTE, username);
-                } else {
+                }
+                else {
                     session.removeNote(Constants.SESS_USERNAME_NOTE);
                 }
                 if (password != null) {
                     session.setNote(Constants.SESS_PASSWORD_NOTE, password);
-                } else {
+                }
+                else {
                     session.removeNote(Constants.SESS_PASSWORD_NOTE);
                 }
             }
@@ -387,16 +390,16 @@ public class FormAuthenticator
     /**
      * Called to forward to the login page
      *
-     * @param request Request we are processing
+     * @param request  Request we are processing
      * @param response Response we are populating
-     * @param config    Login configuration describing how authentication
-     *              should be performed
-     * @throws IOException  If the forward to the login page fails and the call
-     *                      to {@link HttpServletResponse#sendError(int, String)}
-     *                      throws an {@link IOException}
+     * @param config   Login configuration describing how authentication
+     *                 should be performed
+     * @throws IOException If the forward to the login page fails and the call
+     *                     to {@link HttpServletResponse#sendError(int, String)}
+     *                     throws an {@link IOException}
      */
     protected void forwardToLoginPage(Request request,
-            HttpServletResponse response, LoginConfig config)
+                                      HttpServletResponse response, LoginConfig config)
             throws IOException {
 
         if (log.isDebugEnabled()) {
@@ -428,7 +431,7 @@ public class FormAuthenticator
         request.getCoyoteRequest().method().setString("GET");
 
         RequestDispatcher disp =
-            context.getServletContext().getRequestDispatcher(loginPage);
+                context.getServletContext().getRequestDispatcher(loginPage);
         try {
             if (context.fireRequestInitEvent(request.getRequest())) {
                 disp.forward(request.getRequest(), response);
@@ -451,16 +454,16 @@ public class FormAuthenticator
     /**
      * Called to forward to the error page
      *
-     * @param request Request we are processing
+     * @param request  Request we are processing
      * @param response Response we are populating
-     * @param config    Login configuration describing how authentication
-     *              should be performed
-     * @throws IOException  If the forward to the error page fails and the call
-     *                      to {@link HttpServletResponse#sendError(int, String)}
-     *                      throws an {@link IOException}
+     * @param config   Login configuration describing how authentication
+     *                 should be performed
+     * @throws IOException If the forward to the error page fails and the call
+     *                     to {@link HttpServletResponse#sendError(int, String)}
+     *                     throws an {@link IOException}
      */
     protected void forwardToErrorPage(Request request,
-            HttpServletResponse response, LoginConfig config)
+                                      HttpServletResponse response, LoginConfig config)
             throws IOException {
 
         String errorPage = config.getErrorPage();
@@ -576,15 +579,15 @@ public class FormAuthenticator
         MimeHeaders rmh = request.getCoyoteRequest().getMimeHeaders();
         rmh.recycle();
         boolean cacheable = "GET".equalsIgnoreCase(method) ||
-                           "HEAD".equalsIgnoreCase(method);
+                "HEAD".equalsIgnoreCase(method);
         Iterator<String> names = saved.getHeaderNames();
         while (names.hasNext()) {
             String name = names.next();
             // The browser isn't expecting this conditional response now.
             // Assuming that it can quietly recover from an unexpected 412.
             // BZ 43687
-            if(!("If-Modified-Since".equalsIgnoreCase(name) ||
-                 (cacheable && "If-None-Match".equalsIgnoreCase(name)))) {
+            if (!("If-Modified-Since".equalsIgnoreCase(name) ||
+                    (cacheable && "If-None-Match".equalsIgnoreCase(name)))) {
                 Iterator<String> values = saved.getHeaderValues(name);
                 while (values.hasNext()) {
                     rmh.addValue(name).setString(values.next());
@@ -604,7 +607,7 @@ public class FormAuthenticator
 
         if (body != null) {
             request.getCoyoteRequest().action
-                (ActionCode.REQ_SET_BODY_REPLAY, body);
+                    (ActionCode.REQ_SET_BODY_REPLAY, body);
 
             // Set content type
             MessageBytes contentType = MessageBytes.newInstance();
@@ -645,11 +648,11 @@ public class FormAuthenticator
      * @throws IOException if an IO error occurred during the process
      */
     protected void saveRequest(Request request, Session session)
-        throws IOException {
+            throws IOException {
 
         // Create and populate a SavedRequest object for this request
         SavedRequest saved = new SavedRequest();
-        Cookie cookies[] = request.getCookies();
+        Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 saved.addCookie(cookie);
@@ -682,7 +685,7 @@ public class FormAuthenticator
             int bytesRead;
             InputStream is = request.getInputStream();
 
-            while ( (bytesRead = is.read(buffer) ) >= 0) {
+            while ((bytesRead = is.read(buffer)) >= 0) {
                 body.append(buffer, 0, bytesRead);
             }
 
@@ -712,7 +715,7 @@ public class FormAuthenticator
      */
     protected String savedRequestURL(Session session) {
         SavedRequest saved =
-            (SavedRequest) session.getNote(Constants.FORM_REQUEST_NOTE);
+                (SavedRequest) session.getNote(Constants.FORM_REQUEST_NOTE);
         if (saved == null) {
             return null;
         }

@@ -17,11 +17,7 @@
 package org.apache.tomcat.util.descriptor.web;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -35,11 +31,28 @@ public class ResourceBase implements Serializable, Injectable {
 
 
     // ------------------------------------------------------------- Properties
-
+    /**
+     * Holder for our configured properties.
+     */
+    private final Map<String, Object> properties = new HashMap<>();
+    private final List<InjectionTarget> injectionTargets = new ArrayList<>();
     /**
      * The description of this resource.
      */
     private String description = null;
+    /**
+     * The name of this resource.
+     */
+    private String name = null;
+    /**
+     * The name of the resource implementation class.
+     */
+    private String type = null;
+    private String lookupName = null;
+    /**
+     * The NamingResources with which we are associated (if any).
+     */
+    private NamingResources resources = null;
 
     public String getDescription() {
         return this.description;
@@ -48,13 +61,6 @@ public class ResourceBase implements Serializable, Injectable {
     public void setDescription(String description) {
         this.description = description;
     }
-
-
-
-    /**
-     * The name of this resource.
-     */
-    private String name = null;
 
     @Override
     public String getName() {
@@ -65,12 +71,6 @@ public class ResourceBase implements Serializable, Injectable {
         this.name = name;
     }
 
-
-    /**
-     * The name of the resource implementation class.
-     */
-    private String type = null;
-
     public String getType() {
         return this.type;
     }
@@ -78,9 +78,6 @@ public class ResourceBase implements Serializable, Injectable {
     public void setType(String type) {
         this.type = type;
     }
-
-
-    private String lookupName = null;
 
     public String getLookupName() {
         return lookupName;
@@ -94,12 +91,6 @@ public class ResourceBase implements Serializable, Injectable {
         this.lookupName = lookupName;
     }
 
-
-    /**
-     * Holder for our configured properties.
-     */
-    private final Map<String, Object> properties = new HashMap<>();
-
     /**
      * @param name The property name
      * @return a configured property.
@@ -110,7 +101,8 @@ public class ResourceBase implements Serializable, Injectable {
 
     /**
      * Set a configured property.
-     * @param name The property name
+     *
+     * @param name  The property name
      * @param value The property value
      */
     public void setProperty(String name, Object value) {
@@ -119,6 +111,7 @@ public class ResourceBase implements Serializable, Injectable {
 
     /**
      * Remove a configured property.
+     *
      * @param name The property name
      */
     public void removeProperty(String name) {
@@ -127,13 +120,12 @@ public class ResourceBase implements Serializable, Injectable {
 
     /**
      * List properties.
+     *
      * @return the property names iterator
      */
     public Iterator<String> listProperties() {
         return properties.keySet().iterator();
     }
-
-    private final List<InjectionTarget> injectionTargets = new ArrayList<>();
 
     @Override
     public void addInjectionTarget(String injectionTargetName, String jndiName) {
@@ -145,7 +137,6 @@ public class ResourceBase implements Serializable, Injectable {
     public List<InjectionTarget> getInjectionTargets() {
         return injectionTargets;
     }
-
 
     @Override
     public int hashCode() {
@@ -159,7 +150,6 @@ public class ResourceBase implements Serializable, Injectable {
         result = prime * result + ((lookupName == null) ? 0 : lookupName.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -177,52 +167,47 @@ public class ResourceBase implements Serializable, Injectable {
             if (other.description != null) {
                 return false;
             }
-        } else if (!description.equals(other.description)) {
+        }
+        else if (!description.equals(other.description)) {
             return false;
         }
         if (injectionTargets == null) {
             if (other.injectionTargets != null) {
                 return false;
             }
-        } else if (!injectionTargets.equals(other.injectionTargets)) {
+        }
+        else if (!injectionTargets.equals(other.injectionTargets)) {
             return false;
         }
         if (name == null) {
             if (other.name != null) {
                 return false;
             }
-        } else if (!name.equals(other.name)) {
+        }
+        else if (!name.equals(other.name)) {
             return false;
         }
         if (properties == null) {
             if (other.properties != null) {
                 return false;
             }
-        } else if (!properties.equals(other.properties)) {
+        }
+        else if (!properties.equals(other.properties)) {
             return false;
         }
         if (type == null) {
             if (other.type != null) {
                 return false;
             }
-        } else if (!type.equals(other.type)) {
+        }
+        else if (!type.equals(other.type)) {
             return false;
         }
         if (lookupName == null) {
-            if (other.lookupName != null) {
-                return false;
-            }
-        } else if (!lookupName.equals(other.lookupName)) {
-            return false;
+            return other.lookupName == null;
         }
-        return true;
+        else return lookupName.equals(other.lookupName);
     }
-
-
-    /**
-     * The NamingResources with which we are associated (if any).
-     */
-    private NamingResources resources = null;
 
     public NamingResources getNamingResources() {
         return this.resources;

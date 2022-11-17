@@ -16,15 +16,7 @@
  */
 package org.apache.jasper.compiler;
 
-import java.io.IOException;
-import java.net.URL;
-import java.security.AccessController;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-
 import jakarta.servlet.ServletContext;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.jasper.compiler.tagplugin.TagPlugin;
@@ -33,6 +25,13 @@ import org.apache.tomcat.util.descriptor.tagplugin.TagPluginParser;
 import org.apache.tomcat.util.security.PrivilegedGetTccl;
 import org.apache.tomcat.util.security.PrivilegedSetTccl;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.net.URL;
+import java.security.AccessController;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Manages tag plugin optimizations.
@@ -71,7 +70,8 @@ public class TagPluginManager {
         boolean blockExternal;
         if (blockExternalString == null) {
             blockExternal = true;
-        } else {
+        }
+        else {
             blockExternal = Boolean.parseBoolean(blockExternalString);
         }
 
@@ -80,7 +80,8 @@ public class TagPluginManager {
         if (Constants.IS_SECURITY_ENABLED) {
             PrivilegedGetTccl pa = new PrivilegedGetTccl();
             original = AccessController.doPrivileged(pa);
-        } else {
+        }
+        else {
             original = Thread.currentThread().getContextClassLoader();
         }
         try {
@@ -88,7 +89,8 @@ public class TagPluginManager {
                 PrivilegedSetTccl pa =
                         new PrivilegedSetTccl(TagPluginManager.class.getClassLoader());
                 AccessController.doPrivileged(pa);
-            } else {
+            }
+            else {
                 Thread.currentThread().setContextClassLoader(
                         TagPluginManager.class.getClassLoader());
             }
@@ -112,7 +114,8 @@ public class TagPluginManager {
             if (Constants.IS_SECURITY_ENABLED) {
                 PrivilegedSetTccl pa = new PrivilegedSetTccl(original);
                 AccessController.doPrivileged(pa);
-            } else {
+            }
+            else {
                 Thread.currentThread().setContextClassLoader(original);
             }
         }

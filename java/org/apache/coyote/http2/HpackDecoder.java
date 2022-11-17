@@ -16,11 +16,11 @@
  */
 package org.apache.coyote.http2;
 
-import java.nio.ByteBuffer;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.ByteBuffer;
 
 /**
  * A decoder for HPACK.
@@ -62,7 +62,7 @@ public class HpackDecoder {
     /**
      * The maximum allowed memory size set by the container.
      */
-    private int maxMemorySizeHard;
+    private final int maxMemorySizeHard;
     /**
      * The maximum memory size currently in use. May be less than the hard limit.
      */
@@ -91,7 +91,6 @@ public class HpackDecoder {
      * there is no more data in which case this should be considered a protocol error.
      *
      * @param buffer The buffer
-     *
      * @throws HpackException If the packed data is not valid
      */
     void decode(ByteBuffer buffer) throws HpackException {
@@ -105,12 +104,14 @@ public class HpackDecoder {
                 if (index == -1) {
                     buffer.position(originalPos);
                     return;
-                } else if(index == 0) {
+                }
+                else if (index == 0) {
                     throw new HpackException(
                             sm.getString("hpackdecoder.zeroNotValidHeaderTableIndex"));
                 }
                 handleIndex(index);
-            } else if ((b & 0b01000000) != 0) {
+            }
+            else if ((b & 0b01000000) != 0) {
                 //Literal Header Field with Incremental Indexing
                 String headerName = readHeaderName(buffer, 6);
                 if (headerName == null) {
@@ -124,7 +125,8 @@ public class HpackDecoder {
                 }
                 emitHeader(headerName, headerValue);
                 addEntryToHeaderTable(new Hpack.HeaderField(headerName, headerValue));
-            } else if ((b & 0b11110000) == 0) {
+            }
+            else if ((b & 0b11110000) == 0) {
                 //Literal Header Field without Indexing
                 String headerName = readHeaderName(buffer, 4);
                 if (headerName == null) {
@@ -137,7 +139,8 @@ public class HpackDecoder {
                     return;
                 }
                 emitHeader(headerName, headerValue);
-            } else if ((b & 0b11110000) == 0b00010000) {
+            }
+            else if ((b & 0b11110000) == 0b00010000) {
                 //Literal Header Field never indexed
                 String headerName = readHeaderName(buffer, 4);
                 if (headerName == null) {
@@ -150,12 +153,14 @@ public class HpackDecoder {
                     return;
                 }
                 emitHeader(headerName, headerValue);
-            } else if ((b & 0b11100000) == 0b00100000) {
+            }
+            else if ((b & 0b11100000) == 0b00100000) {
                 //context update max table size change
                 if (!handleMaxMemorySizeChange(buffer, originalPos)) {
                     return;
                 }
-            } else {
+            }
+            else {
                 throw new RuntimeException(sm.getString("hpackdecoder.notImplemented"));
             }
         }
@@ -202,9 +207,11 @@ public class HpackDecoder {
         int index = Hpack.decodeInteger(buffer, prefixLength);
         if (index == -1) {
             return null;
-        } else if (index != 0) {
+        }
+        else if (index != 0) {
             return handleIndexedHeaderName(index);
-        } else {
+        }
+        else {
             return readHpackString(buffer);
         }
     }
@@ -239,7 +246,8 @@ public class HpackDecoder {
     private String handleIndexedHeaderName(int index) throws HpackException {
         if (index <= Hpack.STATIC_TABLE_LENGTH) {
             return Hpack.STATIC_TABLE[index].name;
-        } else {
+        }
+        else {
             // index is 1 based
             if (index > Hpack.STATIC_TABLE_LENGTH + filledTableSlots) {
                 throw new HpackException(sm.getString("hpackdecoder.headerTableIndexInvalid",
@@ -264,7 +272,8 @@ public class HpackDecoder {
     private void handleIndex(int index) throws HpackException {
         if (index <= Hpack.STATIC_TABLE_LENGTH) {
             addStaticTableEntry(index);
-        } else {
+        }
+        else {
             int adjustedIndex = getRealIndex(index - Hpack.STATIC_TABLE_LENGTH);
             if (log.isDebugEnabled()) {
                 log.debug(sm.getString("hpackdecoder.useDynamic", Integer.valueOf(adjustedIndex)));
@@ -347,9 +356,9 @@ public class HpackDecoder {
     }
 
     private void resizeIfRequired() {
-        if(filledTableSlots == headerTable.length) {
+        if (filledTableSlots == headerTable.length) {
             Hpack.HeaderField[] newArray = new Hpack.HeaderField[headerTable.length + 10]; //we only grow slowly
-            for(int i = 0; i < headerTable.length; ++i) {
+            for (int i = 0; i < headerTable.length; ++i) {
                 newArray[i] = headerTable[(firstSlotPosition + i) % headerTable.length];
             }
             firstSlotPosition = 0;
@@ -357,6 +366,96 @@ public class HpackDecoder {
         }
     }
 
+    HeaderEmitter getHeaderEmitter() {
+        return headerEmitter;
+    }
+
+    void setHeaderEmitter(HeaderEmitter headerEmitter) {
+        this.headerEmitter = headerEmitter;
+        // Reset limit tracking
+        headerCount = 0;
+        countedCookie = false;
+        headerSize = 0;
+    }
+
+    void setMaxHeaderCount(int maxHeaderCount) {
+        this.maxHeaderCount = maxHeaderCount;
+    }
+
+    void setMaxHeaderSize(int maxHeaderSize) {
+        this.maxHeaderSize = maxHeaderSize;
+    }
+
+    private void emitHeader(String name, String value) throws HpackException {
+        // Header names are forced to lower case
+        if ("cookie".equals(name)) {
+            // Only count the cookie header once since HTTP/2 splits it into
+            // multiple headers to aid compression
+            if (!countedCookie) {
+                headerCount++;
+                countedCookie = true;
+            }
+        }
+        else {
+            headerCount++;
+        }
+        // Overhead will vary. The main concern is that lots of small headers
+        // trigger the limiting mechanism correctly. Therefore, use an overhead
+        // estimate of 3 which is the worst case for small headers.
+        int inc = 3 + name.length() + value.length();
+        headerSize += inc;
+        if (!isHeaderCountExceeded() && !isHeaderSizeExceeded(0)) {
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString("hpackdecoder.emitHeader", name, value));
+            }
+            headerEmitter.emitHeader(name, value);
+        }
+    }
+
+    boolean isHeaderCountExceeded() {
+        if (maxHeaderCount < 0) {
+            return false;
+        }
+        return headerCount > maxHeaderCount;
+    }
+
+    boolean isHeaderSizeExceeded(int unreadSize) {
+        if (maxHeaderSize < 0) {
+            return false;
+        }
+        return (headerSize + unreadSize) > maxHeaderSize;
+    }
+
+    boolean isHeaderSwallowSizeExceeded(int unreadSize) {
+        if (maxHeaderSize < 0) {
+            return false;
+        }
+        // Swallow the same again before closing the connection.
+        return (headerSize + unreadSize) > (2 * maxHeaderSize);
+    }
+
+    int getFirstSlotPosition() {
+        return firstSlotPosition;
+    }
+
+
+    //package private fields for unit tests
+
+    Hpack.HeaderField[] getHeaderTable() {
+        return headerTable;
+    }
+
+    int getFilledTableSlots() {
+        return filledTableSlots;
+    }
+
+    int getCurrentMemorySize() {
+        return currentMemorySize;
+    }
+
+    int getMaxMemorySizeSoft() {
+        return maxMemorySizeSoft;
+    }
 
     /**
      * Interface implemented by the intended recipient of the headers.
@@ -394,103 +493,5 @@ public class HpackDecoder {
          * @throws StreamException If the headers received to date are not valid
          */
         void validateHeaders() throws StreamException;
-    }
-
-
-    HeaderEmitter getHeaderEmitter() {
-        return headerEmitter;
-    }
-
-
-    void setHeaderEmitter(HeaderEmitter headerEmitter) {
-        this.headerEmitter = headerEmitter;
-        // Reset limit tracking
-        headerCount = 0;
-        countedCookie = false;
-        headerSize = 0;
-    }
-
-
-    void setMaxHeaderCount(int maxHeaderCount) {
-        this.maxHeaderCount = maxHeaderCount;
-    }
-
-
-    void setMaxHeaderSize(int maxHeaderSize) {
-        this.maxHeaderSize = maxHeaderSize;
-    }
-
-
-    private void emitHeader(String name, String value) throws HpackException {
-        // Header names are forced to lower case
-        if ("cookie".equals(name)) {
-            // Only count the cookie header once since HTTP/2 splits it into
-            // multiple headers to aid compression
-            if (!countedCookie) {
-                headerCount ++;
-                countedCookie = true;
-            }
-        } else {
-            headerCount ++;
-        }
-        // Overhead will vary. The main concern is that lots of small headers
-        // trigger the limiting mechanism correctly. Therefore, use an overhead
-        // estimate of 3 which is the worst case for small headers.
-        int inc = 3 + name.length() + value.length();
-        headerSize += inc;
-        if (!isHeaderCountExceeded() && !isHeaderSizeExceeded(0)) {
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("hpackdecoder.emitHeader", name, value));
-            }
-            headerEmitter.emitHeader(name, value);
-        }
-    }
-
-
-    boolean isHeaderCountExceeded() {
-        if (maxHeaderCount < 0) {
-            return false;
-        }
-        return headerCount > maxHeaderCount;
-    }
-
-
-    boolean isHeaderSizeExceeded(int unreadSize) {
-        if (maxHeaderSize < 0) {
-            return false;
-        }
-        return (headerSize + unreadSize) > maxHeaderSize;
-    }
-
-
-    boolean isHeaderSwallowSizeExceeded(int unreadSize) {
-        if (maxHeaderSize < 0) {
-            return false;
-        }
-        // Swallow the same again before closing the connection.
-        return (headerSize + unreadSize) > (2 * maxHeaderSize);
-    }
-
-
-    //package private fields for unit tests
-
-    int getFirstSlotPosition() {
-        return firstSlotPosition;
-    }
-
-    Hpack.HeaderField[] getHeaderTable() {
-        return headerTable;
-    }
-
-    int getFilledTableSlots() {
-        return filledTableSlots;
-    }
-
-    int getCurrentMemorySize() {
-        return currentMemorySize;
-    }
-
-    int getMaxMemorySizeSoft() {
-        return maxMemorySizeSoft;
     }
 }

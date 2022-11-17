@@ -17,16 +17,16 @@
 package org.apache.catalina.ant;
 
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-
 import org.apache.catalina.Globals;
 import org.apache.tomcat.util.descriptor.DigesterFactory;
 import org.apache.tomcat.util.digester.Digester;
 import org.apache.tools.ant.BuildException;
 import org.xml.sax.InputSource;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 
 /**
@@ -66,7 +66,7 @@ public class ValidatorTask extends BaseRedirectorHelperTask {
      * attribute validation required by all subclasses; it does not perform
      * any functional logic directly.
      *
-     * @exception BuildException if a validation error occurs
+     * @throws BuildException if a validation error occurs
      */
     @Override
     public void execute() throws BuildException {
@@ -83,7 +83,7 @@ public class ValidatorTask extends BaseRedirectorHelperTask {
         // Commons-logging likes having the context classloader set
         ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader
-            (ValidatorTask.class.getClassLoader());
+                (ValidatorTask.class.getClassLoader());
 
         // Called through trusted manager interface. If running under a
         // SecurityManager assume that untrusted applications may be deployed.
@@ -97,7 +97,8 @@ public class ValidatorTask extends BaseRedirectorHelperTask {
         } catch (Exception e) {
             if (isFailOnError()) {
                 throw new BuildException("Validation failure", e);
-            } else {
+            }
+            else {
                 handleErrorOutput("Validation failure: " + e);
             }
         } finally {

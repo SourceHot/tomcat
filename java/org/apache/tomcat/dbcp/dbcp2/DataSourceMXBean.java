@@ -326,7 +326,6 @@ public interface DataSourceMXBean {
      * See {@link BasicDataSource#restart()}
      *
      * @throws SQLException if an error occurs initializing the data source.
-     *
      * @since 2.8.0
      */
     default void restart() throws SQLException {
@@ -337,7 +336,6 @@ public interface DataSourceMXBean {
      * See {@link BasicDataSource#start()}
      *
      * @throws SQLException if an error occurs initializing the data source.
-     *
      * @since 2.8.0
      */
     default void start() throws SQLException {

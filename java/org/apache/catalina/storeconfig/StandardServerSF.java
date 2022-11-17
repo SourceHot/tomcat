@@ -16,12 +16,12 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Service;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.deploy.NamingResourcesImpl;
+
+import java.io.PrintWriter;
 
 /**
  * Store server.xml Server element and children (
@@ -32,17 +32,12 @@ public class StandardServerSF extends StoreFactoryBase {
     /**
      * Store the specified Server properties.
      *
-     * @param aWriter
-     *            PrintWriter to which we are storing
-     * @param indent
-     *            Number of spaces to indent this element
-     * @param aServer
-     *            Object to be stored
-     *
-     * @exception Exception
-     *                if an exception occurs while storing
+     * @param aWriter PrintWriter to which we are storing
+     * @param indent  Number of spaces to indent this element
+     * @param aServer Object to be stored
+     * @throws Exception if an exception occurs while storing
      * @see org.apache.catalina.storeconfig.IStoreFactory#store(java.io.PrintWriter,
-     *      int, java.lang.Object)
+     * int, java.lang.Object)
      */
     @Override
     public void store(PrintWriter aWriter, int indent, Object aServer)
@@ -54,19 +49,19 @@ public class StandardServerSF extends StoreFactoryBase {
     /**
      * Store the specified server element children.
      *
-     * @param aWriter Current output writer
-     * @param indent Indentation level
-     * @param aObject Server to store
+     * @param aWriter    Current output writer
+     * @param indent     Indentation level
+     * @param aObject    Server to store
      * @param parentDesc The element description
      * @throws Exception Configuration storing error
      */
     @Override
     public void storeChildren(PrintWriter aWriter, int indent, Object aObject,
-            StoreDescription parentDesc) throws Exception {
+                              StoreDescription parentDesc) throws Exception {
         if (aObject instanceof StandardServer) {
             StandardServer server = (StandardServer) aObject;
             // Store nested <Listener> elements
-            LifecycleListener listeners[] = server.findLifecycleListeners();
+            LifecycleListener[] listeners = server.findLifecycleListeners();
             storeElementArray(aWriter, indent, listeners);
             /*LifecycleListener listener = null;
             for (int i = 0; listener == null && i < listeners.length; i++)
@@ -93,7 +88,7 @@ public class StandardServerSF extends StoreFactoryBase {
                         globalNamingResources);
             }
             // Store nested <Service> elements
-            Service services[] = server.findServices();
+            Service[] services = server.findServices();
             storeElementArray(aWriter, indent, services);
         }
     }

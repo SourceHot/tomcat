@@ -16,20 +16,16 @@
  */
 package org.apache.catalina.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InvalidClassException;
-import java.io.ObjectInputStream;
-import java.io.ObjectStreamClass;
+import org.apache.juli.logging.Log;
+import org.apache.tomcat.util.res.StringManager;
+
+import java.io.*;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-
-import org.apache.juli.logging.Log;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * Custom subclass of <code>ObjectInputStream</code> that loads from the
@@ -62,10 +58,9 @@ public final class CustomObjectInputStream extends ObjectInputStream {
      * Construct a new instance of CustomObjectInputStream without any filtering
      * of deserialized classes.
      *
-     * @param stream The input stream we will read from
+     * @param stream      The input stream we will read from
      * @param classLoader The class loader used to instantiate objects
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     public CustomObjectInputStream(InputStream stream, ClassLoader classLoader) throws IOException {
         this(stream, classLoader, null, null, false);
@@ -76,21 +71,20 @@ public final class CustomObjectInputStream extends ObjectInputStream {
      * Construct a new instance of CustomObjectInputStream with filtering of
      * deserialized classes.
      *
-     * @param stream The input stream we will read from
-     * @param classLoader The class loader used to instantiate objects
-     * @param log The logger to use to report any issues. It may only be null if
-     *            the filterMode does not require logging
+     * @param stream                  The input stream we will read from
+     * @param classLoader             The class loader used to instantiate objects
+     * @param log                     The logger to use to report any issues. It may only be null if
+     *                                the filterMode does not require logging
      * @param allowedClassNamePattern The regular expression to use to filter
      *                                deserialized classes. The fully qualified
      *                                class name must match this pattern for
      *                                deserialization to be allowed if filtering
      *                                is enabled.
-     * @param warnOnFailure Should any failures be logged?
-     *
-     * @exception IOException if an input/output error occurs
+     * @param warnOnFailure           Should any failures be logged?
+     * @throws IOException if an input/output error occurs
      */
     public CustomObjectInputStream(InputStream stream, ClassLoader classLoader,
-            Log log, Pattern allowedClassNamePattern, boolean warnOnFailure)
+                                   Log log, Pattern allowedClassNamePattern, boolean warnOnFailure)
             throws IOException {
         super(stream);
         if (log == null && allowedClassNamePattern != null && warnOnFailure) {
@@ -102,7 +96,8 @@ public final class CustomObjectInputStream extends ObjectInputStream {
         this.allowedClassNamePattern = allowedClassNamePattern;
         if (allowedClassNamePattern == null) {
             this.allowedClassNameFilter = null;
-        } else {
+        }
+        else {
             this.allowedClassNameFilter = allowedClassNamePattern.toString();
         }
         this.warnOnFailure = warnOnFailure;
@@ -132,13 +127,12 @@ public final class CustomObjectInputStream extends ObjectInputStream {
      * description, by using the class loader assigned to this Context.
      *
      * @param classDesc Class description from the input stream
-     *
-     * @exception ClassNotFoundException if this class cannot be found
-     * @exception IOException if an input/output error occurs
+     * @throws ClassNotFoundException if this class cannot be found
+     * @throws IOException            if an input/output error occurs
      */
     @Override
     public Class<?> resolveClass(ObjectStreamClass classDesc)
-        throws ClassNotFoundException, IOException {
+            throws ClassNotFoundException, IOException {
 
         String name = classDesc.getName();
         if (allowedClassNamePattern != null) {
@@ -148,7 +142,8 @@ public final class CustomObjectInputStream extends ObjectInputStream {
                 String msg = sm.getString("customObjectInputStream.nomatch", name, allowedClassNameFilter);
                 if (doLog) {
                     log.warn(msg);
-                } else if (log.isDebugEnabled()) {
+                }
+                else if (log.isDebugEnabled()) {
                     log.debug(msg);
                 }
                 throw new InvalidClassException(msg);

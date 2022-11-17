@@ -37,7 +37,7 @@ public interface Store {
     /**
      * @return the Manager instance associated with this Store.
      */
-    public Manager getManager();
+    Manager getManager();
 
 
     /**
@@ -45,15 +45,14 @@ public interface Store {
      *
      * @param manager The Manager which will use this Store.
      */
-    public void setManager(Manager manager);
+    void setManager(Manager manager);
 
 
     /**
      * @return the number of Sessions present in this Store.
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
-    public int getSize() throws IOException;
+    int getSize() throws IOException;
 
 
     // --------------------------------------------------------- Public Methods
@@ -64,17 +63,16 @@ public interface Store {
      *
      * @param listener The listener to add
      */
-    public void addPropertyChangeListener(PropertyChangeListener listener);
+    void addPropertyChangeListener(PropertyChangeListener listener);
 
 
     /**
      * @return an array containing the session identifiers of all Sessions
      * currently saved in this Store.  If there are no such Sessions, a
      * zero-length array is returned.
-     *
-     * @exception IOException if an input/output error occurred
+     * @throws IOException if an input/output error occurred
      */
-    public String[] keys() throws IOException;
+    String[] keys() throws IOException;
 
 
     /**
@@ -83,13 +81,12 @@ public interface Store {
      * such stored Session, return <code>null</code>.
      *
      * @param id Session identifier of the session to load
-     *
-     * @exception ClassNotFoundException if a deserialization error occurs
-     * @exception IOException if an input/output error occurs
      * @return the loaded Session instance
+     * @throws ClassNotFoundException if a deserialization error occurs
+     * @throws IOException            if an input/output error occurs
      */
-    public Session load(String id)
-        throws ClassNotFoundException, IOException;
+    Session load(String id)
+            throws ClassNotFoundException, IOException;
 
 
     /**
@@ -98,18 +95,17 @@ public interface Store {
      * takes no action.
      *
      * @param id Session identifier of the Session to be removed
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
-    public void remove(String id) throws IOException;
+    void remove(String id) throws IOException;
 
 
     /**
      * Remove all Sessions from this Store.
      *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
-    public void clear() throws IOException;
+    void clear() throws IOException;
 
 
     /**
@@ -117,7 +113,7 @@ public interface Store {
      *
      * @param listener The listener to remove
      */
-    public void removePropertyChangeListener(PropertyChangeListener listener);
+    void removePropertyChangeListener(PropertyChangeListener listener);
 
 
     /**
@@ -125,10 +121,9 @@ public interface Store {
      * information for the associated session identifier is replaced.
      *
      * @param session Session to be saved
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
-    public void save(Session session) throws IOException;
+    void save(Session session) throws IOException;
 
 
 }

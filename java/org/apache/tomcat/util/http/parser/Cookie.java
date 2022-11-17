@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.util.http.parser;
 
-import java.nio.charset.StandardCharsets;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.http.ServerCookie;
 import org.apache.tomcat.util.http.ServerCookies;
 import org.apache.tomcat.util.log.UserDataHelper;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -57,8 +57,8 @@ public class Cookie {
     private static final StringManager sm =
             StringManager.getManager("org.apache.tomcat.util.http.parser");
 
-    private static final boolean isCookieOctet[] = new boolean[256];
-    private static final boolean isText[] = new boolean[256];
+    private static final boolean[] isCookieOctet = new boolean[256];
+    private static final boolean[] isText = new boolean[256];
     private static final byte[] VERSION_BYTES = "$Version".getBytes(StandardCharsets.ISO_8859_1);
     private static final byte[] PATH_BYTES = "$Path".getBytes(StandardCharsets.ISO_8859_1);
     private static final byte[] DOMAIN_BYTES = "$Domain".getBytes(StandardCharsets.ISO_8859_1);
@@ -78,19 +78,11 @@ public class Cookie {
         // %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E (RFC6265)
         // %x80 to %xFF                                 (UTF-8)
         for (int i = 0; i < 256; i++) {
-            if (i < 0x21 || i == QUOTE_BYTE || i == COMMA_BYTE ||
-                    i == SEMICOLON_BYTE || i == SLASH_BYTE || i == DEL_BYTE) {
-                isCookieOctet[i] = false;
-            } else {
-                isCookieOctet[i] = true;
-            }
+            isCookieOctet[i] = i >= 0x21 && i != QUOTE_BYTE && i != COMMA_BYTE &&
+                    i != SEMICOLON_BYTE && i != SLASH_BYTE && i != DEL_BYTE;
         }
         for (int i = 0; i < 256; i++) {
-            if (i < TAB_BYTE || (i > TAB_BYTE && i < SPACE_BYTE) || i == DEL_BYTE) {
-                isText[i] = false;
-            } else {
-                isText[i] = true;
-            }
+            isText[i] = i >= TAB_BYTE && (i <= TAB_BYTE || i >= SPACE_BYTE) && i != DEL_BYTE;
         }
     }
 
@@ -101,7 +93,7 @@ public class Cookie {
 
 
     public static void parseCookie(byte[] bytes, int offset, int len,
-            ServerCookies serverCookies) {
+                                   ServerCookies serverCookies) {
 
         // ByteBuffer is used throughout this parser as it allows the byte[]
         // and position information to be easily passed between parsing methods
@@ -147,13 +139,15 @@ public class Cookie {
                 if (b == SEMICOLON_BYTE || b == COMMA_BYTE) {
                     parseCookieRfc2109(bb, serverCookies, version);
                 }
-            } else {
+            }
+            else {
                 // Unrecognised version.
                 // Ignore this header.
                 value.rewind();
                 logInvalidVersion(value);
             }
-        } else {
+        }
+        else {
             // Unrecognised version.
             // Ignore this header.
             logInvalidVersion(value);
@@ -176,15 +170,18 @@ public class Cookie {
         for (int i = 1; i < input.length() - 1; i++) {
             if (chars[i] == '\\') {
                 escaped = true;
-            } else if (escaped) {
+            }
+            else if (escaped) {
                 escaped = false;
                 if (chars[i] < 128) {
                     sb.append(chars[i]);
-                } else {
+                }
+                else {
                     sb.append('\\');
                     sb.append(chars[i]);
                 }
-            } else {
+            }
+            else {
                 sb.append(chars[i]);
             }
         }
@@ -221,12 +218,14 @@ public class Cookie {
             skipResult = skipByte(bb, SEMICOLON_BYTE);
             if (skipResult == SkipResult.FOUND) {
                 // NO-OP
-            } else if (skipResult == SkipResult.NOT_FOUND) {
+            }
+            else if (skipResult == SkipResult.NOT_FOUND) {
                 // Invalid cookie. Ignore it and skip to the next semi-colon
                 skipUntilSemiColon(bb);
                 logInvalidHeader(start, bb);
                 continue;
-            } else {
+            }
+            else {
                 // SkipResult.EOF
                 moreToProcess = false;
             }
@@ -236,7 +235,8 @@ public class Cookie {
                 sc.getName().setBytes(name.array(), name.position(), name.remaining());
                 if (value == null) {
                     sc.getValue().setBytes(EMPTY_BYTES, 0, EMPTY_BYTES.length);
-                } else {
+                }
+                else {
                     sc.getValue().setBytes(value.array(), value.position(), value.remaining());
                 }
             }
@@ -245,7 +245,7 @@ public class Cookie {
 
 
     private static void parseCookieRfc2109(ByteBuffer bb, ServerCookies serverCookies,
-            int version) {
+                                           int version) {
 
         boolean moreToProcess = true;
 
@@ -276,13 +276,15 @@ public class Cookie {
             skipResult = skipByte(bb, COMMA_BYTE);
             if (skipResult == SkipResult.FOUND) {
                 parseAttributes = false;
-            } else {
+            }
+            else {
                 skipResult = skipByte(bb, SEMICOLON_BYTE);
             }
             if (skipResult == SkipResult.EOF) {
                 parseAttributes = false;
                 moreToProcess = false;
-            } else if (skipResult == SkipResult.NOT_FOUND) {
+            }
+            else if (skipResult == SkipResult.NOT_FOUND) {
                 skipInvalidCookie(start, bb);
                 continue;
             }
@@ -308,13 +310,15 @@ public class Cookie {
                     skipResult = skipByte(bb, COMMA_BYTE);
                     if (skipResult == SkipResult.FOUND) {
                         parseAttributes = false;
-                    } else {
+                    }
+                    else {
                         skipResult = skipByte(bb, SEMICOLON_BYTE);
                     }
                     if (skipResult == SkipResult.EOF) {
                         parseAttributes = false;
                         moreToProcess = false;
-                    } else if (skipResult == SkipResult.NOT_FOUND) {
+                    }
+                    else if (skipResult == SkipResult.NOT_FOUND) {
                         skipInvalidCookie(start, bb);
                         continue;
                     }
@@ -342,13 +346,15 @@ public class Cookie {
                     skipResult = skipByte(bb, COMMA_BYTE);
                     if (skipResult == SkipResult.FOUND) {
                         parseAttributes = false;
-                    } else {
+                    }
+                    else {
                         skipResult = skipByte(bb, SEMICOLON_BYTE);
                     }
                     if (skipResult == SkipResult.EOF) {
                         parseAttributes = false;
                         moreToProcess = false;
-                    } else if (skipResult == SkipResult.NOT_FOUND) {
+                    }
+                    else if (skipResult == SkipResult.NOT_FOUND) {
                         skipInvalidCookie(start, bb);
                         continue;
                     }
@@ -361,10 +367,10 @@ public class Cookie {
                 sc.getName().setBytes(name.array(), name.position(), name.remaining());
                 sc.getValue().setBytes(value.array(), value.position(), value.remaining());
                 if (domain != null) {
-                    sc.getDomain().setBytes(domain.array(),  domain.position(),  domain.remaining());
+                    sc.getDomain().setBytes(domain.array(), domain.position(), domain.remaining());
                 }
                 if (path != null) {
-                    sc.getPath().setBytes(path.array(),  path.position(),  path.remaining());
+                    sc.getPath().setBytes(path.array(), path.position(), path.remaining());
                 }
             }
         }
@@ -379,7 +385,7 @@ public class Cookie {
 
 
     private static void skipLWS(ByteBuffer bb) {
-        while(bb.hasRemaining()) {
+        while (bb.hasRemaining()) {
             byte b = bb.get();
             if (b != TAB_BYTE && b != SPACE_BYTE) {
                 bb.rewind();
@@ -390,7 +396,7 @@ public class Cookie {
 
 
     private static void skipUntilSemiColon(ByteBuffer bb) {
-        while(bb.hasRemaining()) {
+        while (bb.hasRemaining()) {
             if (bb.get() == SEMICOLON_BYTE) {
                 break;
             }
@@ -399,7 +405,7 @@ public class Cookie {
 
 
     private static void skipUntilSemiColonOrComma(ByteBuffer bb) {
-        while(bb.hasRemaining()) {
+        while (bb.hasRemaining()) {
             byte b = bb.get();
             if (b == SEMICOLON_BYTE || b == COMMA_BYTE) {
                 break;
@@ -448,7 +454,8 @@ public class Cookie {
         if (bb.hasRemaining()) {
             if (bb.get() == QUOTE_BYTE) {
                 quoted = true;
-            } else {
+            }
+            else {
                 bb.rewind();
             }
         }
@@ -458,14 +465,17 @@ public class Cookie {
             byte b = bb.get();
             if (isCookieOctet[(b & 0xFF)]) {
                 // NO-OP
-            } else if (b == SEMICOLON_BYTE || b == COMMA_BYTE || b == SPACE_BYTE || b == TAB_BYTE) {
+            }
+            else if (b == SEMICOLON_BYTE || b == COMMA_BYTE || b == SPACE_BYTE || b == TAB_BYTE) {
                 end = bb.position() - 1;
                 bb.position(end);
                 break;
-            } else if (quoted && b == QUOTE_BYTE) {
+            }
+            else if (quoted && b == QUOTE_BYTE) {
                 end = bb.position() - 1;
                 break;
-            } else {
+            }
+            else {
                 // Invalid cookie
                 return null;
             }
@@ -484,7 +494,8 @@ public class Cookie {
         if (bb.hasRemaining()) {
             if (bb.get() == QUOTE_BYTE) {
                 quoted = true;
-            } else {
+            }
+            else {
                 bb.rewind();
             }
         }
@@ -494,14 +505,17 @@ public class Cookie {
             byte b = bb.get();
             if (isCookieOctet[(b & 0xFF)]) {
                 // NO-OP
-            } else if (b == SEMICOLON_BYTE || b == SPACE_BYTE || b == TAB_BYTE) {
+            }
+            else if (b == SEMICOLON_BYTE || b == SPACE_BYTE || b == TAB_BYTE) {
                 end = bb.position() - 1;
                 bb.position(end);
                 break;
-            } else if (quoted && b == QUOTE_BYTE) {
+            }
+            else if (quoted && b == QUOTE_BYTE) {
                 end = bb.position() - 1;
                 break;
-            } else {
+            }
+            else {
                 // Invalid cookie
                 return null;
             }
@@ -518,10 +532,12 @@ public class Cookie {
 
         if (bb.peek() == QUOTE_BYTE) {
             return readQuotedString(bb);
-        } else {
+        }
+        else {
             if (allowForwardSlash) {
                 return readTokenAllowForwardSlash(bb);
-            } else {
+            }
+            else {
                 return readToken(bb);
             }
         }
@@ -570,13 +586,17 @@ public class Cookie {
             if (b == SLASH_BYTE) {
                 // Escaping another character
                 escaped = true;
-            } else if (escaped && b > (byte) -1) {
+            }
+            else if (escaped && b > (byte) -1) {
                 escaped = false;
-            } else if (b == QUOTE_BYTE) {
+            }
+            else if (b == QUOTE_BYTE) {
                 return new ByteBuffer(bb.bytes, start, bb.position() - start);
-            } else if (isText[b & 0xFF]) {
+            }
+            else if (isText[b & 0xFF]) {
                 escaped = false;
-            } else {
+            }
+            else {
                 return null;
             }
         }
@@ -610,7 +630,8 @@ public class Cookie {
             String version;
             if (value == null) {
                 version = sm.getString("cookie.valueNotPresent");
-            } else {
+            }
+            else {
                 version = new String(value.bytes, value.position(),
                         value.limit() - value.position(), StandardCharsets.UTF_8);
             }
@@ -636,7 +657,7 @@ public class Cookie {
     private static class ByteBuffer {
 
         private final byte[] bytes;
-        private int limit;
+        private final int limit;
         private int position = 0;
 
         public ByteBuffer(byte[] bytes, int offset, int len) {

@@ -16,13 +16,13 @@
  */
 package org.apache.coyote.http2;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for all streams including the connection (referred to as Stream 0)
@@ -35,9 +35,8 @@ abstract class AbstractStream {
 
     private final Integer identifier;
     private final String idAsString;
-
-    private volatile AbstractStream parentStream = null;
     private final Set<AbstractNonZeroStream> childStreams = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private volatile AbstractStream parentStream = null;
     private long windowSize = ConnectionSettingsBase.DEFAULT_INITIAL_WINDOW_SIZE;
 
     private volatile int connectionAllocationRequested = 0;
@@ -104,22 +103,20 @@ abstract class AbstractStream {
         return childStreams;
     }
 
+    final synchronized long getWindowSize() {
+        return windowSize;
+    }
 
     final synchronized void setWindowSize(long windowSize) {
         this.windowSize = windowSize;
     }
 
-
-    final synchronized long getWindowSize() {
-        return windowSize;
-    }
-
-
     /**
      * Increment window size.
+     *
      * @param increment The amount by which the window size should be increased
      * @throws Http2Exception If the window size is now higher than
-     *  the maximum allowed
+     *                        the maximum allowed
      */
     synchronized void incrementWindowSize(int increment) throws Http2Exception {
         // No need for overflow protection here.
@@ -137,7 +134,8 @@ abstract class AbstractStream {
                     Integer.toString(increment), Long.toString(windowSize));
             if (identifier.intValue() == 0) {
                 throw new ConnectionException(msg, Http2Error.FLOW_CONTROL_ERROR);
-            } else {
+            }
+            else {
                 throw new StreamException(
                         msg, Http2Error.FLOW_CONTROL_ERROR, identifier.intValue());
             }

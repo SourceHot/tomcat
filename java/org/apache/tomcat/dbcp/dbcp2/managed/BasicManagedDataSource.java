@@ -16,20 +16,13 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.managed;
 
-import java.sql.SQLException;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
+import org.apache.tomcat.dbcp.dbcp2.*;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
-
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.TransactionSynchronizationRegistry;
-
-import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
-import org.apache.tomcat.dbcp.dbcp2.ConnectionFactory;
-import org.apache.tomcat.dbcp.dbcp2.PoolableConnection;
-import org.apache.tomcat.dbcp.dbcp2.PoolableConnectionFactory;
-import org.apache.tomcat.dbcp.dbcp2.PoolingDataSource;
-import org.apache.tomcat.dbcp.dbcp2.Utils;
+import java.sql.SQLException;
 
 /**
  * <p>
@@ -52,19 +45,29 @@ import org.apache.tomcat.dbcp.dbcp2.Utils;
  */
 public class BasicManagedDataSource extends BasicDataSource {
 
-    /** Transaction Registry */
+    /**
+     * Transaction Registry
+     */
     private TransactionRegistry transactionRegistry;
 
-    /** Transaction Manager */
+    /**
+     * Transaction Manager
+     */
     private transient TransactionManager transactionManager;
 
-    /** XA data source class name */
+    /**
+     * XA data source class name
+     */
     private String xaDataSource;
 
-    /** XA data source instance */
+    /**
+     * XA data source instance
+     */
     private XADataSource xaDataSourceInstance;
 
-    /** Transaction Synchronization Registry */
+    /**
+     * Transaction Synchronization Registry
+     */
     private transient TransactionSynchronizationRegistry transactionSynchronizationRegistry;
 
     @Override
@@ -119,10 +122,8 @@ public class BasicManagedDataSource extends BasicDataSource {
     /**
      * Creates the PoolableConnectionFactory and attaches it to the connection pool.
      *
-     * @param driverConnectionFactory
-     *            JDBC connection factory created by {@link #createConnectionFactory()}
-     * @throws SQLException
-     *             if an error occurs creating the PoolableConnectionFactory
+     * @param driverConnectionFactory JDBC connection factory created by {@link #createConnectionFactory()}
+     * @throws SQLException if an error occurs creating the PoolableConnectionFactory
      */
     @Override
     protected PoolableConnectionFactory createPoolableConnectionFactory(final ConnectionFactory driverConnectionFactory)
@@ -168,6 +169,15 @@ public class BasicManagedDataSource extends BasicDataSource {
     }
 
     /**
+     * Sets the required transaction manager property.
+     *
+     * @param transactionManager the transaction manager used to enlist connections
+     */
+    public void setTransactionManager(final TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    /**
      * Gets the transaction registry.
      *
      * @return the transaction registry associating XAResources with managed connections
@@ -187,12 +197,32 @@ public class BasicManagedDataSource extends BasicDataSource {
     }
 
     /**
+     * Sets the optional TransactionSynchronizationRegistry property.
+     *
+     * @param transactionSynchronizationRegistry the TSR used to register synchronizations
+     * @since 2.6.0
+     */
+    public void setTransactionSynchronizationRegistry(
+            final TransactionSynchronizationRegistry transactionSynchronizationRegistry) {
+        this.transactionSynchronizationRegistry = transactionSynchronizationRegistry;
+    }
+
+    /**
      * Gets the optional XADataSource class name.
      *
      * @return the optional XADataSource class name
      */
     public synchronized String getXADataSource() {
         return xaDataSource;
+    }
+
+    /**
+     * Sets the optional XADataSource class name.
+     *
+     * @param xaDataSource the optional XADataSource class name
+     */
+    public synchronized void setXADataSource(final String xaDataSource) {
+        this.xaDataSource = xaDataSource;
     }
 
     /**
@@ -205,38 +235,6 @@ public class BasicManagedDataSource extends BasicDataSource {
     }
 
     /**
-     * Sets the required transaction manager property.
-     *
-     * @param transactionManager
-     *            the transaction manager used to enlist connections
-     */
-    public void setTransactionManager(final TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
-    /**
-     * Sets the optional TransactionSynchronizationRegistry property.
-     *
-     * @param transactionSynchronizationRegistry
-     *            the TSR used to register synchronizations
-     * @since 2.6.0
-     */
-    public void setTransactionSynchronizationRegistry(
-            final TransactionSynchronizationRegistry transactionSynchronizationRegistry) {
-        this.transactionSynchronizationRegistry = transactionSynchronizationRegistry;
-    }
-
-    /**
-     * Sets the optional XADataSource class name.
-     *
-     * @param xaDataSource
-     *            the optional XADataSource class name
-     */
-    public synchronized void setXADataSource(final String xaDataSource) {
-        this.xaDataSource = xaDataSource;
-    }
-
-    /**
      * <p>
      * Sets the XADataSource instance used by the XAConnectionFactory.
      * </p>
@@ -246,8 +244,7 @@ public class BasicManagedDataSource extends BasicDataSource {
      * setLoginTimeout, getLoginTimeout, getLogWriter.</code>
      * </p>
      *
-     * @param xaDataSourceInstance
-     *            XADataSource instance
+     * @param xaDataSourceInstance XADataSource instance
      */
     public synchronized void setXaDataSourceInstance(final XADataSource xaDataSourceInstance) {
         this.xaDataSourceInstance = xaDataSourceInstance;

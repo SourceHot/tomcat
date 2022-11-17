@@ -17,9 +17,10 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.PrintWriter;
 
-import org.apache.tomcat.util.res.StringManager;
 /**
  * Implements the Server-side #set command
  *
@@ -29,12 +30,13 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class SSISet implements SSICommand {
     private static final StringManager sm = StringManager.getManager(SSISet.class);
+
     /**
      * @see SSICommand
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer)
+                        String[] paramNames, String[] paramValues, PrintWriter writer)
             throws SSIStopProcessingException {
         long lastModified = 0;
         String errorMessage = ssiMediator.getConfigErrMsg();
@@ -44,19 +46,22 @@ public class SSISet implements SSICommand {
             String paramValue = paramValues[i];
             if (paramName.equalsIgnoreCase("var")) {
                 variableName = paramValue;
-            } else if (paramName.equalsIgnoreCase("value")) {
+            }
+            else if (paramName.equalsIgnoreCase("value")) {
                 if (variableName != null) {
                     String substitutedValue = ssiMediator
                             .substituteVariables(paramValue);
                     ssiMediator.setVariableValue(variableName,
                             substitutedValue);
                     lastModified = System.currentTimeMillis();
-                } else {
+                }
+                else {
                     ssiMediator.log(sm.getString("ssiSet.noVariable"));
                     writer.write(errorMessage);
                     throw new SSIStopProcessingException();
                 }
-            } else {
+            }
+            else {
                 ssiMediator.log(sm.getString("ssiCommand.invalidAttribute", paramName));
                 writer.write(errorMessage);
                 throw new SSIStopProcessingException();

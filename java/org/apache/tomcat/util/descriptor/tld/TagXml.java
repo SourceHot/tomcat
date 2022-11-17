@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.util.descriptor.tld;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import jakarta.servlet.jsp.tagext.TagAttributeInfo;
 import jakarta.servlet.jsp.tagext.TagInfo;
 import jakarta.servlet.jsp.tagext.TagVariableInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Model of a tag define in a tag library descriptor.
@@ -30,6 +30,8 @@ import jakarta.servlet.jsp.tagext.TagVariableInfo;
  * defined it.
  */
 public class TagXml {
+    private final List<TagAttributeInfo> attributes = new ArrayList<>();
+    private final List<TagVariableInfo> variables = new ArrayList<>();
     private String name;
     private String tagClass;
     private String teiClass;
@@ -39,8 +41,6 @@ public class TagXml {
     private String largeIcon;
     private String info;
     private boolean dynamicAttributes;
-    private final List<TagAttributeInfo> attributes = new ArrayList<>();
-    private final List<TagVariableInfo> variables = new ArrayList<>();
 
     public String getName() {
         return name;

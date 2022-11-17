@@ -23,14 +23,13 @@ package org.apache.coyote.http11.upgrade;
  * sense for the protocol and the information is exposed by the protocol
  * implementation.
  */
-public class UpgradeInfo  {
+public class UpgradeInfo {
 
     private UpgradeGroupInfo groupInfo = null;
     private volatile long bytesSent = 0;
     private volatile long bytesReceived = 0;
     private volatile long msgsSent = 0;
     private volatile long msgsReceived = 0;
-
 
 
     public UpgradeGroupInfo getGlobalProcessor() {
@@ -44,7 +43,8 @@ public class UpgradeInfo  {
                 this.groupInfo.removeUpgradeInfo(this);
                 this.groupInfo = null;
             }
-        } else {
+        }
+        else {
             this.groupInfo = groupInfo;
             groupInfo.addUpgradeInfo(this);
         }
@@ -54,9 +54,11 @@ public class UpgradeInfo  {
     public long getBytesSent() {
         return bytesSent;
     }
+
     public void setBytesSent(long bytesSent) {
         this.bytesSent = bytesSent;
     }
+
     public void addBytesSent(long bytesSent) {
         this.bytesSent += bytesSent;
     }
@@ -65,9 +67,11 @@ public class UpgradeInfo  {
     public long getBytesReceived() {
         return bytesReceived;
     }
+
     public void setBytesReceived(long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
+
     public void addBytesReceived(long bytesReceived) {
         this.bytesReceived += bytesReceived;
     }
@@ -76,9 +80,11 @@ public class UpgradeInfo  {
     public long getMsgsSent() {
         return msgsSent;
     }
+
     public void setMsgsSent(long msgsSent) {
         this.msgsSent = msgsSent;
     }
+
     public void addMsgsSent(long msgsSent) {
         this.msgsSent += msgsSent;
     }
@@ -87,9 +93,11 @@ public class UpgradeInfo  {
     public long getMsgsReceived() {
         return msgsReceived;
     }
+
     public void setMsgsReceived(long msgsReceived) {
         this.msgsReceived = msgsReceived;
     }
+
     public void addMsgsReceived(long msgsReceived) {
         this.msgsReceived += msgsReceived;
     }

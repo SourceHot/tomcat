@@ -17,32 +17,7 @@
 package org.apache.catalina.session;
 
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Deque;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Manager;
-import org.apache.catalina.Session;
-import org.apache.catalina.SessionIdGenerator;
+import org.apache.catalina.*;
 import org.apache.catalina.util.LifecycleMBeanBase;
 import org.apache.catalina.util.SessionIdGeneratorBase;
 import org.apache.catalina.util.StandardSessionIdGenerator;
@@ -50,6 +25,15 @@ import org.apache.catalina.util.ToStringUtil;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 
 /**
@@ -61,22 +45,33 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public abstract class ManagerBase extends LifecycleMBeanBase implements Manager {
 
-    private final Log log = LogFactory.getLog(ManagerBase.class); // must not be static
+    protected static final int TIMING_STATS_CACHE_SIZE = 100;
 
     // ----------------------------------------------------- Instance Variables
-
     /**
-     * The Context with which this Manager is associated.
+     * The string manager for this package.
      */
-    private Context context;
-
-
+    protected static final StringManager sm = StringManager.getManager(ManagerBase.class);
     /**
      * The descriptive name of this Manager implementation (for logging).
      */
     private static final String name = "ManagerBase";
-
-
+    protected final Deque<SessionTiming> sessionCreationTiming =
+            new LinkedList<>();
+    protected final Deque<SessionTiming> sessionExpirationTiming =
+            new LinkedList<>();
+    /**
+     * Number of sessions that have expired.
+     */
+    protected final AtomicLong expiredSessions = new AtomicLong(0);
+    /**
+     * The property change support for this component.
+     */
+    protected final PropertyChangeSupport support =
+            new PropertyChangeSupport(this);
+    private final Log log = LogFactory.getLog(ManagerBase.class); // must not be static
+    private final Object sessionMaxAliveTimeUpdateLock = new Object();
+    private final Object maxActiveUpdateLock = new Object();
     /**
      * The Java class name of the secure random number generator class to be
      * used when generating session identifiers. The random number generator
@@ -85,7 +80,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * generated.
      */
     protected String secureRandomClass = null;
-
     /**
      * The name of the algorithm to use to create instances of
      * {@link java.security.SecureRandom} which are used to generate session
@@ -97,7 +91,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * will be created using platform defaults.
      */
     protected String secureRandomAlgorithm = SessionIdGeneratorBase.DEFAULT_SECURE_RANDOM_ALGORITHM;
-
     /**
      * The name of the provider to use to create instances of
      * {@link java.security.SecureRandom} which are used to generate session
@@ -107,68 +100,34 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * instances will be created using platform defaults.
      */
     protected String secureRandomProvider = null;
-
     protected SessionIdGenerator sessionIdGenerator = null;
     protected Class<? extends SessionIdGenerator> sessionIdGeneratorClass = null;
-
     /**
      * The longest time (in seconds) that an expired session had been alive.
      */
     protected volatile int sessionMaxAliveTime;
-    private final Object sessionMaxAliveTimeUpdateLock = new Object();
-
-
-    protected static final int TIMING_STATS_CACHE_SIZE = 100;
-
-    protected final Deque<SessionTiming> sessionCreationTiming =
-            new LinkedList<>();
-
-    protected final Deque<SessionTiming> sessionExpirationTiming =
-            new LinkedList<>();
-
-    /**
-     * Number of sessions that have expired.
-     */
-    protected final AtomicLong expiredSessions = new AtomicLong(0);
-
-
     /**
      * The set of currently active Sessions for this Manager, keyed by
      * session identifier.
      */
     protected Map<String, Session> sessions = new ConcurrentHashMap<>();
-
     // Number of sessions created by this manager
-    protected long sessionCounter=0;
-
-    protected volatile int maxActive=0;
-
-    private final Object maxActiveUpdateLock = new Object();
-
+    protected long sessionCounter = 0;
+    protected volatile int maxActive = 0;
     /**
      * The maximum number of active Sessions allowed, or -1 for no limit.
      */
     protected int maxActiveSessions = -1;
-
     /**
      * Number of session creations that failed due to maxActiveSessions.
      */
     protected int rejectedSessions = 0;
-
     // number of duplicated session ids - anything >0 means we have problems
-    protected volatile int duplicates=0;
-
+    protected volatile int duplicates = 0;
     /**
      * Processing time during session expiration.
      */
     protected long processingTime = 0;
-
-    /**
-     * Iteration count for background processing.
-     */
-    private int count = 0;
-
-
     /**
      * Frequency of the session expiration, and related manager operations.
      * Manager operations will be done once for the specified amount of
@@ -176,18 +135,14 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * checks will occur).
      */
     protected int processExpiresFrequency = 6;
-
     /**
-     * The string manager for this package.
+     * The Context with which this Manager is associated.
      */
-    protected static final StringManager sm = StringManager.getManager(ManagerBase.class);
-
+    private Context context;
     /**
-     * The property change support for this component.
+     * Iteration count for background processing.
      */
-    protected final PropertyChangeSupport support =
-            new PropertyChangeSupport(this);
-
+    private int count = 0;
     private Pattern sessionAttributeNamePattern;
 
     private Pattern sessionAttributeValueClassNamePattern;
@@ -217,8 +172,8 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
             // plus SerializablePrincipal and String[] (required for authentication persistence)
             setSessionAttributeValueClassNameFilter(
                     "java\\.lang\\.(?:Boolean|Integer|Long|Number|String)"
-                    + "|org\\.apache\\.catalina\\.realm\\.GenericPrincipal\\$SerializablePrincipal"
-                    + "|\\[Ljava.lang.String;");
+                            + "|org\\.apache\\.catalina\\.realm\\.GenericPrincipal\\$SerializablePrincipal"
+                            + "|\\[Ljava.lang.String;");
             setWarnOnSessionAttributeFilterFailure(true);
         }
     }
@@ -226,54 +181,73 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
     // -------------------------------------------------------------- Properties
 
+    private static int calculateRate(List<SessionTiming> sessionTiming) {
+        // Init
+        long now = System.currentTimeMillis();
+        long oldest = now;
+        int counter = 0;
+        int result = 0;
+
+        // Calculate rate
+        for (SessionTiming timing : sessionTiming) {
+            if (timing != null) {
+                counter++;
+                if (timing.getTimestamp() < oldest) {
+                    oldest = timing.getTimestamp();
+                }
+            }
+        }
+        if (counter > 0) {
+            if (oldest < now) {
+                result = (1000 * 60 * counter) / (int) (now - oldest);
+            }
+            else {
+                // Better than reporting zero
+                result = Integer.MAX_VALUE;
+            }
+        }
+        return result;
+    }
+
     @Override
     public boolean getNotifyAttributeListenerOnUnchangedValue() {
         return notifyAttributeListenerOnUnchangedValue;
     }
-
-
 
     @Override
     public void setNotifyAttributeListenerOnUnchangedValue(boolean notifyAttributeListenerOnUnchangedValue) {
         this.notifyAttributeListenerOnUnchangedValue = notifyAttributeListenerOnUnchangedValue;
     }
 
-
     @Override
     public boolean getNotifyBindingListenerOnUnchangedValue() {
         return notifyBindingListenerOnUnchangedValue;
     }
-
 
     @Override
     public void setNotifyBindingListenerOnUnchangedValue(boolean notifyBindingListenerOnUnchangedValue) {
         this.notifyBindingListenerOnUnchangedValue = notifyBindingListenerOnUnchangedValue;
     }
 
-
     @Override
     public boolean getSessionActivityCheck() {
         return sessionActivityCheck;
     }
-
 
     @Override
     public void setSessionActivityCheck(boolean sessionActivityCheck) {
         this.sessionActivityCheck = sessionActivityCheck;
     }
 
-
     @Override
     public boolean getSessionLastAccessAtStart() {
         return sessionLastAccessAtStart;
     }
 
-
     @Override
     public void setSessionLastAccessAtStart(boolean sessionLastAccessAtStart) {
         this.sessionLastAccessAtStart = sessionLastAccessAtStart;
     }
-
 
     /**
      * Obtain the regular expression used to filter session attribute based on
@@ -281,9 +255,9 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * entire name
      *
      * @return The regular expression currently used to filter attribute names.
-     *         {@code null} means no filter is applied. If an empty string is
-     *         specified then no names will match the filter and all attributes
-     *         will be blocked.
+     * {@code null} means no filter is applied. If an empty string is
+     * specified then no names will match the filter and all attributes
+     * will be blocked.
      */
     public String getSessionAttributeNameFilter() {
         if (sessionAttributeNamePattern == null) {
@@ -292,40 +266,37 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return sessionAttributeNamePattern.toString();
     }
 
-
     /**
      * Set the regular expression to use to filter session attributes based on
      * attribute name. The regular expression is anchored so it must match the
      * entire name.
      *
      * @param sessionAttributeNameFilter The regular expression to use to filter
-     *        session attributes based on attribute name. Use {@code null} if no
-     *        filtering is required. If an empty string is specified then no
-     *        names will match the filter and all attributes will be blocked.
-     *
+     *                                   session attributes based on attribute name. Use {@code null} if no
+     *                                   filtering is required. If an empty string is specified then no
+     *                                   names will match the filter and all attributes will be blocked.
      * @throws PatternSyntaxException If the expression is not valid
      */
     public void setSessionAttributeNameFilter(String sessionAttributeNameFilter)
             throws PatternSyntaxException {
         if (sessionAttributeNameFilter == null || sessionAttributeNameFilter.length() == 0) {
             sessionAttributeNamePattern = null;
-        } else {
+        }
+        else {
             sessionAttributeNamePattern = Pattern.compile(sessionAttributeNameFilter);
         }
     }
-
 
     /**
      * Provides {@link #getSessionAttributeNameFilter()} as a pre-compiled
      * regular expression pattern.
      *
      * @return The pre-compiled pattern used to filter session attributes based
-     *         on attribute name. {@code null} means no filter is applied.
+     * on attribute name. {@code null} means no filter is applied.
      */
     protected Pattern getSessionAttributeNamePattern() {
         return sessionAttributeNamePattern;
     }
-
 
     /**
      * Obtain the regular expression used to filter session attribute based on
@@ -333,9 +304,9 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * and must match the fully qualified class name.
      *
      * @return The regular expression currently used to filter class names.
-     *         {@code null} means no filter is applied. If an empty string is
-     *         specified then no names will match the filter and all attributes
-     *         will be blocked.
+     * {@code null} means no filter is applied. If an empty string is
+     * specified then no names will match the filter and all attributes
+     * will be blocked.
      */
     public String getSessionAttributeValueClassNameFilter() {
         if (sessionAttributeValueClassNamePattern == null) {
@@ -344,31 +315,16 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return sessionAttributeValueClassNamePattern.toString();
     }
 
-
-    /**
-     * Provides {@link #getSessionAttributeValueClassNameFilter()} as a
-     * pre-compiled regular expression pattern.
-     *
-     * @return The pre-compiled pattern used to filter session attributes based
-     *         on the implementation class name of the value. {@code null} means
-     *         no filter is applied.
-     */
-    protected Pattern getSessionAttributeValueClassNamePattern() {
-        return sessionAttributeValueClassNamePattern;
-    }
-
-
     /**
      * Set the regular expression to use to filter classes used for session
      * attributes. The regular expression is anchored and must match the fully
      * qualified class name.
      *
      * @param sessionAttributeValueClassNameFilter The regular expression to use
-     *            to filter session attributes based on class name. Use {@code
-     *            null} if no filtering is required. If an empty string is
-     *           specified then no names will match the filter and all
-     *           attributes will be blocked.
-     *
+     *                                             to filter session attributes based on class name. Use {@code
+     *                                             null} if no filtering is required. If an empty string is
+     *                                             specified then no names will match the filter and all
+     *                                             attributes will be blocked.
      * @throws PatternSyntaxException If the expression is not valid
      */
     public void setSessionAttributeValueClassNameFilter(String sessionAttributeValueClassNameFilter)
@@ -376,12 +332,24 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         if (sessionAttributeValueClassNameFilter == null ||
                 sessionAttributeValueClassNameFilter.length() == 0) {
             sessionAttributeValueClassNamePattern = null;
-        } else {
+        }
+        else {
             sessionAttributeValueClassNamePattern =
                     Pattern.compile(sessionAttributeValueClassNameFilter);
         }
     }
 
+    /**
+     * Provides {@link #getSessionAttributeValueClassNameFilter()} as a
+     * pre-compiled regular expression pattern.
+     *
+     * @return The pre-compiled pattern used to filter session attributes based
+     * on the implementation class name of the value. {@code null} means
+     * no filter is applied.
+     */
+    protected Pattern getSessionAttributeValueClassNamePattern() {
+        return sessionAttributeValueClassNamePattern;
+    }
 
     /**
      * Should a warn level log message be generated if a session attribute is
@@ -393,26 +361,22 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return warnOnSessionAttributeFilterFailure;
     }
 
-
     /**
      * Configure whether or not a warn level log message should be generated if
      * a session attribute is not persisted / replicated / restored.
      *
      * @param warnOnSessionAttributeFilterFailure {@code true} if the
-     *            warn level message should be generated
-     *
+     *                                            warn level message should be generated
      */
     public void setWarnOnSessionAttributeFilterFailure(
             boolean warnOnSessionAttributeFilterFailure) {
         this.warnOnSessionAttributeFilterFailure = warnOnSessionAttributeFilterFailure;
     }
 
-
     @Override
     public Context getContext() {
         return context;
     }
-
 
     @Override
     public void setContext(Context context) {
@@ -428,7 +392,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         support.firePropertyChange("context", oldContext, this.context);
     }
 
-
     /**
      * @return The name of the implementation class.
      */
@@ -436,29 +399,27 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return this.getClass().getName();
     }
 
-
     @Override
     public SessionIdGenerator getSessionIdGenerator() {
         if (sessionIdGenerator != null) {
             return sessionIdGenerator;
-        } else if (sessionIdGeneratorClass != null) {
+        }
+        else if (sessionIdGeneratorClass != null) {
             try {
                 sessionIdGenerator = sessionIdGeneratorClass.getConstructor().newInstance();
                 return sessionIdGenerator;
-            } catch(ReflectiveOperationException ex) {
+            } catch (ReflectiveOperationException ex) {
                 // Ignore
             }
         }
         return null;
     }
 
-
     @Override
     public void setSessionIdGenerator(SessionIdGenerator sessionIdGenerator) {
         this.sessionIdGenerator = sessionIdGenerator;
         sessionIdGeneratorClass = sessionIdGenerator.getClass();
     }
-
 
     /**
      * @return The descriptive short name of this Manager implementation.
@@ -474,7 +435,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return this.secureRandomClass;
     }
 
-
     /**
      * Set the secure random number generator class name.
      *
@@ -486,10 +446,9 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         String oldSecureRandomClass = this.secureRandomClass;
         this.secureRandomClass = secureRandomClass;
         support.firePropertyChange("secureRandomClass", oldSecureRandomClass,
-                                   this.secureRandomClass);
+                this.secureRandomClass);
 
     }
-
 
     /**
      * @return The secure random number generator algorithm name.
@@ -497,7 +456,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     public String getSecureRandomAlgorithm() {
         return secureRandomAlgorithm;
     }
-
 
     /**
      * Set the secure random number generator algorithm name.
@@ -509,14 +467,12 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         this.secureRandomAlgorithm = secureRandomAlgorithm;
     }
 
-
     /**
      * @return The secure random number generator provider name.
      */
     public String getSecureRandomProvider() {
         return secureRandomProvider;
     }
-
 
     /**
      * Set the secure random number generator provider name.
@@ -528,18 +484,15 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         this.secureRandomProvider = secureRandomProvider;
     }
 
-
     @Override
     public int getRejectedSessions() {
         return rejectedSessions;
     }
 
-
     @Override
     public long getExpiredSessions() {
         return expiredSessions.get();
     }
-
 
     @Override
     public void setExpiredSessions(long expiredSessions) {
@@ -549,7 +502,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     public long getProcessingTime() {
         return processingTime;
     }
-
 
     public void setProcessingTime(long processingTime) {
         this.processingTime = processingTime;
@@ -576,22 +528,24 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         int oldProcessExpiresFrequency = this.processExpiresFrequency;
         this.processExpiresFrequency = processExpiresFrequency;
         support.firePropertyChange("processExpiresFrequency",
-                                   Integer.valueOf(oldProcessExpiresFrequency),
-                                   Integer.valueOf(this.processExpiresFrequency));
+                Integer.valueOf(oldProcessExpiresFrequency),
+                Integer.valueOf(this.processExpiresFrequency));
 
     }
-
 
     /**
      * Return whether sessions managed by this manager shall persist authentication
      * information or not.
      *
      * @return {@code true}, sessions managed by this manager shall persist
-     *         authentication information; {@code false} otherwise
+     * authentication information; {@code false} otherwise
      */
     public boolean getPersistAuthentication() {
         return this.persistAuthentication;
     }
+
+
+    // --------------------------------------------------------- Public Methods
 
     /**
      * Set whether sessions managed by this manager shall persist authentication
@@ -603,9 +557,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     public void setPersistAuthentication(boolean persistAuthentication) {
         this.persistAuthentication = persistAuthentication;
     }
-
-
-    // --------------------------------------------------------- Public Methods
 
     /**
      * {@inheritDoc}
@@ -626,10 +577,10 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     public void processExpires() {
 
         long timeNow = System.currentTimeMillis();
-        Session sessions[] = findSessions();
-        int expireHere = 0 ;
+        Session[] sessions = findSessions();
+        int expireHere = 0;
 
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Start expire sessions " + getName() + " at " + timeNow + " sessioncount " + sessions.length);
         }
         for (Session session : sessions) {
@@ -638,13 +589,12 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
             }
         }
         long timeEnd = System.currentTimeMillis();
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("End expire sessions " + getName() + " processingTime " + (timeEnd - timeNow) + " expired sessions: " + expireHere);
         }
-        processingTime += ( timeEnd - timeNow );
+        processingTime += (timeEnd - timeNow);
 
     }
-
 
     @Override
     protected void initInternal() throws LifecycleException {
@@ -654,7 +604,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
             throw new LifecycleException(sm.getString("managerBase.contextNull"));
         }
     }
-
 
     @Override
     protected void startInternal() throws LifecycleException {
@@ -677,7 +626,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
         sessionIdGenerator.setJvmRoute(getJvmRoute());
         if (sessionIdGenerator instanceof SessionIdGeneratorBase) {
-            SessionIdGeneratorBase sig = (SessionIdGeneratorBase)sessionIdGenerator;
+            SessionIdGeneratorBase sig = (SessionIdGeneratorBase) sessionIdGenerator;
             sig.setSecureRandomAlgorithm(getSecureRandomAlgorithm());
             sig.setSecureRandomClass(getSecureRandomClass());
             sig.setSecureRandomProvider(getSecureRandomProvider());
@@ -685,7 +634,8 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
         if (sessionIdGenerator instanceof Lifecycle) {
             ((Lifecycle) sessionIdGenerator).start();
-        } else {
+        }
+        else {
             // Force initialization of the random number generator
             if (log.isDebugEnabled()) {
                 log.debug("Force random number initialization starting");
@@ -697,7 +647,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         }
     }
 
-
     @Override
     protected void stopInternal() throws LifecycleException {
         if (sessionIdGenerator instanceof Lifecycle) {
@@ -705,26 +654,23 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         }
     }
 
-
     @Override
     public void add(Session session) {
         sessions.put(session.getIdInternal(), session);
         int size = getActiveSessions();
-        if( size > maxActive ) {
-            synchronized(maxActiveUpdateLock) {
-                if( size > maxActive ) {
+        if (size > maxActive) {
+            synchronized (maxActiveUpdateLock) {
+                if (size > maxActive) {
                     maxActive = size;
                 }
             }
         }
     }
 
-
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         support.addPropertyChangeListener(listener);
     }
-
 
     @Override
     public Session createSession(String sessionId) {
@@ -760,12 +706,10 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return session;
     }
 
-
     @Override
     public Session createEmptySession() {
         return getNewSession();
     }
-
 
     @Override
     public Session findSession(String id) throws IOException {
@@ -775,18 +719,15 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return sessions.get(id);
     }
 
-
     @Override
     public Session[] findSessions() {
         return sessions.values().toArray(new Session[0]);
     }
 
-
     @Override
     public void remove(Session session) {
         remove(session, false);
     }
-
 
     @Override
     public void remove(Session session, boolean update) {
@@ -795,7 +736,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         if (update) {
             long timeNow = System.currentTimeMillis();
             int timeAlive =
-                (int) (timeNow - session.getCreationTimeInternal())/1000;
+                    (int) (timeNow - session.getCreationTimeInternal()) / 1000;
             updateSessionMaxAliveTime(timeAlive);
             expiredSessions.incrementAndGet();
             SessionTiming timing = new SessionTiming(timeNow, timeAlive);
@@ -810,12 +751,10 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         }
     }
 
-
     @Override
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         support.removePropertyChangeListener(listener);
     }
-
 
     @Override
     public String rotateSessionId(Session session) {
@@ -824,21 +763,21 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return newId;
     }
 
-
     @Override
     public void changeSessionId(Session session, String newId) {
         changeSessionId(session, newId, true, true);
     }
 
-
     protected void changeSessionId(Session session, String newId,
-            boolean notifySessionListeners, boolean notifyContainerListeners) {
+                                   boolean notifySessionListeners, boolean notifyContainerListeners) {
         String oldId = session.getIdInternal();
         session.setId(newId, false);
         session.tellChangedSessionId(newId, oldId,
                 notifySessionListeners, notifyContainerListeners);
     }
 
+
+    // ------------------------------------------------------ Protected Methods
 
     /**
      * {@inheritDoc}
@@ -858,7 +797,8 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
                             name, sessionAttributeNamePattern);
                     if (getWarnOnSessionAttributeFilterFailure()) {
                         log.warn(msg);
-                    } else {
+                    }
+                    else {
                         log.debug(msg);
                     }
                 }
@@ -875,7 +815,8 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
                             name, value.getClass().getName(), sessionAttributeValueClassNamePattern);
                     if (getWarnOnSessionAttributeFilterFailure()) {
                         log.warn(msg);
-                    } else {
+                    }
+                    else {
                         log.debug(msg);
                     }
                 }
@@ -886,12 +827,9 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return true;
     }
 
-
-    // ------------------------------------------------------ Protected Methods
-
-
     /**
      * Get new session class to be used in the doLoad() method.
+     *
      * @return a new session for use with this manager
      */
     protected StandardSession getNewSession() {
@@ -899,8 +837,11 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     }
 
 
+    // ------------------------------------------------------ Protected Methods
+
     /**
      * Generate and return a new session identifier.
+     *
      * @return a new session id
      */
     protected String generateSessionId() {
@@ -922,10 +863,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return result;
     }
 
-
-    // ------------------------------------------------------ Protected Methods
-
-
     /**
      * Retrieve the enclosing Engine for this Manager.
      *
@@ -933,17 +870,20 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      */
     public Engine getEngine() {
         Engine e = null;
-        for (Container c = getContext(); e == null && c != null ; c = c.getParent()) {
+        for (Container c = getContext(); e == null && c != null; c = c.getParent()) {
             if (c instanceof Engine) {
-                e = (Engine)c;
+                e = (Engine) c;
             }
         }
         return e;
     }
 
 
+    // -------------------------------------------------------- Package Methods
+
     /**
      * Retrieve the JvmRoute for the enclosing Engine.
+     *
      * @return the JvmRoute or null.
      */
     public String getJvmRoute() {
@@ -951,21 +891,15 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return e == null ? null : e.getJvmRoute();
     }
 
-
-    // -------------------------------------------------------- Package Methods
-
-
-    @Override
-    public void setSessionCounter(long sessionCounter) {
-        this.sessionCounter = sessionCounter;
-    }
-
-
     @Override
     public long getSessionCounter() {
         return sessionCounter;
     }
 
+    @Override
+    public void setSessionCounter(long sessionCounter) {
+        this.sessionCounter = sessionCounter;
+    }
 
     /**
      * Number of duplicated session IDs generated by the random source.
@@ -977,23 +911,19 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return duplicates;
     }
 
-
     public void setDuplicates(int duplicates) {
         this.duplicates = duplicates;
     }
-
 
     @Override
     public int getActiveSessions() {
         return sessions.size();
     }
 
-
     @Override
     public int getMaxActive() {
         return maxActive;
     }
-
 
     @Override
     public void setMaxActive(int maxActive) {
@@ -1002,15 +932,13 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         }
     }
 
-
     /**
      * @return The maximum number of active Sessions allowed, or -1 for no
-     *         limit.
+     * limit.
      */
     public int getMaxActiveSessions() {
         return this.maxActiveSessions;
     }
-
 
     /**
      * Set the maximum number of active Sessions allowed, or -1 for
@@ -1023,17 +951,15 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         int oldMaxActiveSessions = this.maxActiveSessions;
         this.maxActiveSessions = max;
         support.firePropertyChange("maxActiveSessions",
-                                   Integer.valueOf(oldMaxActiveSessions),
-                                   Integer.valueOf(this.maxActiveSessions));
+                Integer.valueOf(oldMaxActiveSessions),
+                Integer.valueOf(this.maxActiveSessions));
 
     }
-
 
     @Override
     public int getSessionMaxAliveTime() {
         return sessionMaxAliveTime;
     }
-
 
     @Override
     public void setSessionMaxAliveTime(int sessionMaxAliveTime) {
@@ -1042,13 +968,12 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         }
     }
 
-
     /**
      * Updates the sessionMaxAliveTime attribute if the candidate value is
      * larger than the current value.
      *
-     * @param sessionAliveTime  The candidate value (in seconds) for the new
-     *                          sessionMaxAliveTime value.
+     * @param sessionAliveTime The candidate value (in seconds) for the new
+     *                         sessionMaxAliveTime value.
      */
     public void updateSessionMaxAliveTime(int sessionAliveTime) {
         if (sessionAliveTime > this.sessionMaxAliveTime) {
@@ -1085,12 +1010,11 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
                 counter++;
                 // Very careful not to overflow - probably not necessary
                 result =
-                    (result * ((counter - 1)/counter)) + (timeAlive/counter);
+                        (result * ((counter - 1) / counter)) + (timeAlive / counter);
             }
         }
         return result;
     }
-
 
     /**
      * {@inheritDoc}<p>
@@ -1108,14 +1032,13 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return calculateRate(copy);
     }
 
-
     /**
      * {@inheritDoc}
      * <p>
      * Based on the expiry time of the previous 100 sessions expired. If less
      * than 100 sessions have expired then all available data is used.
      *
-     * @return  The current rate (in sessions per minute) of session expiration
+     * @return The current rate (in sessions per minute) of session expiration
      */
     @Override
     public int getSessionExpireRate() {
@@ -1127,35 +1050,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
         return calculateRate(copy);
     }
-
-
-    private static int calculateRate(List<SessionTiming> sessionTiming) {
-        // Init
-        long now = System.currentTimeMillis();
-        long oldest = now;
-        int counter = 0;
-        int result = 0;
-
-        // Calculate rate
-        for (SessionTiming timing : sessionTiming) {
-            if (timing != null) {
-                counter++;
-                if (timing.getTimestamp() < oldest) {
-                    oldest = timing.getTimestamp();
-                }
-            }
-        }
-        if (counter > 0) {
-            if (oldest < now) {
-                result = (1000*60*counter)/(int) (now - oldest);
-            } else {
-                // Better than reporting zero
-                result = Integer.MAX_VALUE;
-            }
-        }
-        return result;
-    }
-
 
     /**
      * For debugging.
@@ -1176,11 +1070,10 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      *
      * @param sessionId The ID for the session of interest
      * @param key       The key for the attribute to obtain
-     *
      * @return The attribute value for the specified session, if found, null
-     *         otherwise
+     * otherwise
      */
-    public String getSessionAttribute( String sessionId, String key ) {
+    public String getSessionAttribute(String sessionId, String key) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1188,8 +1081,8 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
             }
             return null;
         }
-        Object o=s.getSession().getAttribute(key);
-        if( o==null ) {
+        Object o = s.getSession().getAttribute(key);
+        if (o == null) {
             return null;
         }
         return o.toString();
@@ -1203,7 +1096,6 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
      * session attribute names to the String representation of their values.
      *
      * @param sessionId Session id
-     *
      * @return HashMap mapping session attribute names to the String
      * representation of their values, or null if no session with the
      * specified id exists, or if the session does not have any attributes
@@ -1232,7 +1124,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
     }
 
 
-    public void expireSession( String sessionId ) {
+    public void expireSession(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1243,7 +1135,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         s.expire();
     }
 
-    public long getThisAccessedTimestamp( String sessionId ) {
+    public long getThisAccessedTimestamp(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1254,7 +1146,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return s.getThisAccessedTime();
     }
 
-    public String getThisAccessedTime( String sessionId ) {
+    public String getThisAccessedTime(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1265,7 +1157,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return new Date(s.getThisAccessedTime()).toString();
     }
 
-    public long getLastAccessedTimestamp( String sessionId ) {
+    public long getLastAccessedTimestamp(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1276,7 +1168,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return s.getLastAccessedTime();
     }
 
-    public String getLastAccessedTime( String sessionId ) {
+    public String getLastAccessedTime(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1287,7 +1179,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return new Date(s.getLastAccessedTime()).toString();
     }
 
-    public String getCreationTime( String sessionId ) {
+    public String getCreationTime(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1298,7 +1190,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
         return new Date(s.getCreationTime()).toString();
     }
 
-    public long getCreationTimestamp( String sessionId ) {
+    public long getCreationTimestamp(String sessionId) {
         Session s = sessions.get(sessionId);
         if (s == null) {
             if (log.isInfoEnabled()) {
@@ -1354,7 +1246,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
         /**
          * @return Time stamp associated with this piece of timing information
-         *         in milliseconds.
+         * in milliseconds.
          */
         public long getTimestamp() {
             return timestamp;
@@ -1362,7 +1254,7 @@ public abstract class ManagerBase extends LifecycleMBeanBase implements Manager 
 
         /**
          * @return Duration associated with this piece of timing information in
-         *         seconds.
+         * seconds.
          */
         public int getDuration() {
             return duration;

@@ -16,13 +16,6 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-import java.net.URL;
-
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.Server;
@@ -34,15 +27,20 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import java.io.PrintWriter;
+import java.net.URL;
+
 /**
  * Store Server/Service/Host/Context at file or PrintWriter. Default server.xml
  * is at $catalina.base/conf/server.xml
  */
 public class StoreConfig implements IStoreConfig {
-    private static Log log = LogFactory.getLog(StoreConfig.class);
     protected static final StringManager sm = StringManager
             .getManager(Constants.Package);
-
+    private static final Log log = LogFactory.getLog(StoreConfig.class);
     private String serverFilename = "conf/server.xml";
 
     private StoreRegistry registry;
@@ -78,16 +76,6 @@ public class StoreConfig implements IStoreConfig {
         return registry;
     }
 
-    @Override
-    public void setServer(Server aServer) {
-        server = aServer;
-    }
-
-    @Override
-    public Server getServer() {
-        return server;
-    }
-
     /**
      * set StoreRegistry
      *
@@ -96,6 +84,16 @@ public class StoreConfig implements IStoreConfig {
     @Override
     public void setRegistry(StoreRegistry aRegistry) {
         registry = aRegistry;
+    }
+
+    @Override
+    public Server getServer() {
+        return server;
+    }
+
+    @Override
+    public void setServer(Server aServer) {
+        server = aServer;
     }
 
     /**
@@ -109,16 +107,16 @@ public class StoreConfig implements IStoreConfig {
     /**
      * Store Server from Object Name (Catalina:type=Server).
      *
-     * @param aServerName Server ObjectName
-     * @param backup <code>true</code> to backup existing configuration files
-     *  before rewriting them
+     * @param aServerName     Server ObjectName
+     * @param backup          <code>true</code> to backup existing configuration files
+     *                        before rewriting them
      * @param externalAllowed <code>true</code> to allow saving webapp
-     *  configuration for webapps that are not inside the host's app
-     *  directory
+     *                        configuration for webapps that are not inside the host's app
+     *                        directory
      * @throws MalformedObjectNameException Bad MBean name
      */
     public synchronized void storeServer(String aServerName, boolean backup,
-            boolean externalAllowed) throws MalformedObjectNameException {
+                                         boolean externalAllowed) throws MalformedObjectNameException {
         if (aServerName == null || aServerName.length() == 0) {
             log.error(sm.getString("config.emptyObjectName"));
             return;
@@ -145,13 +143,15 @@ public class StoreConfig implements IStoreConfig {
                         desc.setBackup(oldBackup);
                         desc.setExternalAllowed(oldExternalAllowed);
                     }
-                } else {
+                }
+                else {
                     store(aServer);
                 }
             } catch (Exception e) {
                 log.error(sm.getString("config.storeServerError"), e);
             }
-        } else {
+        }
+        else {
             log.info(sm.getString("config.objectNameNotFound", aServerName));
         }
     }
@@ -159,16 +159,16 @@ public class StoreConfig implements IStoreConfig {
     /**
      * Store a Context from ObjectName.
      *
-     * @param aContextName MBean ObjectName
-     * @param backup <code>true</code> to backup existing configuration files
-     *  before rewriting them
+     * @param aContextName    MBean ObjectName
+     * @param backup          <code>true</code> to backup existing configuration files
+     *                        before rewriting them
      * @param externalAllowed <code>true</code> to allow saving webapp
-     *  configuration for webapps that are not inside the host's app
-     *  directory
+     *                        configuration for webapps that are not inside the host's app
+     *                        directory
      * @throws MalformedObjectNameException Bad MBean name
      */
     public synchronized void storeContext(String aContextName, boolean backup,
-            boolean externalAllowed) throws MalformedObjectNameException {
+                                          boolean externalAllowed) throws MalformedObjectNameException {
         if (aContextName == null || aContextName.length() == 0) {
             log.error(sm.getString("config.emptyObjectName"));
             return;
@@ -194,20 +194,22 @@ public class StoreConfig implements IStoreConfig {
                             desc.setBackup(backup);
                             desc.setExternalAllowed(externalAllowed);
                             desc.getStoreFactory()
-                            .store(null, -2, aContext);
+                                    .store(null, -2, aContext);
                         } finally {
                             desc.setStoreSeparate(oldSeparate);
                             desc.setBackup(oldBackup);
                             desc.setBackup(oldExternalAllowed);
                         }
                     }
-                } else {
+                }
+                else {
                     log.error(sm.getString("config.missingContextFile", aContext.getPath()));
                 }
             } catch (Exception e) {
                 log.error(sm.getString("config.storeContextError", aContextName), e);
             }
-        } else {
+        }
+        else {
             log.info(sm.getString("config.objectNameNotFound", aContextName));
         }
     }
@@ -262,11 +264,11 @@ public class StoreConfig implements IStoreConfig {
 
     /**
      * @see org.apache.catalina.storeconfig.IStoreConfig#store(java.io.PrintWriter,
-     *      int, org.apache.catalina.Context)
+     * int, org.apache.catalina.Context)
      */
     @Override
     public void store(PrintWriter aWriter, int indent,
-            Context aContext) throws Exception {
+                      Context aContext) throws Exception {
         boolean oldSeparate = true;
         StoreDescription desc = null;
         try {
@@ -283,7 +285,7 @@ public class StoreConfig implements IStoreConfig {
 
     /**
      * @see org.apache.catalina.storeconfig.IStoreConfig#store(java.io.PrintWriter,
-     *      int, org.apache.catalina.Host)
+     * int, org.apache.catalina.Host)
      */
     @Override
     public void store(PrintWriter aWriter, int indent, Host aHost)
@@ -295,11 +297,11 @@ public class StoreConfig implements IStoreConfig {
 
     /**
      * @see org.apache.catalina.storeconfig.IStoreConfig#store(java.io.PrintWriter,
-     *      int, org.apache.catalina.Service)
+     * int, org.apache.catalina.Service)
      */
     @Override
     public void store(PrintWriter aWriter, int indent,
-            Service aService) throws Exception {
+                      Service aService) throws Exception {
         StoreDescription desc = getRegistry().findDescription(
                 aService.getClass());
         desc.getStoreFactory().store(aWriter, indent, aService);
@@ -307,11 +309,11 @@ public class StoreConfig implements IStoreConfig {
 
     /**
      * @see org.apache.catalina.storeconfig.IStoreConfig#store(java.io.PrintWriter,
-     *      int, org.apache.catalina.Server)
+     * int, org.apache.catalina.Server)
      */
     @Override
     public void store(PrintWriter writer, int indent,
-            Server aServer) throws Exception {
+                      Server aServer) throws Exception {
         StoreDescription desc = getRegistry().findDescription(
                 aServer.getClass());
         desc.getStoreFactory().store(writer, indent, aServer);

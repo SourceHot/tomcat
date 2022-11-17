@@ -20,7 +20,7 @@ import jakarta.servlet.ServletContext;
 
 /**
  * Provides {@link StringInterpreter} instances for JSP compilation.
- *
+ * <p>
  * The search order is as follows:
  * <ol>
  * <li>StringInterpreter instance or implementation class name provided as a
@@ -37,8 +37,13 @@ public class StringInterpreterFactory {
     private static final StringInterpreter DEFAULT_INSTANCE = new DefaultStringInterpreter();
 
 
+    private StringInterpreterFactory() {
+        // Utility class. Hide default constructor.
+    }
+
     /**
      * Obtain the correct String Interpreter for the given web application.
+     *
      * @param context The Servlet context
      * @return the String interpreter
      * @throws Exception If an error occurs creating the interpreter
@@ -54,7 +59,8 @@ public class StringInterpreterFactory {
         Object attribute = context.getAttribute(STRING_INTERPRETER_CLASS_NAME);
         if (attribute instanceof StringInterpreter) {
             return (StringInterpreter) attribute;
-        } else if (attribute instanceof String) {
+        }
+        else if (attribute instanceof String) {
             result = createInstance(context, (String) attribute);
         }
 
@@ -76,24 +82,17 @@ public class StringInterpreterFactory {
         return result;
     }
 
-
     private static StringInterpreter createInstance(ServletContext context,
-            String className) throws Exception {
+                                                    String className) throws Exception {
         return (StringInterpreter) context.getClassLoader().loadClass(
-                    className).getConstructor().newInstance();
+                className).getConstructor().newInstance();
     }
-
-
-    private StringInterpreterFactory() {
-        // Utility class. Hide default constructor.
-    }
-
 
     public static class DefaultStringInterpreter implements StringInterpreter {
 
         @Override
         public String convertString(Class<?> c, String s, String attrName,
-                Class<?> propEditorClass, boolean isNamedAttribute) {
+                                    Class<?> propEditorClass, boolean isNamedAttribute) {
 
             String quoted = s;
             if (!isNamedAttribute) {
@@ -107,41 +106,59 @@ public class StringInterpreterFactory {
                         + ")org.apache.jasper.runtime.JspRuntimeLibrary.getValueFromBeanInfoPropertyEditor("
                         + className + ".class, \"" + attrName + "\", " + quoted
                         + ", " + propEditorClass.getCanonicalName() + ".class)";
-            } else if (c == String.class) {
+            }
+            else if (c == String.class) {
                 return quoted;
-            } else if (c == boolean.class) {
+            }
+            else if (c == boolean.class) {
                 return JspUtil.coerceToPrimitiveBoolean(s, isNamedAttribute);
-            } else if (c == Boolean.class) {
+            }
+            else if (c == Boolean.class) {
                 return JspUtil.coerceToBoolean(s, isNamedAttribute);
-            } else if (c == byte.class) {
+            }
+            else if (c == byte.class) {
                 return JspUtil.coerceToPrimitiveByte(s, isNamedAttribute);
-            } else if (c == Byte.class) {
+            }
+            else if (c == Byte.class) {
                 return JspUtil.coerceToByte(s, isNamedAttribute);
-            } else if (c == char.class) {
+            }
+            else if (c == char.class) {
                 return JspUtil.coerceToChar(s, isNamedAttribute);
-            } else if (c == Character.class) {
+            }
+            else if (c == Character.class) {
                 return JspUtil.coerceToCharacter(s, isNamedAttribute);
-            } else if (c == double.class) {
+            }
+            else if (c == double.class) {
                 return JspUtil.coerceToPrimitiveDouble(s, isNamedAttribute);
-            } else if (c == Double.class) {
+            }
+            else if (c == Double.class) {
                 return JspUtil.coerceToDouble(s, isNamedAttribute);
-            } else if (c == float.class) {
+            }
+            else if (c == float.class) {
                 return JspUtil.coerceToPrimitiveFloat(s, isNamedAttribute);
-            } else if (c == Float.class) {
+            }
+            else if (c == Float.class) {
                 return JspUtil.coerceToFloat(s, isNamedAttribute);
-            } else if (c == int.class) {
+            }
+            else if (c == int.class) {
                 return JspUtil.coerceToInt(s, isNamedAttribute);
-            } else if (c == Integer.class) {
+            }
+            else if (c == Integer.class) {
                 return JspUtil.coerceToInteger(s, isNamedAttribute);
-            } else if (c == short.class) {
+            }
+            else if (c == short.class) {
                 return JspUtil.coerceToPrimitiveShort(s, isNamedAttribute);
-            } else if (c == Short.class) {
+            }
+            else if (c == Short.class) {
                 return JspUtil.coerceToShort(s, isNamedAttribute);
-            } else if (c == long.class) {
+            }
+            else if (c == long.class) {
                 return JspUtil.coerceToPrimitiveLong(s, isNamedAttribute);
-            } else if (c == Long.class) {
+            }
+            else if (c == Long.class) {
                 return JspUtil.coerceToLong(s, isNamedAttribute);
-            } else if (c == Object.class) {
+            }
+            else if (c == Object.class) {
                 return quoted;
             }
 
@@ -165,10 +182,9 @@ public class StringInterpreterFactory {
          * re-implement the logic in
          * {@link #convertString(Class, String, String, Class, boolean)}.
          *
-         * @param c                 unused
-         * @param s                 unused
-         * @param isNamedAttribute  unused
-         *
+         * @param c                unused
+         * @param s                unused
+         * @param isNamedAttribute unused
          * @return Always {@code null}
          */
         protected String coerceToOtherType(Class<?> c, String s, boolean isNamedAttribute) {

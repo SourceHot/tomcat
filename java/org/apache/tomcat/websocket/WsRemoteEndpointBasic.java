@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.websocket;
 
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.RemoteEndpoint;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.ByteBuffer;
-
-import jakarta.websocket.EncodeException;
-import jakarta.websocket.RemoteEndpoint;
 
 public class WsRemoteEndpointBasic extends WsRemoteEndpointBase
         implements RemoteEndpoint.Basic {

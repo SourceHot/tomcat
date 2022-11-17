@@ -16,31 +16,25 @@
  */
 package org.apache.catalina.mbeans;
 
-import java.lang.reflect.Array;
-import java.util.Set;
-import java.util.StringJoiner;
-
-import javax.management.JMRuntimeException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.management.*;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
+import java.lang.reflect.Array;
+import java.util.Set;
+import java.util.StringJoiner;
 
 /**
  * General helper to dump MBean contents to the log.
  */
 public class MBeanDumper {
 
-    private static final Log log = LogFactory.getLog(MBeanDumper.class);
     protected static final StringManager sm = StringManager.getManager(MBeanDumper.class);
-
+    private static final Log log = LogFactory.getLog(MBeanDumper.class);
     private static final String CRLF = "\r\n";
 
 
@@ -48,7 +42,7 @@ public class MBeanDumper {
      * The following code to dump MBeans has been copied from JMXProxyServlet.
      *
      * @param mbeanServer the MBean server
-     * @param names a set of object names for which to dump the info
+     * @param names       a set of object names for which to dump the info
      * @return a string representation of the MBeans
      */
     public static String dumpBeans(MBeanServer mbeanServer, Set<ObjectName> names) {
@@ -69,7 +63,7 @@ public class MBeanDumper {
                 buf.append(code);
                 buf.append(CRLF);
 
-                MBeanAttributeInfo attrs[] = minfo.getAttributes();
+                MBeanAttributeInfo[] attrs = minfo.getAttributes();
                 Object value = null;
 
                 for (MBeanAttributeInfo attr : attrs) {
@@ -93,11 +87,13 @@ public class MBeanDumper {
                             if (log.isDebugEnabled()) {
                                 log.debug(sm.getString("mBeanDumper.getAttributeError", attName, oname), rme);
                             }
-                        } else if (cause instanceof NullPointerException) {
+                        }
+                        else if (cause instanceof NullPointerException) {
                             if (log.isDebugEnabled()) {
                                 log.debug(sm.getString("mBeanDumper.getAttributeError", attName, oname), rme);
                             }
-                        } else {
+                        }
+                        else {
                             log.error(sm.getString("mBeanDumper.getAttributeError", attName, oname), rme);
                         }
                         continue;
@@ -127,8 +123,9 @@ public class MBeanDumper {
                                 }
                             }
                             valueString = sb.toString();
-                        } else if (TabularData.class.isInstance(value)) {
-                            TabularData tab = TabularData.class.cast(value);
+                        }
+                        else if (value instanceof TabularData) {
+                            TabularData tab = (TabularData) value;
                             StringJoiner joiner = new StringJoiner(CRLF);
                             joiner.add(
                                     "TabularData[" + tab.getTabularType().getRowType().getTypeName()
@@ -137,7 +134,8 @@ public class MBeanDumper {
                                 joiner.add(tableItemToString(item));
                             }
                             valueString = joiner.toString();
-                        } else {
+                        }
+                        else {
                             valueString = valueToString(value);
                         }
                         buf.append(attName);
@@ -191,18 +189,19 @@ public class MBeanDumper {
 
         int pos = start;
         while (end - pos > 78) {
-            sb.append(value.substring(pos, pos + 78));
+            sb.append(value, pos, pos + 78);
             sb.append("\n ");
             pos = pos + 78;
         }
-        sb.append(value.substring(pos, end));
+        sb.append(value, pos, end);
     }
 
 
     private static String tableItemToString(Object item) {
         if (item == null) {
             return "\t" + "NULL VALUE";
-        } else {
+        }
+        else {
             try {
                 return "\t" + valueToString(item);
             } catch (Throwable t) {
@@ -215,10 +214,10 @@ public class MBeanDumper {
 
     private static String valueToString(Object value) {
         String valueString;
-        if (CompositeData.class.isInstance(value)) {
+        if (value instanceof CompositeData) {
             StringBuilder sb = new StringBuilder("{");
             String sep = "";
-            CompositeData composite = CompositeData.class.cast(value);
+            CompositeData composite = (CompositeData) value;
             Set<String> keys = composite.getCompositeType().keySet();
             for (String key : keys) {
                 sb.append(sep).append(key).append('=').append(composite.get(key));
@@ -226,7 +225,8 @@ public class MBeanDumper {
             }
             sb.append('}');
             valueString = sb.toString();
-        } else {
+        }
+        else {
             valueString = value.toString();
         }
         return escape(valueString);

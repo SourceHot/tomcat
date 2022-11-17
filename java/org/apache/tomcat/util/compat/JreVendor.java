@@ -20,6 +20,9 @@ import java.util.Locale;
 
 public class JreVendor {
 
+    public static final boolean IS_ORACLE_JVM;
+    public static final boolean IS_IBM_JVM;
+
     static {
         /**
          * There are a few places where Tomcat either accesses JVM internals
@@ -34,16 +37,14 @@ public class JreVendor {
         if (vendor.startsWith("oracle") || vendor.startsWith("sun")) {
             IS_ORACLE_JVM = true;
             IS_IBM_JVM = false;
-        } else if (vendor.contains("ibm")) {
+        }
+        else if (vendor.contains("ibm")) {
             IS_ORACLE_JVM = false;
             IS_IBM_JVM = true;
-        } else {
+        }
+        else {
             IS_ORACLE_JVM = false;
             IS_IBM_JVM = false;
         }
     }
-
-    public static final boolean IS_ORACLE_JVM;
-
-    public static final boolean IS_IBM_JVM;
 }

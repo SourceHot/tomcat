@@ -16,17 +16,12 @@
  */
 package org.apache.catalina.filters;
 
-import java.io.IOException;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.GenericFilter;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
 
 /**
  * Filter that attempts to force MS WebDAV clients connecting on port 80 to use
@@ -38,7 +33,7 @@ import org.apache.tomcat.util.res.StringManager;
  *   <li>Cancelling the first authentication dialog box and then trying to
  *       reconnect.</li>
  * </ul>
- *
+ * <p>
  * Generally each different version of the MS client has a different set of
  * problems.
  * <p>
@@ -60,19 +55,18 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class WebdavFixFilter extends GenericFilter {
 
-    private static final long serialVersionUID = 1L;
     protected static final StringManager sm = StringManager.getManager(WebdavFixFilter.class);
-
+    private static final long serialVersionUID = 1L;
     /* Start string for all versions */
     private static final String UA_MINIDIR_START =
-        "Microsoft-WebDAV-MiniRedir";
+            "Microsoft-WebDAV-MiniRedir";
     /* XP 32-bit SP3 */
     private static final String UA_MINIDIR_5_1_2600 =
-        "Microsoft-WebDAV-MiniRedir/5.1.2600";
+            "Microsoft-WebDAV-MiniRedir/5.1.2600";
 
     /* XP 64-bit SP2 */
     private static final String UA_MINIDIR_5_2_3790 =
-        "Microsoft-WebDAV-MiniRedir/5.2.3790";
+            "Microsoft-WebDAV-MiniRedir/5.2.3790";
 
     /**
      * Check for the broken MS WebDAV client and if detected issue a re-direct
@@ -80,7 +74,7 @@ public class WebdavFixFilter extends GenericFilter {
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+                         FilterChain chain) throws IOException, ServletException {
         if (!(request instanceof HttpServletRequest) ||
                 !(response instanceof HttpServletResponse)) {
             chain.doFilter(request, response);
@@ -95,10 +89,12 @@ public class WebdavFixFilter extends GenericFilter {
             // No UA or starts with non MS value
             // Hope everything just works...
             chain.doFilter(request, response);
-        } else if (ua.startsWith(UA_MINIDIR_5_1_2600)) {
+        }
+        else if (ua.startsWith(UA_MINIDIR_5_1_2600)) {
             // XP 32-bit SP3 - needs redirect with explicit port
             httpResponse.sendRedirect(buildRedirect(httpRequest));
-        } else if (ua.startsWith(UA_MINIDIR_5_2_3790)) {
+        }
+        else if (ua.startsWith(UA_MINIDIR_5_2_3790)) {
             // XP 64-bit SP2
             if (!httpRequest.getContextPath().isEmpty()) {
                 getServletContext().log(sm.getString("webDavFilter.xpRootContext"));
@@ -108,7 +104,8 @@ public class WebdavFixFilter extends GenericFilter {
             getServletContext().log(sm.getString("webDavFilter.xpProblem"));
 
             chain.doFilter(request, response);
-        } else {
+        }
+        else {
             // Don't know which MS client it is - try the redirect with an
             // explicit port in the hope that it moves the client to a different
             // WebDAV implementation that works
@@ -117,18 +114,16 @@ public class WebdavFixFilter extends GenericFilter {
     }
 
     private String buildRedirect(HttpServletRequest request) {
-        StringBuilder location =
-            new StringBuilder(request.getRequestURL().length());
-        location.append(request.getScheme());
-        location.append("://");
-        location.append(request.getServerName());
-        location.append(':');
-        // If we include the port, even if it is 80, then MS clients will use
-        // a WebDAV client that works rather than the MiniRedir that has
-        // problems with BASIC authentication
-        location.append(request.getServerPort());
-        location.append(request.getRequestURI());
-        return location.toString();
+        String location = request.getScheme() +
+                "://" +
+                request.getServerName() +
+                ':' +
+                // If we include the port, even if it is 80, then MS clients will use
+                // a WebDAV client that works rather than the MiniRedir that has
+                // problems with BASIC authentication
+                request.getServerPort() +
+                request.getRequestURI();
+        return location;
     }
 
 }

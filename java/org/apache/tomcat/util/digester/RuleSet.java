@@ -41,7 +41,7 @@ public interface RuleSet {
      * by a Digester instance.
      *
      * @param digester Digester instance to which the new Rule instances
-     *  should be added.
+     *                 should be added.
      */
     void addRuleInstances(Digester digester);
 }

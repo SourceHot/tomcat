@@ -16,6 +16,12 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
+import org.apache.catalina.tribes.Member;
+import org.apache.catalina.tribes.MembershipService;
+import org.apache.catalina.tribes.membership.MemberImpl;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -25,19 +31,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.catalina.tribes.Member;
-import org.apache.catalina.tribes.MembershipService;
-import org.apache.catalina.tribes.membership.MemberImpl;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-
 /**
  * A {@link org.apache.catalina.tribes.MembershipProvider} that uses DNS to retrieve the members of a cluster.<br>
  *
  * <p>
  * <strong>Configuration example for Kubernetes</strong>
  * </p>
- *
+ * <p>
  * {@code server.xml }
  *
  * <pre>
@@ -59,7 +59,7 @@ import org.apache.juli.logging.LogFactory;
  *         ...
  *  }
  *  </pre>
- *
+ * <p>
  * {@code dns-membership-service.yml }
  *
  * <pre>
@@ -80,9 +80,9 @@ import org.apache.juli.logging.LogFactory;
  *     app: my-tomcat-app
  * }
  * </pre>
- *
+ * <p>
  * Environment variable configuration<br>
- *
+ * <p>
  * {@code DNS_MEMBERSHIP_SERVICE_NAME=my-tomcat-app-membership }
  */
 

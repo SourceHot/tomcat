@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.util.http.parser;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.Reader;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * HTTP header value parser implementation. Parsing HTTP headers as per RFC2616
@@ -27,12 +27,11 @@ import org.apache.tomcat.util.res.StringManager;
  * the simple approach will normally be sufficient. However, for the other
  * headers, while simple code meets 99.9% of cases, there are often some edge
  * cases that make things far more complicated.
- *
+ * <p>
  * The purpose of this parser is to let the parser worry about the edge cases.
  * It provides tolerant (where safe to do so) parsing of HTTP header values
  * assuming that wrapped header lines have already been unwrapped. (The Tomcat
  * header processing code does the unwrapping.)
- *
  */
 public class HttpParser {
 
@@ -63,9 +62,9 @@ public class HttpParser {
             }
 
             // Separator
-            if (    i == '(' || i == ')' || i == '<' || i == '>'  || i == '@'  ||
+            if (i == '(' || i == ')' || i == '<' || i == '>' || i == '@' ||
                     i == ',' || i == ';' || i == ':' || i == '\\' || i == '\"' ||
-                    i == '/' || i == '[' || i == ']' || i == '?'  || i == '='  ||
+                    i == '/' || i == '[' || i == ']' || i == '?' || i == '=' ||
                     i == '{' || i == '}' || i == ' ' || i == '\t') {
                 IS_SEPARATOR[i] = true;
             }
@@ -76,7 +75,7 @@ public class HttpParser {
             }
 
             // Hex: 0-9, a-f, A-F
-            if ((i >= '0' && i <='9') || (i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F')) {
+            if ((i >= '0' && i <= '9') || (i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F')) {
                 IS_HEX[i] = true;
             }
 
@@ -112,7 +111,7 @@ public class HttpParser {
             // restrictions may be relaxed when used in the path and/or query
             // string
             if (i == '\"' || i == '<' || i == '>' || i == '[' || i == '\\' || i == ']' ||
-                    i == '^' || i == '`'  || i == '{' || i == '|' || i == '}') {
+                    i == '^' || i == '`' || i == '{' || i == '|' || i == '}') {
                 IS_RELAXABLE[i] = true;
             }
         }
@@ -133,7 +132,7 @@ public class HttpParser {
             // ASCII, no controls plus a few additional characters excluded
             if (IS_CONTROL[i] ||
                     i == ' ' || i == '\"' || i == '#' || i == '<' || i == '>' || i == '\\' ||
-                    i == '^' || i == '`'  || i == '{' || i == '|' || i == '}') {
+                    i == '^' || i == '`' || i == '{' || i == '|' || i == '}') {
                 IS_NOT_REQUEST_TARGET[i] = true;
             }
 
@@ -162,40 +161,6 @@ public class HttpParser {
         relax(IS_QUERY_RELAXED, relaxedQueryChars);
     }
 
-
-    public boolean isNotRequestTargetRelaxed(int c) {
-        // Fast for valid request target characters, slower for some incorrect
-        // ones
-        try {
-            return IS_NOT_REQUEST_TARGET[c];
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            return true;
-        }
-    }
-
-
-    public boolean isAbsolutePathRelaxed(int c) {
-        // Fast for valid user info characters, slower for some incorrect
-        // ones
-        try {
-            return IS_ABSOLUTEPATH_RELAXED[c];
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            return false;
-        }
-    }
-
-
-    public boolean isQueryRelaxed(int c) {
-        // Fast for valid user info characters, slower for some incorrect
-        // ones
-        try {
-            return IS_QUERY_RELAXED[c];
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            return false;
-        }
-    }
-
-
     public static String unquote(String input) {
         if (input == null || input.length() < 2) {
             return input;
@@ -208,24 +173,25 @@ public class HttpParser {
         if (input.charAt(0) == '"') {
             start = 1;
             end = input.length() - 1;
-        } else {
+        }
+        else {
             start = 0;
             end = input.length();
         }
 
         StringBuilder result = new StringBuilder();
-        for (int i = start ; i < end; i++) {
+        for (int i = start; i < end; i++) {
             char c = input.charAt(i);
             if (input.charAt(i) == '\\') {
                 i++;
                 result.append(input.charAt(i));
-            } else {
+            }
+            else {
                 result.append(c);
             }
         }
         return result.toString();
     }
-
 
     public static boolean isToken(int c) {
         // Fast for correct values, slower for incorrect ones
@@ -236,7 +202,6 @@ public class HttpParser {
         }
     }
 
-
     /**
      * Is the provided String a token as per RFC 7230?
      * <br>
@@ -246,9 +211,8 @@ public class HttpParser {
      * string ({@code ""}) are not considered to be valid tokens.
      *
      * @param s The string to test
-     *
      * @return {@code true} if the string is a valid token, otherwise
-     *         {@code false}
+     * {@code false}
      */
     public static boolean isToken(String s) {
         if (s == null) {
@@ -265,7 +229,6 @@ public class HttpParser {
         return true;
     }
 
-
     public static boolean isHex(int c) {
         // Fast for correct values, slower for some incorrect ones
         try {
@@ -275,11 +238,9 @@ public class HttpParser {
         }
     }
 
-
     public static boolean isNotRequestTarget(int c) {
         return DEFAULT.isNotRequestTargetRelaxed(c);
     }
-
 
     public static boolean isHttpProtocol(int c) {
         // Fast for valid HTTP protocol characters, slower for some incorrect
@@ -291,7 +252,6 @@ public class HttpParser {
         }
     }
 
-
     public static boolean isAlpha(int c) {
         // Fast for valid alpha characters, slower for some incorrect
         // ones
@@ -301,7 +261,6 @@ public class HttpParser {
             return false;
         }
     }
-
 
     public static boolean isNumeric(int c) {
         // Fast for valid numeric characters, slower for some incorrect
@@ -313,7 +272,6 @@ public class HttpParser {
         }
     }
 
-
     public static boolean isUserInfo(int c) {
         // Fast for valid user info characters, slower for some incorrect
         // ones
@@ -323,7 +281,6 @@ public class HttpParser {
             return false;
         }
     }
-
 
     private static boolean isRelaxable(int c) {
         // Fast for valid user info characters, slower for some incorrect
@@ -335,16 +292,13 @@ public class HttpParser {
         }
     }
 
-
     public static boolean isAbsolutePath(int c) {
         return DEFAULT.isAbsolutePathRelaxed(c);
     }
 
-
     public static boolean isQuery(int c) {
         return DEFAULT.isQueryRelaxed(c);
     }
-
 
     public static boolean isControl(int c) {
         // Fast for valid control characters, slower for some incorrect
@@ -355,7 +309,6 @@ public class HttpParser {
             return false;
         }
     }
-
 
     // Skip any LWS and position to read the next character. The next character
     // is returned as being able to 'peek()' it allows a small optimisation in
@@ -397,9 +350,9 @@ public class HttpParser {
     }
 
     /**
-     * @return  the token if one was found, the empty string if no data was
-     *          available to read or <code>null</code> if data other than a
-     *          token was found
+     * @return the token if one was found, the empty string if no data was
+     * available to read or <code>null</code> if data other than a
+     * token was found
      */
     static String readToken(Reader input) throws IOException {
         StringBuilder result = new StringBuilder();
@@ -419,14 +372,15 @@ public class HttpParser {
 
         if (c != -1 && result.length() == 0) {
             return null;
-        } else {
+        }
+        else {
             return result.toString();
         }
     }
 
     /**
-     * @return  the digits if any were found, the empty string if no data was
-     *          found or if data other than digits was found
+     * @return the digits if any were found, the empty string if no data was
+     * found or if data other than digits was found
      */
     static String readDigits(Reader input) throws IOException {
         StringBuilder result = new StringBuilder();
@@ -448,8 +402,8 @@ public class HttpParser {
     }
 
     /**
-     * @return  the number if digits were found, -1 if no data was found
-     *          or if data other than digits was found
+     * @return the number if digits were found, -1 if no data was found
+     * or if data other than digits was found
      */
     static long readLong(Reader input) throws IOException {
         String digits = readDigits(input);
@@ -463,8 +417,8 @@ public class HttpParser {
 
     /**
      * @return the quoted string if one was found, null if data other than a
-     *         quoted string was found or null if the end of data was reached
-     *         before the quoted string was terminated
+     * quoted string was found or null if the end of data was reached
+     * before the quoted string was terminated
      */
     static String readQuotedString(Reader input, boolean returnQuoted) throws IOException {
 
@@ -484,13 +438,15 @@ public class HttpParser {
         while (c != '"') {
             if (c == -1) {
                 return null;
-            } else if (c == '\\') {
+            }
+            else if (c == '\\') {
                 c = input.read();
                 if (returnQuoted) {
                     result.append('\\');
                 }
                 result.append((char) c);
-            } else {
+            }
+            else {
                 result.append((char) c);
             }
             c = input.read();
@@ -510,7 +466,8 @@ public class HttpParser {
 
         if (c == '"') {
             return readQuotedString(input, returnQuoted);
-        } else {
+        }
+        else {
             return readToken(input);
         }
     }
@@ -524,8 +481,8 @@ public class HttpParser {
      * should be tokens.
      *
      * @return the token if one was found, null if data other than a token or
-     *         quoted token was found or null if the end of data was reached
-     *         before a quoted token was terminated
+     * quoted token was found or null if the end of data was reached
+     * before a quoted token was terminated
      */
     static String readQuotedToken(Reader input) throws IOException {
 
@@ -538,9 +495,11 @@ public class HttpParser {
 
         if (c == '"') {
             quoted = true;
-        } else if (c == -1 || !isToken(c)) {
+        }
+        else if (c == -1 || !isToken(c)) {
             return null;
-        } else {
+        }
+        else {
             result.append((char) c);
         }
         input.mark(1);
@@ -556,7 +515,8 @@ public class HttpParser {
             if (c != '"') {
                 return null;
             }
-        } else {
+        }
+        else {
             // Use mark(1)/reset() rather than skip(-1) since skip() is a NOP
             // once the end of the String has been reached.
             input.reset();
@@ -564,7 +524,8 @@ public class HttpParser {
 
         if (c != -1 && result.length() == 0) {
             return null;
-        } else {
+        }
+        else {
             return result.toString();
         }
     }
@@ -580,8 +541,8 @@ public class HttpParser {
      * allows for upper-case digits as well, converting the returned value to
      * lower-case.
      *
-     * @return  the sequence of LHEX (minus any surrounding quotes) if any was
-     *          found, or <code>null</code> if data other LHEX was found
+     * @return the sequence of LHEX (minus any surrounding quotes) if any was
+     * found, or <code>null</code> if data other LHEX was found
      */
     static String readLhex(Reader input) throws IOException {
 
@@ -594,9 +555,11 @@ public class HttpParser {
 
         if (c == '"') {
             quoted = true;
-        } else if (c == -1 || !isHex(c)) {
+        }
+        else if (c == -1 || !isHex(c)) {
             return null;
-        } else {
+        }
+        else {
             if ('A' <= c && c <= 'F') {
                 c -= ('A' - 'a');
             }
@@ -618,7 +581,8 @@ public class HttpParser {
             if (c != '"') {
                 return null;
             }
-        } else {
+        }
+        else {
             // Use mark(1)/reset() rather than skip(-1) since skip() is a NOP
             // once the end of the String has been reached.
             input.reset();
@@ -626,7 +590,8 @@ public class HttpParser {
 
         if (c != -1 && result.length() == 0) {
             return null;
-        } else {
+        }
+        else {
             return result.toString();
         }
     }
@@ -637,7 +602,8 @@ public class HttpParser {
         if (c == -1 || c == delimiter) {
             // No q value just whitespace
             return 1;
-        } else if (c != 'q') {
+        }
+        else if (c != 'q') {
             // Malformed. Use quality of zero so it is dropped.
             skipUntil(input, c, delimiter);
             return 0;
@@ -667,17 +633,20 @@ public class HttpParser {
                 if (decimalPlacesRead == -1 && c == '.') {
                     value.append('.');
                     decimalPlacesRead = 0;
-                } else if (decimalPlacesRead > -1 && c >= '0' && c <= '9') {
+                }
+                else if (decimalPlacesRead > -1 && c >= '0' && c <= '9') {
                     if (decimalPlacesRead < 3) {
                         value.append((char) c);
                         decimalPlacesRead++;
                     }
-                } else {
+                }
+                else {
                     break;
                 }
                 c = input.read();
             }
-        } else {
+        }
+        else {
             // Malformed. Use quality of zero so it is dropped and skip until
             // EOF or the next delimiter
             skipUntil(input, c, delimiter);
@@ -704,11 +673,10 @@ public class HttpParser {
         return result;
     }
 
-
     /**
      * @return If inIPv6 is false, the position of ':' that separates the host
-     *         from the port or -1 if it is not present. If inIPv6 is true, the
-     *         number of characters read
+     * from the port or -1 if it is not present. If inIPv6 is true, the
+     * number of characters read
      */
     static int readHostIPv4(Reader reader, boolean inIPv6) throws IOException {
         int octet = -1;
@@ -726,51 +694,64 @@ public class HttpParser {
                     // Valid
                     octetCount++;
                     octet = -1;
-                } else if (inIPv6 || octet == -1) {
+                }
+                else if (inIPv6 || octet == -1) {
                     throw new IllegalArgumentException(
                             sm.getString("http.invalidOctet", Integer.toString(octet)));
-                } else {
+                }
+                else {
                     // Might not be an IPv4 address. Could be a host / FQDN with
                     // a fully numeric component.
                     reader.reset();
                     return readHostDomainName(reader);
                 }
-            } else if (isNumeric(c)) {
+            }
+            else if (isNumeric(c)) {
                 if (octet == -1) {
                     octet = c - '0';
-                } else if (octet == 0) {
+                }
+                else if (octet == 0) {
                     // Leading zero in non-zero octet. Not valid (ambiguous).
                     if (inIPv6) {
                         throw new IllegalArgumentException(sm.getString("http.invalidLeadingZero"));
-                    } else {
+                    }
+                    else {
                         // Could be a host/FQDN
                         reader.reset();
                         return readHostDomainName(reader);
                     }
-                } else {
+                }
+                else {
                     octet = octet * 10 + c - '0';
                 }
-            } else if (c == ':') {
+            }
+            else if (c == ':') {
                 break;
-            } else if (c == -1) {
+            }
+            else if (c == -1) {
                 if (inIPv6) {
                     throw new IllegalArgumentException(sm.getString("http.noClosingBracket"));
-                } else {
+                }
+                else {
                     pos = -1;
                     break;
                 }
-            } else if (c == ']') {
+            }
+            else if (c == ']') {
                 if (inIPv6) {
                     pos++;
                     break;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(sm.getString("http.closingBracket"));
                 }
-            } else if (!inIPv6 && (isAlpha(c) || c == '-')) {
+            }
+            else if (!inIPv6 && (isAlpha(c) || c == '-')) {
                 // Go back to the start and parse as a host / FQDN
                 reader.reset();
                 return readHostDomainName(reader);
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString(
                         "http.illegalCharacterIpv4", Character.toString((char) c)));
             }
@@ -788,10 +769,9 @@ public class HttpParser {
         return pos;
     }
 
-
     /**
      * @return The position of ':' that separates the host from the port or -1
-     *         if it is not present
+     * if it is not present
      */
     static int readHostIPv6(Reader reader) throws IOException {
         // Must start with '['
@@ -822,14 +802,16 @@ public class HttpParser {
                 if (h16Size > 4) {
                     throw new IllegalArgumentException(sm.getString("http.invalidHextet"));
                 }
-            } else if (c == ':') {
-                if (precedingColonsCount >=2 ) {
+            }
+            else if (c == ':') {
+                if (precedingColonsCount >= 2) {
                     // ::: is not allowed
                     throw new IllegalArgumentException(sm.getString("http.tooManyColons"));
-                } else {
-                    if(precedingColonsCount == 1) {
+                }
+                else {
+                    if (precedingColonsCount == 1) {
                         // End of ::
-                        if (parsedDoubleColon ) {
+                        if (parsedDoubleColon) {
                             // Only allowed one :: sequence
                             throw new IllegalArgumentException(
                                     sm.getString("http.tooManyDoubleColons"));
@@ -843,24 +825,28 @@ public class HttpParser {
                     reader.mark(4);
                 }
                 h16Size = 0;
-            } else if (c == ']') {
+            }
+            else if (c == ']') {
                 if (precedingColonsCount == 1) {
                     // Can't end on a single ':'
                     throw new IllegalArgumentException(sm.getString("http.singleColonEnd"));
                 }
                 pos++;
                 break;
-            } else if (c == '.') {
+            }
+            else if (c == '.') {
                 if (h16Count == 7 || h16Count < 7 && parsedDoubleColon) {
                     reader.reset();
                     pos -= h16Size;
                     pos += readHostIPv4(reader, true);
                     h16Count++;
                     break;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(sm.getString("http.invalidIpv4Location"));
                 }
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString(
                         "http.illegalCharacterIpv6", Character.toString((char) c)));
             }
@@ -870,7 +856,8 @@ public class HttpParser {
         if (h16Count > 8) {
             throw new IllegalArgumentException(
                     sm.getString("http.tooManyHextets", Integer.toString(h16Count)));
-        } else if (h16Count != 8 && !parsedDoubleColon) {
+        }
+        else if (h16Count != 8 && !parsedDoubleColon) {
             throw new IllegalArgumentException(
                     sm.getString("http.tooFewHextets", Integer.toString(h16Count)));
         }
@@ -878,8 +865,9 @@ public class HttpParser {
         c = reader.read();
         if (c == ':') {
             return pos;
-        } else {
-            if(c == -1) {
+        }
+        else {
+            if (c == -1) {
                 return -1;
             }
             throw new IllegalArgumentException(
@@ -889,7 +877,7 @@ public class HttpParser {
 
     /**
      * @return The position of ':' that separates the host from the port or -1
-     *         if it is not present
+     * if it is not present
      */
     static int readHostDomainName(Reader reader) throws IOException {
         DomainParseState state = DomainParseState.NEW;
@@ -903,11 +891,11 @@ public class HttpParser {
         if (DomainParseState.COLON == state) {
             // State identifies the state of the previous character
             return pos - 1;
-        } else {
+        }
+        else {
             return -1;
         }
     }
-
 
     /**
      * Skips all characters until EOF or the specified target is found. Normally
@@ -919,11 +907,41 @@ public class HttpParser {
         }
         if (c == -1) {
             return SkipResult.EOF;
-        } else {
+        }
+        else {
             return SkipResult.FOUND;
         }
     }
 
+    public boolean isNotRequestTargetRelaxed(int c) {
+        // Fast for valid request target characters, slower for some incorrect
+        // ones
+        try {
+            return IS_NOT_REQUEST_TARGET[c];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            return true;
+        }
+    }
+
+    public boolean isAbsolutePathRelaxed(int c) {
+        // Fast for valid user info characters, slower for some incorrect
+        // ones
+        try {
+            return IS_ABSOLUTEPATH_RELAXED[c];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            return false;
+        }
+    }
+
+    public boolean isQueryRelaxed(int c) {
+        // Fast for valid user info characters, slower for some incorrect
+        // ones
+        try {
+            return IS_QUERY_RELAXED[c];
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            return false;
+        }
+    }
 
     private void relax(boolean[] flags, String relaxedChars) {
         if (relaxedChars != null && relaxedChars.length() > 0) {
@@ -939,13 +957,13 @@ public class HttpParser {
 
 
     private enum DomainParseState {
-        NEW(     true, false, false, false, "http.invalidCharacterDomain.atStart"),
-        ALPHA(   true,  true,  true,  true, "http.invalidCharacterDomain.afterLetter"),
-        NUMERIC( true,  true,  true,  true, "http.invalidCharacterDomain.afterNumber"),
-        PERIOD(  true, false, false,  true, "http.invalidCharacterDomain.afterPeriod"),
-        HYPHEN(  true,  true, false, false, "http.invalidCharacterDomain.afterHyphen"),
-        COLON(  false, false, false, false, "http.invalidCharacterDomain.afterColon"),
-        END(    false, false, false, false, "http.invalidCharacterDomain.atEnd");
+        NEW(true, false, false, false, "http.invalidCharacterDomain.atStart"),
+        ALPHA(true, true, true, true, "http.invalidCharacterDomain.afterLetter"),
+        NUMERIC(true, true, true, true, "http.invalidCharacterDomain.afterNumber"),
+        PERIOD(true, false, false, true, "http.invalidCharacterDomain.afterPeriod"),
+        HYPHEN(true, true, false, false, "http.invalidCharacterDomain.afterHyphen"),
+        COLON(false, false, false, false, "http.invalidCharacterDomain.afterColon"),
+        END(false, false, false, false, "http.invalidCharacterDomain.atEnd");
 
         private final boolean mayContinue;
         private final boolean allowsHyphen;
@@ -953,8 +971,8 @@ public class HttpParser {
         private final boolean allowsEnd;
         private final String errorMsg;
 
-        private DomainParseState(boolean mayContinue, boolean allowsHyphen, boolean allowsPeriod,
-                boolean allowsEnd, String errorMsg) {
+        DomainParseState(boolean mayContinue, boolean allowsHyphen, boolean allowsPeriod,
+                                 boolean allowsEnd, String errorMsg) {
             this.mayContinue = mayContinue;
             this.allowsHyphen = allowsHyphen;
             this.allowsPeriod = allowsPeriod;
@@ -970,36 +988,46 @@ public class HttpParser {
             if (c == -1) {
                 if (allowsEnd) {
                     return END;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(
                             sm.getString("http.invalidSegmentEndState", this.name()));
                 }
-            } else if (HttpParser.isAlpha(c)) {
+            }
+            else if (HttpParser.isAlpha(c)) {
                 return ALPHA;
-            } else if (HttpParser.isNumeric(c)) {
+            }
+            else if (HttpParser.isNumeric(c)) {
                 return NUMERIC;
-            } else if (c == '.') {
+            }
+            else if (c == '.') {
                 if (allowsPeriod) {
                     return PERIOD;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(sm.getString(errorMsg,
                             Character.toString((char) c)));
                 }
-            } else if (c == ':') {
+            }
+            else if (c == ':') {
                 if (allowsEnd) {
                     return COLON;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(sm.getString(errorMsg,
                             Character.toString((char) c)));
                 }
-            } else if (c == '-') {
+            }
+            else if (c == '-') {
                 if (allowsHyphen) {
                     return HYPHEN;
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException(sm.getString(errorMsg,
                             Character.toString((char) c)));
                 }
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString(
                         "http.illegalCharacterDomain", Character.toString((char) c)));
             }

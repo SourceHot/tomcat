@@ -31,34 +31,18 @@ import java.util.List;
 public class Constants {
 
     public static final String SPEC_VERSION = "3.0";
-
-    /**
-     * These classes/packages are automatically imported by the
-     * generated code.
-     */
-    private static final String[] PRIVATE_STANDARD_IMPORTS = {
-        "jakarta.servlet.*",
-        "jakarta.servlet.http.*",
-        "jakarta.servlet.jsp.*"
-    };
-    public static final List<String> STANDARD_IMPORTS =
-        Collections.unmodifiableList(Arrays.asList(PRIVATE_STANDARD_IMPORTS));
-
     /**
      * Default size of the JSP buffer.
      */
     public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
-
     /**
      * Default size for the tag buffers.
      */
     public static final int DEFAULT_TAG_BUFFER_SIZE = 512;
-
     /**
      * Default tag handler pool size.
      */
     public static final int MAX_POOL_SIZE = 5;
-
     /**
      * Default URLs to download the plugin for Netscape and IE.
      *
@@ -66,25 +50,20 @@ public class Constants {
      */
     @Deprecated
     public static final String NS_PLUGIN_URL =
-        "http://java.sun.com/products/plugin/";
-
+            "http://java.sun.com/products/plugin/";
     @Deprecated
     public static final String IE_PLUGIN_URL =
-        "http://java.sun.com/products/plugin/1.2.2/jinstall-1_2_2-win.cab#Version=1,2,2,0";
-
+            "http://java.sun.com/products/plugin/1.2.2/jinstall-1_2_2-win.cab#Version=1,2,2,0";
     /**
      * Has security been turned on?
      */
     public static final boolean IS_SECURITY_ENABLED =
-        (System.getSecurityManager() != null);
-
+            (System.getSecurityManager() != null);
     /**
      * Name of the system property containing
      * the tomcat product installation path
      */
     public static final String CATALINA_HOME_PROP = "catalina.home";
-
-
     /**
      * Name of the ServletContext init-param that determines if the XML parsers
      * used for *.tld files will be validating or not.
@@ -93,7 +72,6 @@ public class Constants {
      */
     public static final String XML_VALIDATION_TLD_INIT_PARAM =
             "org.apache.jasper.XML_VALIDATE_TLD";
-
     /**
      * Name of the ServletContext init-param that determines if the XML parsers
      * will block the resolution of external entities.
@@ -102,7 +80,6 @@ public class Constants {
      */
     public static final String XML_BLOCK_EXTERNAL_INIT_PARAM =
             "org.apache.jasper.XML_BLOCK_EXTERNAL";
-
     /**
      * Name of the ServletContext init-param that determines the JSP
      * factory pool size. Set the value to a positive integer to enable it.
@@ -110,5 +87,16 @@ public class Constants {
      */
     public static final String JSP_FACTORY_POOL_SIZE_INIT_PARAM =
             "org.apache.jasper.runtime.JspFactoryImpl.POOL_SIZE";
+    /**
+     * These classes/packages are automatically imported by the
+     * generated code.
+     */
+    private static final String[] PRIVATE_STANDARD_IMPORTS = {
+            "jakarta.servlet.*",
+            "jakarta.servlet.http.*",
+            "jakarta.servlet.jsp.*"
+    };
+    public static final List<String> STANDARD_IMPORTS =
+            Collections.unmodifiableList(Arrays.asList(PRIVATE_STANDARD_IMPORTS));
 
 }

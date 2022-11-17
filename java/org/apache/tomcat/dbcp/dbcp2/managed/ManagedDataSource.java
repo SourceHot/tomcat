@@ -16,18 +16,17 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.managed;
 
+import org.apache.tomcat.dbcp.dbcp2.PoolingDataSource;
+import org.apache.tomcat.dbcp.pool2.ObjectPool;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 
-import org.apache.tomcat.dbcp.dbcp2.PoolingDataSource;
-import org.apache.tomcat.dbcp.pool2.ObjectPool;
-
 /**
  * The ManagedDataSource is a PoolingDataSource that creates ManagedConnections.
  *
- * @param <C>
- *            The kind of {@link Connection} to manage.
+ * @param <C> The kind of {@link Connection} to manage.
  * @since 2.0
  */
 public class ManagedDataSource<C extends Connection> extends PoolingDataSource<C> {
@@ -40,11 +39,9 @@ public class ManagedDataSource<C extends Connection> extends PoolingDataSource<C
      * connection in a global transaction because the XAResource object associated with the connection will be
      * unavailable.
      *
-     * @param pool
-     *            the connection pool
-     * @param transactionRegistry
-     *            the transaction registry obtained from the XAConnectionFactory used to create the connection pool
-     *            object factory
+     * @param pool                the connection pool
+     * @param transactionRegistry the transaction registry obtained from the XAConnectionFactory used to create the connection pool
+     *                            object factory
      */
     public ManagedDataSource(final ObjectPool<C> pool, final TransactionRegistry transactionRegistry) {
         super(pool);
@@ -78,8 +75,7 @@ public class ManagedDataSource<C extends Connection> extends PoolingDataSource<C
      * Sets the transaction registry from the XAConnectionFactory used to create the pool. The transaction registry can
      * only be set once using either a connector or this setter method.
      *
-     * @param transactionRegistry
-     *            the transaction registry acquired from the XAConnectionFactory used to create the pool
+     * @param transactionRegistry the transaction registry acquired from the XAConnectionFactory used to create the pool
      */
     public void setTransactionRegistry(final TransactionRegistry transactionRegistry) {
         if (this.transactionRegistry != null) {

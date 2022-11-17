@@ -16,20 +16,20 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionIdGenerator;
 import org.apache.catalina.session.StandardManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.PrintWriter;
+
 /**
  * Store server.xml Manager element
  */
 public class ManagerSF extends StoreFactoryBase {
 
-    private static Log log = LogFactory.getLog(ManagerSF.class);
+    private static final Log log = LogFactory.getLog(ManagerSF.class);
 
     /**
      * Store the only the Manager elements
@@ -51,10 +51,12 @@ public class ManagerSF extends StoreFactoryBase {
                     }
                     super.store(aWriter, indent, aElement);
                 }
-            } else {
+            }
+            else {
                 super.store(aWriter, indent, aElement);
             }
-        } else {
+        }
+        else {
             if (log.isWarnEnabled()) {
                 log.warn(sm.getString("factory.storeNoDescriptor", aElement
                         .getClass()));
@@ -66,23 +68,19 @@ public class ManagerSF extends StoreFactoryBase {
      * Is this an instance of the default <code>Manager</code> configuration,
      * with all-default properties?
      *
-     * @param smanager
-     *            Manager to be tested
+     * @param smanager Manager to be tested
      * @return <code>true</code> if this is an instance of the default manager
      */
     protected boolean isDefaultManager(StandardManager smanager) {
 
-        if (!"SESSIONS.ser".equals(smanager.getPathname())
-                || (smanager.getMaxActiveSessions() != -1)) {
-            return false;
-        }
-        return true;
+        return "SESSIONS.ser".equals(smanager.getPathname())
+                && (smanager.getMaxActiveSessions() == -1);
 
     }
 
     @Override
     public void storeChildren(PrintWriter aWriter, int indent, Object aManager,
-            StoreDescription parentDesc) throws Exception {
+                              StoreDescription parentDesc) throws Exception {
         if (aManager instanceof Manager) {
             Manager manager = (Manager) aManager;
             // Store nested <SessionIdGenerator> element;

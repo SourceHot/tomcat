@@ -16,6 +16,9 @@
  */
 package org.apache.catalina.authenticator;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.catalina.Session;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -25,18 +28,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.apache.catalina.Session;
-
 /**
  * A class that represents entries in the cache of authenticated users.
  * This is necessary to make it available to
  * <code>AuthenticatorBase</code> subclasses that need it in order to perform
  * reauthentications when SingleSignOn is in use.
  *
- * @author  B Stansberry, based on work by Craig R. McClanahan
- *
+ * @author B Stansberry, based on work by Craig R. McClanahan
  * @see SingleSignOn
  * @see AuthenticatorBase#reauthenticateFromSSO
  */
@@ -45,17 +43,12 @@ public class SingleSignOnEntry implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // ------------------------------------------------------  Instance Fields
-
+    private final Map<SingleSignOnSessionKey, SingleSignOnSessionKey> sessionKeys =
+            new ConcurrentHashMap<>();
     private String authType = null;
-
     private String password = null;
-
     // Marked as transient so special handling can be applied to serialization
     private transient Principal principal = null;
-
-    private final Map<SingleSignOnSessionKey,SingleSignOnSessionKey> sessionKeys =
-            new ConcurrentHashMap<>();
-
     private String username = null;
 
     private boolean canReauthenticate = false;
@@ -84,10 +77,10 @@ public class SingleSignOnEntry implements Serializable {
      * Adds a <code>Session</code> to the list of those associated with
      * this SSO.
      *
-     * @param sso       The <code>SingleSignOn</code> valve that is managing
-     *                  the SSO session.
-     * @param ssoId     The ID of the SSO session.
-     * @param session   The <code>Session</code> being associated with the SSO.
+     * @param sso     The <code>SingleSignOn</code> valve that is managing
+     *                the SSO session.
+     * @param ssoId   The ID of the SSO session.
+     * @param session The <code>Session</code> being associated with the SSO.
      */
     public void addSession(SingleSignOn sso, String ssoId, Session session) {
         SingleSignOnSessionKey key = new SingleSignOnSessionKey(session);
@@ -102,7 +95,7 @@ public class SingleSignOnEntry implements Serializable {
      * Removes the given <code>Session</code> from the list of those
      * associated with this SSO.
      *
-     * @param session  the <code>Session</code> to remove.
+     * @param session the <code>Session</code> to remove.
      */
     public void removeSession(Session session) {
         SingleSignOnSessionKey key = new SingleSignOnSessionKey(session);
@@ -113,7 +106,7 @@ public class SingleSignOnEntry implements Serializable {
      * Returns the HTTP Session identifiers associated with this SSO.
      *
      * @return The identifiers for the HTTP sessions that are current associated
-     *         with this SSo entry
+     * with this SSo entry
      */
     public Set<SingleSignOnSessionKey> findSessions() {
         return sessionKeys.keySet();
@@ -133,8 +126,8 @@ public class SingleSignOnEntry implements Serializable {
      * Gets whether the authentication type associated with the original
      * authentication supports reauthentication.
      *
-     * @return  <code>true</code> if <code>getAuthType</code> returns
-     *          "BASIC" or "FORM", <code>false</code> otherwise.
+     * @return <code>true</code> if <code>getAuthType</code> returns
+     * "BASIC" or "FORM", <code>false</code> otherwise.
      */
     public boolean getCanReauthenticate() {
         return this.canReauthenticate;
@@ -143,9 +136,9 @@ public class SingleSignOnEntry implements Serializable {
     /**
      * Gets the password credential (if any) associated with the SSO.
      *
-     * @return  the password credential associated with the SSO, or
-     *          <code>null</code> if the original authentication type
-     *          does not involve a password.
+     * @return the password credential associated with the SSO, or
+     * <code>null</code> if the original authentication type
+     * does not involve a password.
      */
     public String getPassword() {
         return this.password;
@@ -155,7 +148,7 @@ public class SingleSignOnEntry implements Serializable {
      * Gets the <code>Principal</code> that has been authenticated by the SSO.
      *
      * @return The Principal that was created by the authentication that
-     *         triggered the creation of the SSO entry
+     * triggered the creation of the SSO entry
      */
     public Principal getPrincipal() {
         return this.principal;
@@ -166,7 +159,7 @@ public class SingleSignOnEntry implements Serializable {
      * process.
      *
      * @return The user name that was authenticated as part of the
-     *         authentication that triggered the creation of the SSO entry
+     * authentication that triggered the creation of the SSO entry
      */
     public String getUsername() {
         return this.username;
@@ -185,7 +178,7 @@ public class SingleSignOnEntry implements Serializable {
      * @param password  the password (if any) used for the authentication
      */
     public synchronized void updateCredentials(Principal principal, String authType,
-                                  String username, String password) {
+                                               String username, String password) {
         this.principal = principal;
         this.authType = authType;
         this.username = username;
@@ -200,7 +193,8 @@ public class SingleSignOnEntry implements Serializable {
         if (principal instanceof Serializable) {
             out.writeBoolean(true);
             out.writeObject(principal);
-        } else {
+        }
+        else {
             out.writeBoolean(false);
         }
     }

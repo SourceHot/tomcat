@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,11 @@
  */
 package org.apache.catalina.storeconfig;
 
+import org.apache.catalina.connector.Connector;
+import org.apache.coyote.ProtocolHandler;
+import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.tomcat.util.net.SocketProperties;
+
 import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -23,16 +28,7 @@ import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.catalina.connector.Connector;
-import org.apache.coyote.ProtocolHandler;
-import org.apache.tomcat.util.IntrospectionUtils;
-import org.apache.tomcat.util.net.SocketProperties;
+import java.util.*;
 
 /**
  * Store the Connector attributes. Connector has really special design. A
@@ -44,6 +40,7 @@ public class ConnectorStoreAppender extends StoreAppender {
 
     protected static final HashMap<String, String> replacements = new HashMap<>();
     protected static final Set<String> internalExecutorAttributes = new HashSet<>();
+
     static {
         replacements.put("timeout", "connectionUploadTimeout");
         replacements.put("randomfile", "randomFile");
@@ -55,7 +52,7 @@ public class ConnectorStoreAppender extends StoreAppender {
 
     @Override
     public void printAttributes(PrintWriter writer, int indent,
-            boolean include, Object bean, StoreDescription desc)
+                                boolean include, Object bean, StoreDescription desc)
             throws Exception {
 
         // Render a className attribute if requested
@@ -113,7 +110,7 @@ public class ConnectorStoreAppender extends StoreAppender {
         // Acquire the list of properties for this bean
         ProtocolHandler protocolHandler = bean.getProtocolHandler();
         // Acquire the list of properties for this bean
-        PropertyDescriptor descriptors[] = Introspector.getBeanInfo(
+        PropertyDescriptor[] descriptors = Introspector.getBeanInfo(
                 bean.getClass()).getPropertyDescriptors();
         if (descriptors == null) {
             descriptors = new PropertyDescriptor[0];
@@ -129,7 +126,7 @@ public class ConnectorStoreAppender extends StoreAppender {
             }
             if ("protocol".equals(descriptor.getName())
                     || "protocolHandlerClassName".equals(descriptor
-                            .getName())) {
+                    .getName())) {
                 continue;
             }
             propertyKeys.add(descriptor.getName());
@@ -200,7 +197,7 @@ public class ConnectorStoreAppender extends StoreAppender {
      * @throws Exception Store error occurred
      */
     protected void storeConnectorAttributes(PrintWriter aWriter, int indent,
-            Object bean, StoreDescription aDesc) throws Exception {
+                                            Object bean, StoreDescription aDesc) throws Exception {
         if (aDesc.isAttributes()) {
             printAttributes(aWriter, indent, false, bean, aDesc);
         }
@@ -215,7 +212,7 @@ public class ConnectorStoreAppender extends StoreAppender {
      */
     @Override
     public void printOpenTag(PrintWriter aWriter, int indent, Object bean,
-            StoreDescription aDesc) throws Exception {
+                             StoreDescription aDesc) throws Exception {
         aWriter.print("<");
         aWriter.print(aDesc.getTag());
         storeConnectorAttributes(aWriter, indent, bean, aDesc);
@@ -231,7 +228,7 @@ public class ConnectorStoreAppender extends StoreAppender {
      */
     @Override
     public void printTag(PrintWriter aWriter, int indent, Object bean,
-            StoreDescription aDesc) throws Exception {
+                         StoreDescription aDesc) throws Exception {
         aWriter.print("<");
         aWriter.print(aDesc.getTag());
         storeConnectorAttributes(aWriter, indent, bean, aDesc);
@@ -246,7 +243,7 @@ public class ConnectorStoreAppender extends StoreAppender {
      */
     @Override
     public void printValue(PrintWriter writer, int indent, String name,
-            Object value) {
+                           Object value) {
         String repl = name;
         if (replacements.get(name) != null) {
             repl = replacements.get(name);
@@ -264,7 +261,7 @@ public class ConnectorStoreAppender extends StoreAppender {
      */
     @Override
     public boolean isPrintValue(Object bean, Object bean2, String attrName,
-            StoreDescription desc) {
+                                StoreDescription desc) {
         boolean isPrint = super.isPrintValue(bean, bean2, attrName, desc);
         if (isPrint) {
             if ("jkHome".equals(attrName)) {

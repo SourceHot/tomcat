@@ -16,28 +16,17 @@
  */
 package org.apache.jasper.el;
 
+import jakarta.el.*;
+import jakarta.servlet.jsp.el.ImplicitObjectELResolver;
+import jakarta.servlet.jsp.el.ScopedAttributeELResolver;
+import org.apache.jasper.runtime.ExceptionUtils;
+import org.apache.jasper.runtime.JspRuntimeLibrary;
+
 import java.beans.FeatureDescriptor;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import jakarta.el.ArrayELResolver;
-import jakarta.el.BeanELResolver;
-import jakarta.el.CompositeELResolver;
-import jakarta.el.ELContext;
-import jakarta.el.ELException;
-import jakarta.el.ELResolver;
-import jakarta.el.ListELResolver;
-import jakarta.el.MapELResolver;
-import jakarta.el.PropertyNotFoundException;
-import jakarta.el.ResourceBundleELResolver;
-import jakarta.el.StaticFieldELResolver;
-import jakarta.servlet.jsp.el.ImplicitObjectELResolver;
-import jakarta.servlet.jsp.el.ScopedAttributeELResolver;
-
-import org.apache.jasper.runtime.ExceptionUtils;
-import org.apache.jasper.runtime.JspRuntimeLibrary;
 
 /**
  * Jasper-specific CompositeELResolver that optimizes certain functions to avoid
@@ -46,13 +35,12 @@ import org.apache.jasper.runtime.JspRuntimeLibrary;
 public class JasperELResolver extends CompositeELResolver {
 
     private static final int STANDARD_RESOLVERS_COUNT = 9;
-
-    private AtomicInteger resolversSize = new AtomicInteger(0);
-    private volatile ELResolver[] resolvers;
     private final int appResolversSize;
+    private final AtomicInteger resolversSize = new AtomicInteger(0);
+    private volatile ELResolver[] resolvers;
 
     public JasperELResolver(List<ELResolver> appResolvers,
-            ELResolver streamResolver) {
+                            ELResolver streamResolver) {
         appResolversSize = appResolvers.size();
         resolvers = new ELResolver[appResolversSize + STANDARD_RESOLVERS_COUNT];
 
@@ -73,6 +61,24 @@ public class JasperELResolver extends CompositeELResolver {
         add(new ScopedAttributeELResolver());
     }
 
+    /*
+     * Copied from org.apache.el.lang.ELSupport#coerceToString(ELContext,Object)
+     */
+    private static final String coerceToString(final Object obj) {
+        if (obj == null) {
+            return "";
+        }
+        else if (obj instanceof String) {
+            return (String) obj;
+        }
+        else if (obj instanceof Enum<?>) {
+            return ((Enum<?>) obj).name();
+        }
+        else {
+            return obj.toString();
+        }
+    }
+
     @Override
     public synchronized void add(ELResolver elResolver) {
         super.add(elResolver);
@@ -81,7 +87,8 @@ public class JasperELResolver extends CompositeELResolver {
 
         if (resolvers.length > size) {
             resolvers[size] = elResolver;
-        } else {
+        }
+        else {
             ELResolver[] nr = new ELResolver[size + 1];
             System.arraycopy(resolvers, 0, nr, 0, size);
             nr[size] = elResolver;
@@ -93,7 +100,7 @@ public class JasperELResolver extends CompositeELResolver {
 
     @Override
     public Object getValue(ELContext context, Object base, Object property)
-        throws NullPointerException, PropertyNotFoundException, ELException {
+            throws NullPointerException, ELException {
         context.setPropertyResolved(false);
 
         int start;
@@ -114,7 +121,8 @@ public class JasperELResolver extends CompositeELResolver {
             if (JspRuntimeLibrary.GRAAL) {
                 start++;
             }
-        } else {
+        }
+        else {
             // skip implicit resolver only
             start = 1;
         }
@@ -132,7 +140,7 @@ public class JasperELResolver extends CompositeELResolver {
 
     @Override
     public Object invoke(ELContext context, Object base, Object method,
-            Class<?>[] paramTypes, Object[] params) {
+                         Class<?>[] paramTypes, Object[] params) {
         String targetMethod = coerceToString(method);
         if (targetMethod.length() == 0) {
             throw new ELException(new NoSuchMethodException());
@@ -169,30 +177,48 @@ public class JasperELResolver extends CompositeELResolver {
         return null;
     }
 
-    /*
-     * Copied from org.apache.el.lang.ELSupport#coerceToString(ELContext,Object)
-     */
-    private static final String coerceToString(final Object obj) {
-        if (obj == null) {
-            return "";
-        } else if (obj instanceof String) {
-            return (String) obj;
-        } else if (obj instanceof Enum<?>) {
-            return ((Enum<?>) obj).name();
-        } else {
-            return obj.toString();
-        }
-    }
-
     /**
      * Extend ELResolver for Graal to avoid bean info use if possible,
      * as BeanELResolver needs manual reflection configuration.
      */
     private static class GraalBeanELResolver extends ELResolver {
 
+        public static Method getReadMethod(Class<?> beanClass, String prop) {
+            Method result = null;
+            String setter = "get" + capitalize(prop);
+            Method[] methods = beanClass.getMethods();
+            for (Method method : methods) {
+                if (setter.equals(method.getName())) {
+                    return method;
+                }
+            }
+            return result;
+        }
+
+        public static Method getWriteMethod(Class<?> beanClass, String prop) {
+            Method result = null;
+            String setter = "set" + capitalize(prop);
+            Method[] methods = beanClass.getMethods();
+            for (Method method : methods) {
+                if (setter.equals(method.getName())) {
+                    return method;
+                }
+            }
+            return result;
+        }
+
+        public static String capitalize(String name) {
+            if (name == null || name.length() == 0) {
+                return name;
+            }
+            char[] chars = name.toCharArray();
+            chars[0] = Character.toUpperCase(chars[0]);
+            return new String(chars);
+        }
+
         @Override
         public Object getValue(ELContext context, Object base,
-                Object property) {
+                               Object property) {
             Object value = null;
             Method method = getReadMethod(base.getClass(), property.toString());
             if (method != null) {
@@ -210,7 +236,7 @@ public class JasperELResolver extends CompositeELResolver {
 
         @Override
         public void setValue(ELContext context, Object base, Object property,
-                Object value) {
+                             Object value) {
             if (base == null) {
                 return;
             }
@@ -228,49 +254,16 @@ public class JasperELResolver extends CompositeELResolver {
 
         @Override
         public boolean isReadOnly(ELContext context, Object base,
-                Object property) {
+                                  Object property) {
             Class<?> beanClass = base.getClass();
             String prop = property.toString();
             return (getReadMethod(beanClass, prop) != null)
                     && (getWriteMethod(beanClass, prop) != null);
         }
 
-        public static Method getReadMethod(Class<?> beanClass, String prop) {
-            Method result = null;
-            String setter = "get" + capitalize(prop);
-            Method methods[] = beanClass.getMethods();
-            for (Method method : methods) {
-                if (setter.equals(method.getName())) {
-                    return method;
-                }
-            }
-            return result;
-        }
-
-        public static Method getWriteMethod(Class<?> beanClass, String prop) {
-            Method result = null;
-            String setter = "set" + capitalize(prop);
-            Method methods[] = beanClass.getMethods();
-            for (Method method : methods) {
-                if (setter.equals(method.getName())) {
-                    return method;
-                }
-            }
-            return result;
-        }
-
-        public static String capitalize(String name) {
-            if (name == null || name.length() == 0) {
-                return name;
-            }
-            char chars[] = name.toCharArray();
-            chars[0] = Character.toUpperCase(chars[0]);
-            return new String(chars);
-        }
-
         @Override
         public Class<?> getType(ELContext context, Object base,
-                Object property) {
+                                Object property) {
             return null;
         }
 

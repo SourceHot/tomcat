@@ -19,23 +19,7 @@ package org.apache.tomcat.dbcp.dbcp2;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLType;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -55,44 +39,16 @@ import java.util.Map;
 public final class DelegatingResultSet extends AbandonedTrace implements ResultSet {
 
     /**
-     * Wraps the given result set in a delegate.
-     *
-     * @param connection
-     *            The Connection which created the ResultSet.
-     * @param resultSet
-     *            The ResultSet to wrap.
-     * @return a new delegate.
-     */
-    public static ResultSet wrapResultSet(final Connection connection, final ResultSet resultSet) {
-        if (null == resultSet) {
-            return null;
-        }
-        return new DelegatingResultSet(connection, resultSet);
-    }
-
-    /**
-     * Wraps the given result set in a delegate.
-     *
-     * @param statement
-     *            The Statement which created the ResultSet.
-     * @param resultSet
-     *            The ResultSet to wrap.
-     * @return a new delegate.
-     */
-    public static ResultSet wrapResultSet(final Statement statement, final ResultSet resultSet) {
-        if (null == resultSet) {
-            return null;
-        }
-        return new DelegatingResultSet(statement, resultSet);
-    }
-
-    /** My delegate. **/
+     * My delegate.
+     **/
     private final ResultSet resultSet;
-
-    /** The Statement that created me, if any. **/
+    /**
+     * The Statement that created me, if any.
+     **/
     private Statement statement;
-
-    /** The Connection that created me, if any. **/
+    /**
+     * The Connection that created me, if any.
+     **/
     private Connection connection;
 
     /**
@@ -102,10 +58,8 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
      * Private to ensure all construction is {@link #wrapResultSet(Connection, ResultSet)}
      * </p>
      *
-     * @param connection
-     *            Connection which created this ResultSet
-     * @param resultSet
-     *            ResultSet to wrap
+     * @param connection Connection which created this ResultSet
+     * @param resultSet  ResultSet to wrap
      */
     private DelegatingResultSet(final Connection connection, final ResultSet resultSet) {
         super((AbandonedTrace) connection);
@@ -120,15 +74,41 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
      * Private to ensure all construction is {@link #wrapResultSet(Statement, ResultSet)}
      * </p>
      *
-     * @param statement
-     *            The Statement which created the ResultSet.
-     * @param resultSet
-     *            The ResultSet to wrap.
+     * @param statement The Statement which created the ResultSet.
+     * @param resultSet The ResultSet to wrap.
      */
     private DelegatingResultSet(final Statement statement, final ResultSet resultSet) {
         super((AbandonedTrace) statement);
         this.statement = statement;
         this.resultSet = resultSet;
+    }
+
+    /**
+     * Wraps the given result set in a delegate.
+     *
+     * @param connection The Connection which created the ResultSet.
+     * @param resultSet  The ResultSet to wrap.
+     * @return a new delegate.
+     */
+    public static ResultSet wrapResultSet(final Connection connection, final ResultSet resultSet) {
+        if (null == resultSet) {
+            return null;
+        }
+        return new DelegatingResultSet(connection, resultSet);
+    }
+
+    /**
+     * Wraps the given result set in a delegate.
+     *
+     * @param statement The Statement which created the ResultSet.
+     * @param resultSet The ResultSet to wrap.
+     * @return a new delegate.
+     */
+    public static ResultSet wrapResultSet(final Statement statement, final ResultSet resultSet) {
+        if (null == resultSet) {
+            return null;
+        }
+        return new DelegatingResultSet(statement, resultSet);
     }
 
     @Override
@@ -277,7 +257,9 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         }
     }
 
-    /** @deprecated Use {@link #getBigDecimal(int)} */
+    /**
+     * @deprecated Use {@link #getBigDecimal(int)}
+     */
     @Deprecated
     @Override
     public BigDecimal getBigDecimal(final int columnIndex, final int scale) throws SQLException {
@@ -299,7 +281,9 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         }
     }
 
-    /** @deprecated Use {@link #getBigDecimal(String)} */
+    /**
+     * @deprecated Use {@link #getBigDecimal(String)}
+     */
     @Deprecated
     @Override
     public BigDecimal getBigDecimal(final String columnName, final int scale) throws SQLException {
@@ -551,12 +535,30 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
     }
 
     @Override
+    public void setFetchDirection(final int direction) throws SQLException {
+        try {
+            resultSet.setFetchDirection(direction);
+        } catch (final SQLException e) {
+            handleException(e);
+        }
+    }
+
+    @Override
     public int getFetchSize() throws SQLException {
         try {
             return resultSet.getFetchSize();
         } catch (final SQLException e) {
             handleException(e);
             return 0;
+        }
+    }
+
+    @Override
+    public void setFetchSize(final int rows) throws SQLException {
+        try {
+            resultSet.setFetchSize(rows);
+        } catch (final SQLException e) {
+            handleException(e);
         }
     }
 
@@ -990,7 +992,9 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         }
     }
 
-    /** @deprecated Use {@link #getCharacterStream(int)} */
+    /**
+     * @deprecated Use {@link #getCharacterStream(int)}
+     */
     @Deprecated
     @Override
     public InputStream getUnicodeStream(final int columnIndex) throws SQLException {
@@ -1002,7 +1006,9 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         }
     }
 
-    /** @deprecated Use {@link #getCharacterStream(String)} */
+    /**
+     * @deprecated Use {@link #getCharacterStream(String)}
+     */
     @Deprecated
     @Override
     public InputStream getUnicodeStream(final String columnName) throws SQLException {
@@ -1044,12 +1050,14 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         }
     }
 
-    protected void handleException(final SQLException e) throws SQLException {
+    private void handleException(final SQLException e) throws SQLException {
         if (statement instanceof DelegatingStatement) {
             ((DelegatingStatement) statement).handleException(e);
-        } else if (connection instanceof DelegatingConnection) {
+        }
+        else if (connection instanceof DelegatingConnection) {
             ((DelegatingConnection<?>) connection).handleException(e);
-        } else {
+        }
+        else {
             throw e;
         }
     }
@@ -1218,24 +1226,6 @@ public final class DelegatingResultSet extends AbandonedTrace implements ResultS
         } catch (final SQLException e) {
             handleException(e);
             return false;
-        }
-    }
-
-    @Override
-    public void setFetchDirection(final int direction) throws SQLException {
-        try {
-            resultSet.setFetchDirection(direction);
-        } catch (final SQLException e) {
-            handleException(e);
-        }
-    }
-
-    @Override
-    public void setFetchSize(final int rows) throws SQLException {
-        try {
-            resultSet.setFetchSize(rows);
-        } catch (final SQLException e) {
-            handleException(e);
         }
     }
 

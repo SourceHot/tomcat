@@ -21,11 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -35,7 +31,7 @@ public class ImportHandler {
 
     private static final boolean IS_SECURITY_ENABLED = (System.getSecurityManager() != null);
 
-    private static final Map<String,Set<String>> standardPackages = new HashMap<>();
+    private static final Map<String, Set<String>> standardPackages = new HashMap<>();
 
     static {
         // Servlet 5.0
@@ -276,10 +272,10 @@ public class ImportHandler {
 
     }
 
-    private Map<String,Set<String>> packageNames = new ConcurrentHashMap<>();
-    private Map<String,String> classNames = new ConcurrentHashMap<>();
-    private Map<String,Class<?>> clazzes = new ConcurrentHashMap<>();
-    private Map<String,Class<?>> statics = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> packageNames = new ConcurrentHashMap<>();
+    private final Map<String, String> classNames = new ConcurrentHashMap<>();
+    private final Map<String, Class<?>> clazzes = new ConcurrentHashMap<>();
+    private final Map<String, Class<?>> statics = new ConcurrentHashMap<>();
 
 
     public ImportHandler() {
@@ -342,7 +338,7 @@ public class ImportHandler {
         if (conflict != null) {
             throw new ELException(Util.message(null,
                     "importHandler.ambiguousStaticImport", name,
-                    conflict.getName() + '.' +  fieldOrMethodName));
+                    conflict.getName() + '.' + fieldOrMethodName));
         }
 
         statics.put(fieldOrMethodName, clazz);
@@ -377,7 +373,8 @@ public class ImportHandler {
         Set<String> preloaded = standardPackages.get(name);
         if (preloaded == null) {
             packageNames.put(name, Collections.emptySet());
-        } else {
+        }
+        else {
             packageNames.put(name, preloaded);
         }
     }
@@ -394,7 +391,8 @@ public class ImportHandler {
         if (result != null) {
             if (NotFound.class.equals(result)) {
                 return null;
-            } else {
+            }
+            else {
                 return result;
             }
         }
@@ -411,7 +409,7 @@ public class ImportHandler {
 
         // Search the package imports - note there may be multiple matches
         // (which correctly triggers an error)
-        for (Map.Entry<String,Set<String>> entry : packageNames.entrySet()) {
+        for (Map.Entry<String, Set<String>> entry : packageNames.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 // Standard package where we know all the class names
                 if (!entry.getValue().contains(name)) {
@@ -436,7 +434,8 @@ public class ImportHandler {
             // Cache NotFound results to save repeated calls to findClass()
             // which is relatively slow
             clazzes.put(name, NotFound.class);
-        } else {
+        }
+        else {
             clazzes.put(name, result);
         }
 
@@ -468,7 +467,8 @@ public class ImportHandler {
                 if (!AccessController.doPrivileged(new PrivilegedResourceExists(cl, path)).booleanValue()) {
                     return null;
                 }
-            } else {
+            }
+            else {
                 if (cl.getResource(path) == null) {
                     return null;
                 }
@@ -492,7 +492,8 @@ public class ImportHandler {
             if (throwException) {
                 throw new ELException(Util.message(
                         null, "importHandler.invalidClass", name));
-            } else {
+            }
+            else {
                 return null;
             }
         }
@@ -523,7 +524,8 @@ public class ImportHandler {
         public Boolean run() {
             if (cl.getResource(name) == null) {
                 return Boolean.FALSE;
-            } else {
+            }
+            else {
                 return Boolean.TRUE;
             }
         }

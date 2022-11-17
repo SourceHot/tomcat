@@ -21,11 +21,11 @@ package org.apache.tomcat.dbcp.pool2.impl;
  * exposed via JMX.
  * <p>
  * NOTE: This interface exists only to define those attributes and methods that
- *       will be made available via JMX. It must not be implemented by clients
- *       as it is subject to change between major, minor and patch version
- *       releases of commons pool. Clients that implement this interface may
- *       not, therefore, be able to upgrade to a new minor or patch release
- *       without requiring code changes.
+ * will be made available via JMX. It must not be implemented by clients
+ * as it is subject to change between major, minor and patch version
+ * releases of commons pool. Clients that implement this interface may
+ * not, therefore, be able to upgrade to a new minor or patch release
+ * without requiring code changes.
  * </p>
  *
  * @since 2.0
@@ -34,6 +34,7 @@ public interface DefaultPooledObjectInfoMBean {
 
     /**
      * Gets the number of times this object has been borrowed.
+     *
      * @return The number of times this object has been borrowed.
      * @since 2.1
      */
@@ -51,7 +52,7 @@ public interface DefaultPooledObjectInfoMBean {
      * Gets the time that pooled object was created.
      *
      * @return The creation time for the pooled object formatted as
-     *         {@code yyyy-MM-dd HH:mm:ss Z}
+     * {@code yyyy-MM-dd HH:mm:ss Z}
      */
     String getCreateTimeFormatted();
 
@@ -67,7 +68,7 @@ public interface DefaultPooledObjectInfoMBean {
      * Gets the time that pooled object was last borrowed.
      *
      * @return The last borrowed time for the pooled object formatted as
-     *         {@code yyyy-MM-dd HH:mm:ss Z}
+     * {@code yyyy-MM-dd HH:mm:ss Z}
      */
     String getLastBorrowTimeFormatted();
 
@@ -75,7 +76,7 @@ public interface DefaultPooledObjectInfoMBean {
      * Gets the stack trace recorded when the pooled object was last borrowed.
      *
      * @return The stack trace showing which code last borrowed the pooled
-     *         object
+     * object
      */
     String getLastBorrowTrace();
 
@@ -91,7 +92,7 @@ public interface DefaultPooledObjectInfoMBean {
      * Gets the time that pooled object was last returned.
      *
      * @return The last returned time for the pooled object formatted as
-     *         {@code yyyy-MM-dd HH:mm:ss Z}
+     * {@code yyyy-MM-dd HH:mm:ss Z}
      */
     String getLastReturnTimeFormatted();
 
@@ -100,7 +101,6 @@ public interface DefaultPooledObjectInfoMBean {
      * not fixed and may change at any time.
      *
      * @return A string representation of the pooled object
-     *
      * @see Object#toString()
      */
     String getPooledObjectToString();
@@ -109,7 +109,6 @@ public interface DefaultPooledObjectInfoMBean {
      * Gets the name of the class of the pooled object.
      *
      * @return The pooled object's class name
-     *
      * @see Class#getName()
      */
     String getPooledObjectType();

@@ -49,12 +49,12 @@ public interface Wrapper extends Container {
     /**
      * Container event for adding a wrapper.
      */
-    public static final String ADD_MAPPING_EVENT = "addMapping";
+    String ADD_MAPPING_EVENT = "addMapping";
 
     /**
      * Container event for removing a wrapper.
      */
-    public static final String REMOVE_MAPPING_EVENT = "removeMapping";
+    String REMOVE_MAPPING_EVENT = "removeMapping";
 
     // ------------------------------------------------------------- Properties
 
@@ -68,7 +68,7 @@ public interface Wrapper extends Container {
      * the servlet is currently available.  A value equal to Long.MAX_VALUE
      * is considered to mean that unavailability is permanent.
      */
-    public long getAvailable();
+    long getAvailable();
 
 
     /**
@@ -80,15 +80,16 @@ public interface Wrapper extends Container {
      *
      * @param available The new available date/time
      */
-    public void setAvailable(long available);
+    void setAvailable(long available);
 
 
     /**
      * 获取启动序号
+     *
      * @return the load-on-startup order value (negative value means
      * load on first call).
      */
-    public int getLoadOnStartup();
+    int getLoadOnStartup();
 
 
     /**
@@ -98,14 +99,15 @@ public interface Wrapper extends Container {
      *
      * @param value New load-on-startup value
      */
-    public void setLoadOnStartup(int value);
+    void setLoadOnStartup(int value);
 
 
     /**
      * 获取启动身份
+     *
      * @return the run-as identity for this servlet.
      */
-    public String getRunAs();
+    String getRunAs();
 
 
     /**
@@ -114,14 +116,15 @@ public interface Wrapper extends Container {
      *
      * @param runAs New run-as identity value
      */
-    public void setRunAs(String runAs);
+    void setRunAs(String runAs);
 
 
     /**
      * 获取servlet类
+     *
      * @return the fully qualified servlet class name for this servlet.
      */
-    public String getServletClass();
+    String getServletClass();
 
 
     /**
@@ -130,45 +133,47 @@ public interface Wrapper extends Container {
      *
      * @param servletClass Servlet class name
      */
-    public void setServletClass(String servletClass);
+    void setServletClass(String servletClass);
 
 
     /**
      * 获取servlet方法名称集合
      * Gets the names of the methods supported by the underlying servlet.
-     *
+     * <p>
      * This is the same set of methods included in the Allow response header
      * in response to an OPTIONS request method processed by the underlying
      * servlet.
      *
      * @return Array of names of the methods supported by the underlying
-     *         servlet
-     *
+     * servlet
      * @throws ServletException If the target servlet cannot be loaded
      */
-    public String[] getServletMethods() throws ServletException;
+    String[] getServletMethods() throws ServletException;
 
 
     /**
      * 判断servlet是否可用
+     *
      * @return <code>true</code> if this Servlet is currently unavailable.
      */
-    public boolean isUnavailable();
+    boolean isUnavailable();
 
 
     /**
      * 获取servlet
+     *
      * @return the associated Servlet instance.
      */
-    public Servlet getServlet();
+    Servlet getServlet();
 
 
     /**
      * Set the associated Servlet instance
      * 设置servlet
+     *
      * @param servlet The associated Servlet
      */
-    public void setServlet(Servlet servlet);
+    void setServlet(Servlet servlet);
 
     // --------------------------------------------------------- Public Methods
 
@@ -176,29 +181,32 @@ public interface Wrapper extends Container {
     /**
      * Add a new servlet initialization parameter for this servlet.
      * 添加初始化参数
-     * @param name Name of this initialization parameter to add
+     *
+     * @param name  Name of this initialization parameter to add
      * @param value Value of this initialization parameter to add
      */
-    public void addInitParameter(String name, String value);
+    void addInitParameter(String name, String value);
 
 
     /**
      * Add a mapping associated with the Wrapper.
      * 添加映射
+     *
      * @param mapping The new wrapper mapping
      */
-    public void addMapping(String mapping);
+    void addMapping(String mapping);
 
 
     /**
      * Add a new security role reference record to the set of records for
      * this servlet.
-     *
+     * <p>
      * 添加安全角色和引用
+     *
      * @param name Role name used within this servlet
      * @param link Role name used within the web application
      */
-    public void addSecurityReference(String name, String link);
+    void addSecurityReference(String name, String link);
 
 
     /**
@@ -211,12 +219,12 @@ public interface Wrapper extends Container {
      * that this instance is not allocated again until it is deallocated by a
      * call to <code>deallocate()</code>.
      *
-     * @exception ServletException if the Servlet init() method threw
-     *  an exception
-     * @exception ServletException if a loading error occurs
      * @return a new Servlet instance
+     * @throws ServletException if the Servlet init() method threw
+     *                          an exception
+     * @throws ServletException if a loading error occurs
      */
-    public Servlet allocate() throws ServletException;
+    Servlet allocate() throws ServletException;
 
 
     /**
@@ -226,60 +234,62 @@ public interface Wrapper extends Container {
      * no action is actually required.
      *
      * @param servlet The servlet to be returned
-     *
-     * @exception ServletException if a deallocation error occurs
+     * @throws ServletException if a deallocation error occurs
      */
-    public void deallocate(Servlet servlet) throws ServletException;
+    void deallocate(Servlet servlet) throws ServletException;
 
 
     /**
+     * @param name Name of the requested initialization parameter
      * @return the value for the specified initialization parameter name,
      * if any; otherwise return <code>null</code>.
-     *
+     * <p>
      * 寻找初始化参数
-     * @param name Name of the requested initialization parameter
      */
-    public String findInitParameter(String name);
+    String findInitParameter(String name);
 
 
     /**
      * 获取所有初始化参数名称
+     *
      * @return the names of all defined initialization parameters for this
      * servlet.
      */
-    public String[] findInitParameters();
+    String[] findInitParameters();
 
 
     /**
      * 获取所有映射
+     *
      * @return the mappings associated with this wrapper.
      */
-    public String[] findMappings();
+    String[] findMappings();
 
 
     /**
      * 获取安全角色对应的引用
-     * @return the security role link for the specified security role
-     * reference name, if any; otherwise return <code>null</code>.
      *
      * @param name Security role reference used within this servlet
+     * @return the security role link for the specified security role
+     * reference name, if any; otherwise return <code>null</code>.
      */
-    public String findSecurityReference(String name);
+    String findSecurityReference(String name);
 
 
     /**
      * 获取所有的安全角色
+     *
      * @return the set of security role reference names associated with
      * this servlet, if any; otherwise return a zero-length array.
      */
-    public String[] findSecurityReferences();
+    String[] findSecurityReferences();
 
 
     /**
      * Increment the error count value used when monitoring.
      * 异常计数器累加
      */
-    public void incrementErrorCount();
+    void incrementErrorCount();
 
 
     /**
@@ -289,35 +299,38 @@ public interface Wrapper extends Container {
      * load Servlets that are marked in the deployment descriptor to be loaded
      * at server startup time.
      *
-     * @exception ServletException if the Servlet init() method threw
-     *  an exception or if some other loading problem occurs
+     * @throws ServletException if the Servlet init() method threw
+     *                          an exception or if some other loading problem occurs
      */
-    public void load() throws ServletException;
+    void load() throws ServletException;
 
 
     /**
      * Remove the specified initialization parameter from this Servlet.
-     *
+     * <p>
      * 移除初始化参数
+     *
      * @param name Name of the initialization parameter to remove
      */
-    public void removeInitParameter(String name);
+    void removeInitParameter(String name);
 
 
     /**
      * Remove a mapping associated with the wrapper.
      * 移除映射
+     *
      * @param mapping The pattern to remove
      */
-    public void removeMapping(String mapping);
+    void removeMapping(String mapping);
 
 
     /**
      * Remove any security role reference for the specified role name.
      * 移除安全映射
+     *
      * @param name Security role used within this servlet to be removed
      */
-    public void removeSecurityReference(String name);
+    void removeSecurityReference(String name);
 
 
     /**
@@ -325,11 +338,10 @@ public interface Wrapper extends Container {
      * Process an UnavailableException, marking this Servlet as unavailable
      * for the specified amount of time.
      *
-     *
      * @param unavailable The exception that occurred, or <code>null</code>
-     *  to mark this Servlet as permanently unavailable
+     *                    to mark this Servlet as permanently unavailable
      */
-    public void unavailable(UnavailableException unavailable);
+    void unavailable(UnavailableException unavailable);
 
 
     /**
@@ -340,18 +352,19 @@ public interface Wrapper extends Container {
      * prior to reloading all of the classes from the Loader associated with
      * our Loader's repository.
      *
-     * @exception ServletException if an unload error occurs
+     * @throws ServletException if an unload error occurs
      */
-    public void unload() throws ServletException;
+    void unload() throws ServletException;
 
 
     /**
      * 获取servlet的配置
+     *
      * @return the multi-part configuration for the associated Servlet. If no
      * multi-part configuration has been defined, then <code>null</code> will be
      * returned.
      */
-    public MultipartConfigElement getMultipartConfigElement();
+    MultipartConfigElement getMultipartConfigElement();
 
 
     /**
@@ -361,24 +374,26 @@ public interface Wrapper extends Container {
      *
      * @param multipartConfig The configuration associated with the Servlet
      */
-    public void setMultipartConfigElement(
+    void setMultipartConfigElement(
             MultipartConfigElement multipartConfig);
 
     /**
      * Does the associated Servlet support async processing? Defaults to
      * <code>false</code>.
-     *
+     * <p>
      * 获取当前servlet是否支持异步处理标记
+     *
      * @return <code>true</code> if the Servlet supports async
      */
-    public boolean isAsyncSupported();
+    boolean isAsyncSupported();
 
     /**
      * Set the async support for the associated Servlet.
      * 设置当前servlet是否支持异步处理标记
+     *
      * @param asyncSupport the new value
      */
-    public void setAsyncSupported(boolean asyncSupport);
+    void setAsyncSupported(boolean asyncSupport);
 
     /**
      * 获取servlet是否启动标识
@@ -386,7 +401,7 @@ public interface Wrapper extends Container {
      *
      * @return <code>true</code> if the Servlet is enabled
      */
-    public boolean isEnabled();
+    boolean isEnabled();
 
     /**
      * 为servlet设置是否启动标识
@@ -394,7 +409,7 @@ public interface Wrapper extends Container {
      *
      * @param enabled the new value
      */
-    public void setEnabled(boolean enabled);
+    void setEnabled(boolean enabled);
 
     /**
      * 获取servlet覆盖属性
@@ -402,7 +417,7 @@ public interface Wrapper extends Container {
      *
      * @return <code>true</code> if the Servlet can be overridden in a ServletContainerInitializer
      */
-    public boolean isOverridable();
+    boolean isOverridable();
 
     /**
      * 设置servlet覆盖属性
@@ -410,5 +425,5 @@ public interface Wrapper extends Container {
      *
      * @param overridable the new value
      */
-    public void setOverridable(boolean overridable);
+    void setOverridable(boolean overridable);
 }

@@ -17,14 +17,14 @@
 
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
-import java.util.Arrays;
-
 import org.apache.tomcat.dbcp.dbcp2.Utils;
+
+import java.util.Arrays;
 
 /**
  * A {@code char} array wrapper that does not reveal its contents inadvertently through toString(). In contrast to, for
  * example, AtomicReference which toString()'s its contents.
- *
+ * <p>
  * May contain null.
  *
  * @since 2.9.0

@@ -16,17 +16,12 @@
  */
 package org.apache.jasper.el;
 
+import jakarta.el.*;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELException;
-import jakarta.el.MethodExpression;
-import jakarta.el.MethodInfo;
-import jakarta.el.MethodNotFoundException;
-import jakarta.el.PropertyNotFoundException;
 
 public final class JspMethodExpression extends MethodExpression implements
         Externalizable {
@@ -46,8 +41,8 @@ public final class JspMethodExpression extends MethodExpression implements
 
     @Override
     public MethodInfo getMethodInfo(ELContext context)
-            throws NullPointerException, PropertyNotFoundException,
-            MethodNotFoundException, ELException {
+            throws NullPointerException,
+            ELException {
         context.notifyBeforeEvaluation(getExpressionString());
         try {
             MethodInfo result = this.target.getMethodInfo(context);
@@ -73,8 +68,8 @@ public final class JspMethodExpression extends MethodExpression implements
 
     @Override
     public Object invoke(ELContext context, Object[] params)
-            throws NullPointerException, PropertyNotFoundException,
-            MethodNotFoundException, ELException {
+            throws NullPointerException,
+            ELException {
         context.notifyBeforeEvaluation(getExpressionString());
         try {
             Object result = this.target.invoke(context, params);

@@ -16,14 +16,13 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletException;
-
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.IOException;
 
 /**
  * Concrete implementation of <code>RequestFilterValve</code> that filters
@@ -45,7 +44,8 @@ public final class RemoteHostValve extends RequestFilterValve {
         if (getAddConnectorPort()) {
             property = request.getRequest().getRemoteHost() + ";" +
                     request.getConnector().getPortWithOffset();
-        } else {
+        }
+        else {
             property = request.getRequest().getRemoteHost();
         }
         process(property, request, response);

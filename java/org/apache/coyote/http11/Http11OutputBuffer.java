@@ -16,10 +16,6 @@
  */
 package org.apache.coyote.http11;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.CloseNowException;
 import org.apache.coyote.Response;
@@ -27,6 +23,10 @@ import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Provides buffering for the HTTP headers (allowing responses to be reset
@@ -50,57 +50,39 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
      * Associated Coyote response.
      */
     protected final Response response;
-
-
-    private volatile boolean ackSent = false;
-
-
-    /**
-     * Finished flag.
-     */
-    protected boolean responseFinished;
-
-
     /**
      * The buffer used for header composition.
      */
     protected final ByteBuffer headerBuffer;
-
-
+    /**
+     * Finished flag.
+     */
+    protected boolean responseFinished;
     /**
      * Filter library for processing the response body.
      */
     protected OutputFilter[] filterLibrary;
-
-
     /**
      * Active filters for the current request.
      */
     protected OutputFilter[] activeFilters;
-
-
     /**
      * Index of the last active filter.
      */
     protected int lastActiveFilter;
-
-
     /**
      * Underlying output buffer.
      */
     protected HttpOutputBuffer outputStreamOutputBuffer;
-
-
     /**
      * Wrapper for socket where data will be written to.
      */
     protected SocketWrapperBase<?> socketWrapper;
-
-
     /**
      * Bytes written to client for the current request
      */
     protected long byteCount = 0;
+    private volatile boolean ackSent = false;
 
 
     protected Http11OutputBuffer(Response response, int headerBufferSize) {
@@ -161,7 +143,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
 
         if (lastActiveFilter == -1) {
             filter.setBuffer(outputStreamOutputBuffer);
-        } else {
+        }
+        else {
             for (int i = 0; i <= lastActiveFilter; i++) {
                 if (activeFilters[i] == filter) {
                     return;
@@ -190,7 +173,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
 
         if (lastActiveFilter == -1) {
             return outputStreamOutputBuffer.doWrite(chunk);
-        } else {
+        }
+        else {
             return activeFilters[lastActiveFilter].doWrite(chunk);
         }
     }
@@ -200,7 +184,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
     public long getBytesWritten() {
         if (lastActiveFilter == -1) {
             return outputStreamOutputBuffer.getBytesWritten();
-        } else {
+        }
+        else {
             return activeFilters[lastActiveFilter].getBytesWritten();
         }
     }
@@ -217,7 +202,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
     public void flush() throws IOException {
         if (lastActiveFilter == -1) {
             outputStreamOutputBuffer.flush();
-        } else {
+        }
+        else {
             activeFilters[lastActiveFilter].flush();
         }
     }
@@ -231,7 +217,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
 
         if (lastActiveFilter == -1) {
             outputStreamOutputBuffer.end();
-        } else {
+        }
+        else {
             activeFilters[lastActiveFilter].end();
         }
 
@@ -316,7 +303,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
                 SocketWrapperBase<?> socketWrapper = this.socketWrapper;
                 if (socketWrapper != null) {
                     socketWrapper.write(isBlocking(), headerBuffer);
-                } else {
+                }
+                else {
                     throw new CloseNowException(sm.getString("iob.failedwrite"));
                 }
             } finally {
@@ -337,17 +325,17 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
         // Write status code
         int status = response.getStatus();
         switch (status) {
-        case 200:
-            write(Constants._200_BYTES);
-            break;
-        case 400:
-            write(Constants._400_BYTES);
-            break;
-        case 404:
-            write(Constants._404_BYTES);
-            break;
-        default:
-            write(status);
+            case 200:
+                write(Constants._200_BYTES);
+                break;
+            case 400:
+                write(Constants._400_BYTES);
+                break;
+            case 404:
+                write(Constants._404_BYTES);
+                break;
+            default:
+                write(status);
         }
 
         headerBuffer.put(Constants.SP);
@@ -363,7 +351,7 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
     /**
      * Send a header.
      *
-     * @param name Header name
+     * @param name  Header name
      * @param value Header value
      */
     public void sendHeader(MessageBytes name, MessageBytes value) {
@@ -455,7 +443,7 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
         int len = s.length();
         checkLengthBeforeWrite(len);
         for (int i = 0; i < len; i++) {
-            char c = s.charAt (i);
+            char c = s.charAt(i);
             headerBuffer.put((byte) c);
         }
     }
@@ -480,18 +468,19 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
     /**
      * Writes any remaining buffered data.
      *
-     * @param block     Should this method block until the buffer is empty
-     * @return  <code>true</code> if data remains in the buffer (which can only
-     *          happen in non-blocking mode) else <code>false</code>.
+     * @param block Should this method block until the buffer is empty
+     * @return <code>true</code> if data remains in the buffer (which can only
+     * happen in non-blocking mode) else <code>false</code>.
      * @throws IOException Error writing data
      */
-    protected boolean flushBuffer(boolean block) throws IOException  {
+    protected boolean flushBuffer(boolean block) throws IOException {
         return socketWrapper.flush(block);
     }
 
 
     /**
      * Is standard Servlet blocking IO being used for output?
+     *
      * @return <code>true</code> if this is blocking IO
      */
     protected final boolean isBlocking() {
@@ -545,7 +534,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
                 SocketWrapperBase<?> socketWrapper = Http11OutputBuffer.this.socketWrapper;
                 if (socketWrapper != null) {
                     socketWrapper.write(isBlocking(), chunk);
-                } else {
+                }
+                else {
                     throw new CloseNowException(sm.getString("iob.failedwrite"));
                 }
                 len -= chunk.remaining();

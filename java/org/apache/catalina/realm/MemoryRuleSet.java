@@ -54,7 +54,7 @@ public class MemoryRuleSet implements RuleSet {
      * matching pattern prefix.
      *
      * @param prefix Prefix for matching pattern rules (including the
-     *  trailing slash character)
+     *               trailing slash character)
      */
     public MemoryRuleSet(String prefix) {
         this.prefix = prefix;
@@ -71,7 +71,7 @@ public class MemoryRuleSet implements RuleSet {
      * by a Digester instance.</p>
      *
      * @param digester Digester instance to which the new Rule instances
-     *  should be added.
+     *                 should be added.
      */
     @Override
     public void addRuleInstances(Digester digester) {
@@ -105,7 +105,7 @@ final class MemoryUserRule extends Rule {
      */
     @Override
     public void begin(String namespace, String name, Attributes attributes)
-        throws Exception {
+            throws Exception {
 
         String username = attributes.getValue("username");
         if (username == null) {
@@ -115,7 +115,7 @@ final class MemoryUserRule extends Rule {
         String roles = attributes.getValue("roles");
 
         MemoryRealm realm =
-            (MemoryRealm) digester.peek(digester.getCount() - 1);
+                (MemoryRealm) digester.peek(digester.getCount() - 1);
         realm.addUser(username, password, roles);
 
     }

@@ -16,17 +16,13 @@
  */
 package org.apache.catalina.storeconfig;
 
+import org.apache.catalina.*;
+import org.apache.catalina.core.StandardEngine;
+import org.apache.catalina.ha.ClusterValve;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.catalina.Cluster;
-import org.apache.catalina.Container;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Realm;
-import org.apache.catalina.Valve;
-import org.apache.catalina.core.StandardEngine;
-import org.apache.catalina.ha.ClusterValve;
 
 /**
  * Store server.xml Element Engine
@@ -36,23 +32,18 @@ public class StandardEngineSF extends StoreFactoryBase {
     /**
      * Store the specified Engine properties.
      *
-     * @param aWriter
-     *            PrintWriter to which we are storing
-     * @param indent
-     *            Number of spaces to indent this element
-     * @param aEngine
-     *            Object whose properties are being stored
-     *
-     * @exception Exception
-     *                if an exception occurs while storing
+     * @param aWriter PrintWriter to which we are storing
+     * @param indent  Number of spaces to indent this element
+     * @param aEngine Object whose properties are being stored
+     * @throws Exception if an exception occurs while storing
      */
     @Override
     public void storeChildren(PrintWriter aWriter, int indent, Object aEngine,
-            StoreDescription parentDesc) throws Exception {
+                              StoreDescription parentDesc) throws Exception {
         if (aEngine instanceof StandardEngine) {
             StandardEngine engine = (StandardEngine) aEngine;
             // Store nested <Listener> elements
-            LifecycleListener listeners[] = engine.findLifecycleListeners();
+            LifecycleListener[] listeners = engine.findLifecycleListeners();
             storeElementArray(aWriter, indent, listeners);
 
             // Store nested <Realm> element
@@ -68,9 +59,9 @@ public class StandardEngineSF extends StoreFactoryBase {
             }
 
             // Store nested <Valve> elements
-            Valve valves[] = engine.getPipeline().getValves();
-            if(valves != null && valves.length > 0 ) {
-                List<Valve> engineValves = new ArrayList<>() ;
+            Valve[] valves = engine.getPipeline().getValves();
+            if (valves != null && valves.length > 0) {
+                List<Valve> engineValves = new ArrayList<>();
                 for (Valve valve : valves) {
                     if (!(valve instanceof ClusterValve)) {
                         engineValves.add(valve);
@@ -85,9 +76,9 @@ public class StandardEngineSF extends StoreFactoryBase {
                 storeElement(aWriter, indent, cluster);
             }
             // store all <Host> elements
-            Container children[] = engine.findChildren();
+            Container[] children = engine.findChildren();
             storeElementArray(aWriter, indent, children);
 
-       }
+        }
     }
 }

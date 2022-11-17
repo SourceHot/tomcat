@@ -62,7 +62,8 @@ public class Utf8Encoder extends CharsetEncoder {
                 }
                 bArr[outPos++] = (byte) (jchar & 0xFF);
                 outRemaining--;
-            } else if (jchar <= 0x7FF) {
+            }
+            else if (jchar <= 0x7FF) {
 
                 if (outRemaining < 2) {
                     in.position(x);
@@ -73,7 +74,8 @@ public class Utf8Encoder extends CharsetEncoder {
                 bArr[outPos++] = (byte) (0x80 + (jchar & 0x3F));
                 outRemaining -= 2;
 
-            } else if (jchar >= 0xD800 && jchar <= 0xDFFF) {
+            }
+            else if (jchar >= 0xD800 && jchar <= 0xDFFF) {
 
                 // in has to have one byte more.
                 if (limit <= x + 1) {
@@ -118,7 +120,8 @@ public class Utf8Encoder extends CharsetEncoder {
                 outRemaining -= 4;
                 x++;
 
-            } else {
+            }
+            else {
 
                 if (outRemaining < 3) {
                     in.position(x);
@@ -136,7 +139,8 @@ public class Utf8Encoder extends CharsetEncoder {
                 // If both input and output are exhausted, return UNDERFLOW
                 if (x + 1 == limit) {
                     return CoderResult.UNDERFLOW;
-                } else {
+                }
+                else {
                     return CoderResult.OVERFLOW;
                 }
             }
@@ -169,7 +173,8 @@ public class Utf8Encoder extends CharsetEncoder {
                     out.put((byte) jchar);
                     outRemaining--;
 
-                } else if (jchar <= 0x7FF) {
+                }
+                else if (jchar <= 0x7FF) {
 
                     if (outRemaining < 2) {
                         return CoderResult.OVERFLOW;
@@ -178,7 +183,8 @@ public class Utf8Encoder extends CharsetEncoder {
                     out.put((byte) (0x80 + (jchar & 0x3F)));
                     outRemaining -= 2;
 
-                } else if (jchar >= 0xD800 && jchar <= 0xDFFF) {
+                }
+                else if (jchar >= 0xD800 && jchar <= 0xDFFF) {
 
                     // in has to have one byte more.
                     if (limit <= pos + 1) {
@@ -215,7 +221,8 @@ public class Utf8Encoder extends CharsetEncoder {
                     outRemaining -= 4;
                     pos++;
 
-                } else {
+                }
+                else {
 
                     if (outRemaining < 3) {
                         return CoderResult.OVERFLOW;

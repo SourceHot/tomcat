@@ -16,12 +16,12 @@
  */
 package org.apache.catalina.core;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import org.apache.catalina.AccessLog;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A helper class that wraps several AccessLog instances.
@@ -32,26 +32,21 @@ public class AccessLogAdapter implements AccessLog {
 
     public AccessLogAdapter(AccessLog log) {
         Objects.requireNonNull(log);
-        logs = new AccessLog[] { log };
+        logs = new AccessLog[]{log};
     }
 
     public void add(AccessLog log) {
         Objects.requireNonNull(log);
-        AccessLog newArray[] = Arrays.copyOf(logs, logs.length + 1);
+        AccessLog[] newArray = Arrays.copyOf(logs, logs.length + 1);
         newArray[newArray.length - 1] = log;
         logs = newArray;
     }
 
     @Override
     public void log(Request request, Response response, long time) {
-        for (AccessLog log: logs) {
+        for (AccessLog log : logs) {
             log.log(request, response, time);
         }
-    }
-
-    @Override
-    public void setRequestAttributesEnabled(boolean requestAttributesEnabled) {
-        // NOOP
     }
 
     @Override
@@ -59,5 +54,10 @@ public class AccessLogAdapter implements AccessLog {
         // NOOP. Could return logs[0].getRequestAttributesEnabled(), but I do
         // not see a use case for that.
         return false;
+    }
+
+    @Override
+    public void setRequestAttributesEnabled(boolean requestAttributesEnabled) {
+        // NOOP
     }
 }

@@ -16,24 +16,18 @@
  */
 package org.apache.catalina.core;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.util.Set;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Globals;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.security.PrivilegedActionException;
+import java.util.Set;
 
 /**
  * Implementation of <code>jakarta.servlet.FilterChain</code> used to manage
@@ -46,122 +40,129 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public final class ApplicationFilterChain implements FilterChain {
 
+    public static final int INCREMENT = 10;
     // Used to enforce requirements of SRV.8.2 / SRV.14.2.5.1
     private static final ThreadLocal<ServletRequest> lastServicedRequest = new ThreadLocal<>();
-    private static final ThreadLocal<ServletResponse> lastServicedResponse = new ThreadLocal<>();
 
 
     // -------------------------------------------------------------- Constants
-
-
-    public static final int INCREMENT = 10;
+    private static final ThreadLocal<ServletResponse> lastServicedResponse = new ThreadLocal<>();
 
 
     // ----------------------------------------------------- Instance Variables
-
-    /**
-     * Filters.
-     */
-    private ApplicationFilterConfig[] filters = new ApplicationFilterConfig[0];
-
-
-    /**
-     * The int which is used to maintain the current position
-     * in the filter chain.
-     */
-    private int pos = 0;
-
-
-    /**
-     * The int which gives the current number of filters in the chain.
-     */
-    private int n = 0;
-
-
-    /**
-     * The servlet instance to be executed by this chain.
-     */
-    private Servlet servlet = null;
-
-
-    /**
-     * Does the associated servlet instance support async processing?
-     */
-    private boolean servletSupportsAsync = false;
-
-    /**
-     * Check the proper Servlet objects have been used.
-     */
-    private boolean dispatcherWrapsSameObject = false;
-
     /**
      * The string manager for our package.
      */
     private static final StringManager sm = StringManager.getManager(ApplicationFilterChain.class);
-
-
     /**
      * Static class array used when the SecurityManager is turned on and
      * <code>doFilter</code> is invoked.
      */
     private static final Class<?>[] classType = new Class[]{
-        ServletRequest.class, ServletResponse.class, FilterChain.class};
-
+            ServletRequest.class, ServletResponse.class, FilterChain.class};
     /**
      * Static class array used when the SecurityManager is turned on and
      * <code>service</code> is invoked.
      */
     private static final Class<?>[] classTypeUsedInService = new Class[]{
-        ServletRequest.class, ServletResponse.class};
+            ServletRequest.class, ServletResponse.class};
+    /**
+     * Filters.
+     */
+    private ApplicationFilterConfig[] filters = new ApplicationFilterConfig[0];
+    /**
+     * The int which is used to maintain the current position
+     * in the filter chain.
+     */
+    private int pos = 0;
+    /**
+     * The int which gives the current number of filters in the chain.
+     */
+    private int n = 0;
+    /**
+     * The servlet instance to be executed by this chain.
+     */
+    private Servlet servlet = null;
+    /**
+     * Does the associated servlet instance support async processing?
+     */
+    private boolean servletSupportsAsync = false;
+    /**
+     * Check the proper Servlet objects have been used.
+     */
+    private boolean dispatcherWrapsSameObject = false;
 
 
     // ---------------------------------------------------- FilterChain Methods
+
+    /**
+     * The last request passed to a servlet for servicing from the current
+     * thread.
+     *
+     * @return The last request to be serviced.
+     */
+    public static ServletRequest getLastServicedRequest() {
+        return lastServicedRequest.get();
+    }
+
+    /**
+     * The last response passed to a servlet for servicing from the current
+     * thread.
+     *
+     * @return The last response to be serviced.
+     */
+    public static ServletResponse getLastServicedResponse() {
+        return lastServicedResponse.get();
+    }
 
     /**
      * Invoke the next filter in this chain, passing the specified request
      * and response.  If there are no more filters in this chain, invoke
      * the <code>service()</code> method of the servlet itself.
      *
-     * @param request The servlet request we are processing
+     * @param request  The servlet request we are processing
      * @param response The servlet response we are creating
-     *
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet exception occurs
+     * @throws IOException      if an input/output error occurs
+     * @throws ServletException if a servlet exception occurs
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
 
-        if( Globals.IS_SECURITY_ENABLED ) {
+        if (Globals.IS_SECURITY_ENABLED) {
             final ServletRequest req = request;
             final ServletResponse res = response;
             try {
                 java.security.AccessController.doPrivileged(
                         (java.security.PrivilegedExceptionAction<Void>) () -> {
-                            internalDoFilter(req,res);
+                            internalDoFilter(req, res);
                             return null;
                         }
                 );
-            } catch( PrivilegedActionException pe) {
+            } catch (PrivilegedActionException pe) {
                 Exception e = pe.getException();
                 if (e instanceof ServletException) {
                     throw (ServletException) e;
-                } else if (e instanceof IOException) {
+                }
+                else if (e instanceof IOException) {
                     throw (IOException) e;
-                } else if (e instanceof RuntimeException) {
+                }
+                else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
-                } else {
+                }
+                else {
                     throw new ServletException(e.getMessage(), e);
                 }
             }
-        } else {
-            internalDoFilter(request,response);
+        }
+        else {
+            internalDoFilter(request, response);
         }
     }
 
     private void internalDoFilter(ServletRequest request,
                                   ServletResponse response)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
 
         // Call the next filter if there is one
         if (pos < n) {
@@ -173,15 +174,16 @@ public final class ApplicationFilterChain implements FilterChain {
                         filterConfig.getFilterDef().getAsyncSupported())) {
                     request.setAttribute(Globals.ASYNC_SUPPORTED_ATTR, Boolean.FALSE);
                 }
-                if( Globals.IS_SECURITY_ENABLED ) {
+                if (Globals.IS_SECURITY_ENABLED) {
                     final ServletRequest req = request;
                     final ServletResponse res = response;
                     Principal principal =
-                        ((HttpServletRequest) req).getUserPrincipal();
+                            ((HttpServletRequest) req).getUserPrincipal();
 
                     Object[] args = new Object[]{req, res, this};
-                    SecurityUtil.doAsPrivilege ("doFilter", filter, classType, args, principal);
-                } else {
+                    SecurityUtil.doAsPrivilege("doFilter", filter, classType, args, principal);
+                }
+                else {
                     filter.doFilter(request, response, this);
                 }
             } catch (IOException | ServletException | RuntimeException e) {
@@ -208,18 +210,19 @@ public final class ApplicationFilterChain implements FilterChain {
             // Use potentially wrapped request from this point
             if ((request instanceof HttpServletRequest) &&
                     (response instanceof HttpServletResponse) &&
-                    Globals.IS_SECURITY_ENABLED ) {
+                    Globals.IS_SECURITY_ENABLED) {
                 final ServletRequest req = request;
                 final ServletResponse res = response;
                 Principal principal =
-                    ((HttpServletRequest) req).getUserPrincipal();
+                        ((HttpServletRequest) req).getUserPrincipal();
                 Object[] args = new Object[]{req, res};
                 SecurityUtil.doAsPrivilege("service",
-                                           servlet,
-                                           classTypeUsedInService,
-                                           args,
-                                           principal);
-            } else {
+                        servlet,
+                        classTypeUsedInService,
+                        args,
+                        principal);
+            }
+            else {
                 servlet.service(request, response);
             }
         } catch (IOException | ServletException | RuntimeException e) {
@@ -237,28 +240,6 @@ public final class ApplicationFilterChain implements FilterChain {
     }
 
 
-    /**
-     * The last request passed to a servlet for servicing from the current
-     * thread.
-     *
-     * @return The last request to be serviced.
-     */
-    public static ServletRequest getLastServicedRequest() {
-        return lastServicedRequest.get();
-    }
-
-
-    /**
-     * The last response passed to a servlet for servicing from the current
-     * thread.
-     *
-     * @return The last response to be serviced.
-     */
-    public static ServletResponse getLastServicedResponse() {
-        return lastServicedResponse.get();
-    }
-
-
     // -------------------------------------------------------- Package Methods
 
     /**
@@ -269,15 +250,15 @@ public final class ApplicationFilterChain implements FilterChain {
     void addFilter(ApplicationFilterConfig filterConfig) {
 
         // Prevent the same filter being added multiple times
-        for(ApplicationFilterConfig filter:filters) {
-            if(filter==filterConfig) {
+        for (ApplicationFilterConfig filter : filters) {
+            if (filter == filterConfig) {
                 return;
             }
         }
 
         if (n == filters.length) {
             ApplicationFilterConfig[] newFilters =
-                new ApplicationFilterConfig[n + INCREMENT];
+                    new ApplicationFilterConfig[n + INCREMENT];
             System.arraycopy(filters, 0, newFilters, 0, n);
             filters = newFilters;
         }
@@ -338,7 +319,7 @@ public final class ApplicationFilterChain implements FilterChain {
      *               be added
      */
     public void findNonAsyncFilters(Set<String> result) {
-        for (int i = 0; i < n ; i++) {
+        for (int i = 0; i < n; i++) {
             ApplicationFilterConfig filter = filters[i];
             if ("false".equalsIgnoreCase(filter.getFilterDef().getAsyncSupported())) {
                 result.add(filter.getFilterClass());

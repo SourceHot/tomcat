@@ -45,7 +45,7 @@ public class RulesBase implements Rules {
      * Each value is a List containing the Rules for that pattern, in the
      * order that they were originally registered.
      */
-    protected HashMap<String,List<Rule>> cache = new HashMap<>();
+    protected HashMap<String, List<Rule>> cache = new HashMap<>();
 
 
     /**
@@ -93,14 +93,14 @@ public class RulesBase implements Rules {
      * Register a new Rule instance matching the specified pattern.
      *
      * @param pattern Nesting pattern to be matched for this Rule
-     * @param rule Rule instance to be registered
+     * @param rule    Rule instance to be registered
      */
     @Override
     public void add(String pattern, Rule rule) {
         // to help users who accidentally add '/' to the end of their patterns
         int patternLength = pattern.length();
-        if (patternLength>1 && pattern.endsWith("/")) {
-            pattern = pattern.substring(0, patternLength-1);
+        if (patternLength > 1 && pattern.endsWith("/")) {
+            pattern = pattern.substring(0, patternLength - 1);
         }
 
         List<Rule> list = cache.get(pattern);
@@ -134,8 +134,8 @@ public class RulesBase implements Rules {
      * method.
      *
      * @param namespaceURI Namespace URI for which to select matching rules,
-     *  or <code>null</code> to match regardless of namespace URI
-     * @param pattern Nesting pattern to be matched
+     *                     or <code>null</code> to match regardless of namespace URI
+     * @param pattern      Nesting pattern to be matched
      */
     @Override
     public List<Rule> match(String namespaceURI, String pattern) {
@@ -148,7 +148,7 @@ public class RulesBase implements Rules {
             for (String key : this.cache.keySet()) {
                 if (key.startsWith("*/")) {
                     if (pattern.equals(key.substring(2)) ||
-                        pattern.endsWith(key.substring(1))) {
+                            pattern.endsWith(key.substring(1))) {
                         if (key.length() > longKey.length()) {
                             // rulesList = (List) this.cache.get(key);
                             rulesList = lookup(namespaceURI, key);
@@ -186,8 +186,8 @@ public class RulesBase implements Rules {
      * rules, return <code>null</code>.
      *
      * @param namespaceURI Namespace URI to match, or <code>null</code> to
-     *  select matching rules regardless of namespace URI
-     * @param pattern Pattern to be matched
+     *                     select matching rules regardless of namespace URI
+     * @param pattern      Pattern to be matched
      * @return a rules list
      */
     protected List<Rule> lookup(String namespaceURI, String pattern) {

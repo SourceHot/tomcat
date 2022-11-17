@@ -25,11 +25,9 @@ package org.apache.tomcat.dbcp.pool2;
  * This class is immutable, and therefore thread-safe.
  * </p>
  *
- * @see KeyedPooledObjectFactory
- *
  * @param <K> The type of keys managed by this factory.
  * @param <V> Type of element managed by this factory.
- *
+ * @see KeyedPooledObjectFactory
  * @since 2.0
  */
 public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
@@ -42,11 +40,11 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      * </p>
      *
      * @param key the key used when selecting the object
-     * @param p a {@code PooledObject} wrapping the instance to be activated
+     * @param p   a {@code PooledObject} wrapping the instance to be activated
      */
     @Override
     public void activateObject(final K key, final PooledObject<V> p)
-        throws Exception {
+            throws Exception {
         // The default implementation is a no-op.
     }
 
@@ -55,12 +53,11 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      *
      * @param key the key used when constructing the object
      * @return an instance that can be served by the pool
-     *
      * @throws Exception if there is a problem creating a new instance,
-     *    this will be propagated to the code requesting an object.
+     *                   this will be propagated to the code requesting an object.
      */
     public abstract V create(K key)
-        throws Exception;
+            throws Exception;
 
     /**
      * Destroy an instance no longer needed by the pool.
@@ -69,11 +66,11 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      * </p>
      *
      * @param key the key used when selecting the instance
-     * @param p a {@code PooledObject} wrapping the instance to be destroyed
+     * @param p   a {@code PooledObject} wrapping the instance to be destroyed
      */
     @Override
     public void destroyObject(final K key, final PooledObject<V> p)
-        throws Exception {
+            throws Exception {
         // The default implementation is a no-op.
     }
 
@@ -89,11 +86,11 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      * </p>
      *
      * @param key the key used when selecting the object
-     * @param p a {@code PooledObject} wrapping the instance to be passivated
+     * @param p   a {@code PooledObject} wrapping the instance to be passivated
      */
     @Override
     public void passivateObject(final K key, final PooledObject<V> p)
-        throws Exception {
+            throws Exception {
         // The default implementation is a no-op.
     }
 
@@ -104,7 +101,7 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      * </p>
      *
      * @param key the key used when selecting the object
-     * @param p a {@code PooledObject} wrapping the instance to be validated
+     * @param p   a {@code PooledObject} wrapping the instance to be validated
      * @return always {@code true} in the default implementation
      */
     @Override
@@ -117,7 +114,6 @@ public abstract class BaseKeyedPooledObjectFactory<K, V> extends BaseObject
      * {@link PooledObject}.
      *
      * @param value the instance to wrap
-     *
      * @return The provided instance, wrapped by a {@link PooledObject}
      */
     public abstract PooledObject<V> wrap(V value);

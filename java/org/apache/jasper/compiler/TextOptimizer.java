@@ -21,8 +21,19 @@ import org.apache.jasper.Options;
 import org.apache.jasper.TrimSpacesOption;
 
 /**
+ *
  */
 public class TextOptimizer {
+
+    public static void concatenate(Compiler compiler, Node.Nodes page)
+            throws JasperException {
+
+        TextCatVisitor v = new TextCatVisitor(compiler);
+        page.visit(v);
+
+        // Cleanup, in case the page ends with a template text
+        v.collectText();
+    }
 
     /**
      * A visitor to concatenate contiguous template texts.
@@ -88,7 +99,8 @@ public class TextOptimizer {
                         pageInfo.isTrimDirectiveWhitespaces())) {
                     n.setText(EMPTY_TEXT);
                     return;
-                } else if (options.getTrimSpaces() == TrimSpacesOption.SINGLE) {
+                }
+                else if (options.getTrimSpaces() == TrimSpacesOption.SINGLE) {
                     n.setText(SINGLE_SPACE);
                     return;
                 }
@@ -97,7 +109,8 @@ public class TextOptimizer {
             if (textNodeCount++ == 0) {
                 firstTextNode = n;
                 textBuffer = new StringBuilder(n.getText());
-            } else {
+            }
+            else {
                 // Append text to text buffer
                 textBuffer.append(n.getText());
                 n.setText(EMPTY_TEXT);
@@ -117,15 +130,5 @@ public class TextOptimizer {
             textNodeCount = 0;
         }
 
-    }
-
-    public static void concatenate(Compiler compiler, Node.Nodes page)
-            throws JasperException {
-
-        TextCatVisitor v = new TextCatVisitor(compiler);
-        page.visit(v);
-
-        // Cleanup, in case the page ends with a template text
-        v.collectText();
     }
 }

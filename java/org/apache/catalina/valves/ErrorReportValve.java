@@ -16,19 +16,9 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.util.ErrorPageSupport;
@@ -40,6 +30,10 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.security.Escape;
+
+import java.io.*;
+import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <p>Implementation of a Valve that outputs HTML error pages.</p>
@@ -57,11 +51,9 @@ import org.apache.tomcat.util.security.Escape;
  */
 public class ErrorReportValve extends ValveBase {
 
-    private boolean showReport = true;
-
-    private boolean showServerInfo = true;
-
     private final ErrorPageSupport errorPageSupport = new ErrorPageSupport();
+    private boolean showReport = true;
+    private boolean showServerInfo = true;
 
 
     //------------------------------------------------------ Constructor
@@ -79,11 +71,10 @@ public class ErrorReportValve extends ValveBase {
      * or an uncaught exception was thrown then the error handling will be
      * triggered.
      *
-     * @param request The servlet request to be processed
+     * @param request  The servlet request to be processed
      * @param response The servlet response to be created
-     *
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet error occurs
+     * @throws IOException      if an input/output error occurs
+     * @throws ServletException if a servlet error occurs
      */
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
@@ -154,10 +145,10 @@ public class ErrorReportValve extends ValveBase {
     /**
      * Prints out an error report.
      *
-     * @param request The request being processed
-     * @param response The response being generated
+     * @param request   The request being processed
+     * @param response  The response being generated
      * @param throwable The exception that occurred (which possibly wraps
-     *  a root cause exception
+     *                  a root cause exception
      */
     protected void report(Request request, Response response, Throwable throwable) {
 
@@ -231,7 +222,8 @@ public class ErrorReportValve extends ValveBase {
         if (reason == null || description == null) {
             if (message.isEmpty()) {
                 return;
-            } else {
+            }
+            else {
                 reason = smClient.getString("errorReportValve.unknownReason");
                 description = smClient.getString("errorReportValve.noDescription");
             }
@@ -260,7 +252,8 @@ public class ErrorReportValve extends ValveBase {
             sb.append("</b> ");
             if (throwable != null) {
                 sb.append(smClient.getString("errorReportValve.exceptionReport"));
-            } else {
+            }
+            else {
                 sb.append(smClient.getString("errorReportValve.statusReport"));
             }
             sb.append("</p>");
@@ -338,6 +331,7 @@ public class ErrorReportValve extends ValveBase {
     /**
      * Print out a partial servlet stack trace (truncating at the last
      * occurrence of jakarta.servlet.).
+     *
      * @param t The stack trace to process
      * @return the stack trace relative to the application layer
      */
@@ -348,15 +342,15 @@ public class ErrorReportValve extends ValveBase {
         int pos = elements.length;
         for (int i = elements.length - 1; i >= 0; i--) {
             if ((elements[i].getClassName().startsWith
-                 ("org.apache.catalina.core.ApplicationFilterChain"))
-                && (elements[i].getMethodName().equals("internalDoFilter"))) {
+                    ("org.apache.catalina.core.ApplicationFilterChain"))
+                    && (elements[i].getMethodName().equals("internalDoFilter"))) {
                 pos = i;
                 break;
             }
         }
         for (int i = 0; i < pos; i++) {
             if (!(elements[i].getClassName().startsWith
-                  ("org.apache.catalina.core."))) {
+                    ("org.apache.catalina.core."))) {
                 trace.append('\t').append(elements[i].toString()).append(System.lineSeparator());
             }
         }
@@ -381,7 +375,7 @@ public class ErrorReportValve extends ValveBase {
         response.setCharacterEncoding("UTF-8");
 
         try (OutputStream os = response.getOutputStream();
-                InputStream is = new FileInputStream(file);){
+             InputStream is = new FileInputStream(file)) {
             IOTools.flow(is, os);
         } catch (IOException e) {
             getContainer().getLogger().warn(
@@ -392,6 +386,9 @@ public class ErrorReportValve extends ValveBase {
         return true;
     }
 
+    public boolean isShowReport() {
+        return showReport;
+    }
 
     /**
      * Enables/Disables full error reports
@@ -402,8 +399,8 @@ public class ErrorReportValve extends ValveBase {
         this.showReport = showReport;
     }
 
-    public boolean isShowReport() {
-        return showReport;
+    public boolean isShowServerInfo() {
+        return showServerInfo;
     }
 
     /**
@@ -415,11 +412,6 @@ public class ErrorReportValve extends ValveBase {
         this.showServerInfo = showServerInfo;
     }
 
-    public boolean isShowServerInfo() {
-        return showServerInfo;
-    }
-
-
     public boolean setProperty(String name, String value) {
         if (name.startsWith("errorCode.")) {
             int code = Integer.parseInt(name.substring(10));
@@ -428,7 +420,8 @@ public class ErrorReportValve extends ValveBase {
             ep.setLocation(value);
             errorPageSupport.add(ep);
             return true;
-        } else if (name.startsWith("exceptionType.")) {
+        }
+        else if (name.startsWith("exceptionType.")) {
             String className = name.substring(14);
             ErrorPage ep = new ErrorPage();
             ep.setExceptionType(className);
@@ -446,18 +439,22 @@ public class ErrorReportValve extends ValveBase {
             ErrorPage ep = errorPageSupport.find(code);
             if (ep == null) {
                 result = null;
-            } else {
+            }
+            else {
                 result = ep.getLocation();
             }
-        } else if (name.startsWith("exceptionType.")) {
+        }
+        else if (name.startsWith("exceptionType.")) {
             String className = name.substring(14);
             ErrorPage ep = errorPageSupport.find(className);
             if (ep == null) {
                 result = null;
-            } else {
+            }
+            else {
                 result = ep.getLocation();
             }
-        } else {
+        }
+        else {
             result = null;
         }
         return result;

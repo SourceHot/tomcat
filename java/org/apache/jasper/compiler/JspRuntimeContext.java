@@ -16,6 +16,17 @@
  */
 package org.apache.jasper.compiler;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import org.apache.jasper.Constants;
+import org.apache.jasper.JspCompilationContext;
+import org.apache.jasper.Options;
+import org.apache.jasper.runtime.ExceptionUtils;
+import org.apache.jasper.servlet.JspServletWrapper;
+import org.apache.jasper.util.FastRemovalDequeue;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilePermission;
@@ -33,27 +44,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-
-import org.apache.jasper.Constants;
-import org.apache.jasper.JspCompilationContext;
-import org.apache.jasper.Options;
-import org.apache.jasper.runtime.ExceptionUtils;
-import org.apache.jasper.servlet.JspServletWrapper;
-import org.apache.jasper.util.FastRemovalDequeue;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-
 
 /**
  * Class for tracking JSP compile time file dependencies when the
  * &gt;%@include file="..."%&lt; directive is used.
- *
+ * <p>
  * A background thread periodically checks the files a JSP page
  * is dependent upon.  If a dependent file changes the JSP page
  * which included it is recompiled.
- *
+ * <p>
  * Only used if a web application context is a directory.
  *
  * @author Glenn L. Nielsen
@@ -76,10 +75,43 @@ public final class JspRuntimeContext {
     private final AtomicInteger jspUnloadCount = new AtomicInteger(0);
 
     // ----------------------------------------------------------- Constructors
+    /**
+     * This web applications ServletContext
+     */
+    private final ServletContext context;
+
+    // ----------------------------------------------------- Instance Variables
+    private final Options options;
+    private final ClassLoader parentClassLoader;
+    private final PermissionCollection permissionCollection;
+    private final CodeSource codeSource;
+    private final String classpath;
+    /**
+     * Maps JSP pages to their JspServletWrapper's
+     */
+    private final Map<String, JspServletWrapper> jsps = new ConcurrentHashMap<>();
+    /**
+     * Map of class name to associated source map. This is maintained here as
+     * multiple JSPs can depend on the same file (included JSP, tag file, etc.)
+     * so a web application scoped Map is required.
+     */
+    private final Map<String, SmapStratum> smaps = new ConcurrentHashMap<>();
+    private volatile long lastCompileCheck = -1L;
+    private volatile long lastJspQueueUpdate = System.currentTimeMillis();
+    /* JSP idle timeout in milliseconds */
+    private long jspIdleTimeout;
+    /**
+     * Keeps JSP pages ordered by last access.
+     */
+    private FastRemovalDequeue<JspServletWrapper> jspQueue = null;
+    /**
+     * Flag that indicates if a background compilation check is in progress.
+     */
+    private volatile boolean compileCheckInProgress = false;
 
     /**
      * Create a JspRuntimeContext for a web application context.
-     *
+     * <p>
      * Loads in any previously generated dependencies from file.
      *
      * @param context ServletContext for web application
@@ -99,14 +131,15 @@ public final class JspRuntimeContext {
         if (log.isDebugEnabled()) {
             if (loader != null) {
                 log.debug(Localizer.getMessage("jsp.message.parent_class_loader_is",
-                                               loader.toString()));
-            } else {
+                        loader.toString()));
+            }
+            else {
                 log.debug(Localizer.getMessage("jsp.message.parent_class_loader_is",
-                                               "<none>"));
+                        "<none>"));
             }
         }
 
-        parentClassLoader =  loader;
+        parentClassLoader = loader;
         classpath = initClassPath();
 
         if (context instanceof org.apache.jasper.servlet.JspCServletContext) {
@@ -119,7 +152,8 @@ public final class JspRuntimeContext {
             SecurityHolder holder = initSecurity();
             codeSource = holder.cs;
             permissionCollection = holder.pc;
-        } else {
+        }
+        else {
             codeSource = null;
             permissionCollection = null;
         }
@@ -137,51 +171,13 @@ public final class JspRuntimeContext {
             jspQueue = new FastRemovalDequeue<>(options.getMaxLoadedJsps());
             if (log.isDebugEnabled()) {
                 log.debug(Localizer.getMessage("jsp.message.jsp_queue_created",
-                                               "" + options.getMaxLoadedJsps(), context.getContextPath()));
+                        "" + options.getMaxLoadedJsps(), context.getContextPath()));
             }
         }
 
         /* Init parameter is in seconds, locally we use milliseconds */
-        jspIdleTimeout = options.getJspIdleTimeout() * 1000;
+        jspIdleTimeout = options.getJspIdleTimeout() * 1000L;
     }
-
-    // ----------------------------------------------------- Instance Variables
-
-    /**
-     * This web applications ServletContext
-     */
-    private final ServletContext context;
-    private final Options options;
-    private final ClassLoader parentClassLoader;
-    private final PermissionCollection permissionCollection;
-    private final CodeSource codeSource;
-    private final String classpath;
-    private volatile long lastCompileCheck = -1L;
-    private volatile long lastJspQueueUpdate = System.currentTimeMillis();
-    /* JSP idle timeout in milliseconds */
-    private long jspIdleTimeout;
-
-    /**
-     * Maps JSP pages to their JspServletWrapper's
-     */
-    private final Map<String, JspServletWrapper> jsps = new ConcurrentHashMap<>();
-
-    /**
-     * Keeps JSP pages ordered by last access.
-     */
-    private FastRemovalDequeue<JspServletWrapper> jspQueue = null;
-
-    /**
-     * Map of class name to associated source map. This is maintained here as
-     * multiple JSPs can depend on the same file (included JSP, tag file, etc.)
-     * so a web application scoped Map is required.
-     */
-    private final Map<String,SmapStratum> smaps = new ConcurrentHashMap<>();
-
-    /**
-     * Flag that indicates if a background compilation check is in progress.
-     */
-    private volatile boolean compileCheckInProgress = false;
 
 
     // ------------------------------------------------------ Public Methods
@@ -190,7 +186,7 @@ public final class JspRuntimeContext {
      * Add a new JspServletWrapper.
      *
      * @param jspUri JSP URI
-     * @param jsw Servlet wrapper for JSP
+     * @param jsw    Servlet wrapper for JSP
      */
     public void addWrapper(String jspUri, JspServletWrapper jsw) {
         jsps.put(jspUri, jsw);
@@ -221,18 +217,18 @@ public final class JspRuntimeContext {
      *
      * @param jsw Servlet wrapper for jsp.
      * @return an unloadHandle that can be pushed to front of queue at later execution times.
-     * */
+     */
     public FastRemovalDequeue<JspServletWrapper>.Entry push(JspServletWrapper jsw) {
         if (log.isTraceEnabled()) {
             log.trace(Localizer.getMessage("jsp.message.jsp_added",
-                                           jsw.getJspUri(), context.getContextPath()));
+                    jsw.getJspUri(), context.getContextPath()));
         }
         FastRemovalDequeue<JspServletWrapper>.Entry entry = jspQueue.push(jsw);
         JspServletWrapper replaced = entry.getReplaced();
         if (replaced != null) {
             if (log.isDebugEnabled()) {
                 log.debug(Localizer.getMessage("jsp.message.jsp_removed_excess",
-                                               replaced.getJspUri(), context.getContextPath()));
+                        replaced.getJspUri(), context.getContextPath()));
             }
             unloadJspServletWrapper(replaced);
             entry.clearReplaced();
@@ -244,12 +240,12 @@ public final class JspRuntimeContext {
      * Push unloadHandle for JspServletWrapper to front of the queue.
      *
      * @param unloadHandle the unloadHandle for the jsp.
-     * */
+     */
     public void makeYoungest(FastRemovalDequeue<JspServletWrapper>.Entry unloadHandle) {
         if (log.isTraceEnabled()) {
             JspServletWrapper jsw = unloadHandle.getContent();
             log.trace(Localizer.getMessage("jsp.message.jsp_queue_update",
-                                           jsw.getJspUri(), context.getContextPath()));
+                    jsw.getJspUri(), context.getContextPath()));
         }
         jspQueue.moveFirst(unloadHandle);
     }
@@ -310,21 +306,21 @@ public final class JspRuntimeContext {
     }
 
     /**
-     * Resets the JSP reload counter.
-     *
-     * @param count Value to which to reset the JSP reload counter
-     */
-    public void setJspReloadCount(int count) {
-        jspReloadCount.set(count);
-    }
-
-    /**
      * Gets the current value of the JSP reload counter.
      *
      * @return The current value of the JSP reload counter
      */
     public int getJspReloadCount() {
         return jspReloadCount.intValue();
+    }
+
+    /**
+     * Resets the JSP reload counter.
+     *
+     * @param count Value to which to reset the JSP reload counter
+     */
+    public void setJspReloadCount(int count) {
+        jspReloadCount.set(count);
     }
 
     /**
@@ -364,7 +360,8 @@ public final class JspRuntimeContext {
         long now = System.currentTimeMillis();
         if (now > (lastCompileCheck + (options.getCheckInterval() * 1000L))) {
             lastCompileCheck = now;
-        } else {
+        }
+        else {
             return;
         }
 
@@ -373,7 +370,7 @@ public final class JspRuntimeContext {
         // check is in progress. See BZ 62603.
         compileCheckInProgress = true;
 
-        Object [] wrappers = jsps.values().toArray();
+        Object[] wrappers = jsps.values().toArray();
         for (Object wrapper : wrappers) {
             JspServletWrapper jsw = (JspServletWrapper) wrapper;
             JspCompilationContext ctxt = jsw.getJspEngineContext();
@@ -407,7 +404,8 @@ public final class JspRuntimeContext {
                     synchronized (this) {
                         jsw.loadTagFile();
                     }
-                } else {
+                }
+                else {
                     jsw.getServlet();
                 }
             } catch (ServletException e) {
@@ -435,7 +433,7 @@ public final class JspRuntimeContext {
     }
 
 
-    public Map<String,SmapStratum> getSmaps() {
+    public Map<String, SmapStratum> getSmaps() {
         return smaps;
     }
 
@@ -448,6 +446,7 @@ public final class JspRuntimeContext {
 
     /**
      * Method used to initialize classpath for compiles.
+     *
      * @return the compilation classpath
      */
     private String initClassPath() {
@@ -455,7 +454,7 @@ public final class JspRuntimeContext {
         StringBuilder cpath = new StringBuilder();
 
         if (parentClassLoader instanceof URLClassLoader) {
-            URL [] urls = ((URLClassLoader)parentClassLoader).getURLs();
+            URL[] urls = ((URLClassLoader) parentClassLoader).getURLs();
 
             for (URL url : urls) {
                 // Tomcat can use URLs other than file URLs. However, a protocol
@@ -482,25 +481,14 @@ public final class JspRuntimeContext {
             cp = options.getClassPath();
         }
 
-        String path = cpath.toString() + cp;
+        String path = cpath + cp;
 
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Compilation classpath initialized: " + path);
         }
         return path;
     }
 
-    /**
-     * Helper class to allow initSecurity() to return two items
-     */
-    private static class SecurityHolder{
-        private final CodeSource cs;
-        private final PermissionCollection pc;
-        private SecurityHolder(CodeSource cs, PermissionCollection pc){
-            this.cs = cs;
-            this.pc = pc;
-        }
-    }
     /**
      * Method used to initialize SecurityManager data.
      */
@@ -513,52 +501,53 @@ public final class JspRuntimeContext {
         Policy policy = Policy.getPolicy();
         CodeSource source = null;
         PermissionCollection permissions = null;
-        if( policy != null ) {
+        if (policy != null) {
             try {
                 // Get the permissions for the web app context
                 String docBase = context.getRealPath("/");
-                if( docBase == null ) {
+                if (docBase == null) {
                     docBase = options.getScratchDir().toString();
                 }
                 String codeBase = docBase;
-                if (!codeBase.endsWith(File.separator)){
+                if (!codeBase.endsWith(File.separator)) {
                     codeBase = codeBase + File.separator;
                 }
                 File contextDir = new File(codeBase);
                 URL url = contextDir.getCanonicalFile().toURI().toURL();
-                source = new CodeSource(url,(Certificate[])null);
+                source = new CodeSource(url, (Certificate[]) null);
                 permissions = policy.getPermissions(source);
 
                 // Create a file read permission for web app context directory
-                if (!docBase.endsWith(File.separator)){
+                if (!docBase.endsWith(File.separator)) {
                     permissions.add
-                        (new FilePermission(docBase,"read"));
+                            (new FilePermission(docBase, "read"));
                     docBase = docBase + File.separator;
-                } else {
+                }
+                else {
                     permissions.add
-                        (new FilePermission
-                            (docBase.substring(0,docBase.length() - 1),"read"));
+                            (new FilePermission
+                                    (docBase.substring(0, docBase.length() - 1), "read"));
                 }
                 docBase = docBase + "-";
-                permissions.add(new FilePermission(docBase,"read"));
+                permissions.add(new FilePermission(docBase, "read"));
 
                 // Spec says apps should have read/write for their temp
                 // directory. This is fine, as no security sensitive files, at
                 // least any that the app doesn't have full control of anyway,
                 // will be written here.
                 String workDir = options.getScratchDir().toString();
-                if (!workDir.endsWith(File.separator)){
+                if (!workDir.endsWith(File.separator)) {
                     permissions.add
-                        (new FilePermission(workDir,"read,write"));
+                            (new FilePermission(workDir, "read,write"));
                     workDir = workDir + File.separator;
                 }
                 workDir = workDir + "-";
                 permissions.add(new FilePermission(
-                        workDir,"read,write,delete"));
+                        workDir, "read,write,delete"));
 
                 // Allow the JSP to access org.apache.jasper.runtime.HttpJspBase
-                permissions.add( new RuntimePermission(
-                    "accessClassInPackage.org.apache.jasper.runtime") );
+                permissions.add(new RuntimePermission(
+                        "accessClassInPackage.org.apache.jasper.runtime"));
             } catch (RuntimeException | IOException e) {
                 context.log(Localizer.getMessage("jsp.error.security"), e);
             }
@@ -568,12 +557,11 @@ public final class JspRuntimeContext {
 
     private void unloadJspServletWrapper(JspServletWrapper jsw) {
         removeWrapper(jsw.getJspUri());
-        synchronized(jsw) {
+        synchronized (jsw) {
             jsw.destroy();
         }
         jspUnloadCount.incrementAndGet();
     }
-
 
     /**
      * Method used by background thread to check if any JSP's should be unloaded.
@@ -586,12 +574,12 @@ public final class JspRuntimeContext {
                 queueLength = jspQueue.getSize();
             }
             log.trace(Localizer.getMessage("jsp.message.jsp_unload_check",
-                                           context.getContextPath(), "" + jsps.size(), "" + queueLength));
+                    context.getContextPath(), "" + jsps.size(), "" + queueLength));
         }
         long now = System.currentTimeMillis();
         if (jspIdleTimeout > 0) {
             long unloadBefore = now - jspIdleTimeout;
-            Object [] wrappers = jsps.values().toArray();
+            Object[] wrappers = jsps.values().toArray();
             for (Object wrapper : wrappers) {
                 JspServletWrapper jsw = (JspServletWrapper) wrapper;
                 synchronized (jsw) {
@@ -610,5 +598,18 @@ public final class JspRuntimeContext {
             }
         }
         lastJspQueueUpdate = now;
+    }
+
+    /**
+     * Helper class to allow initSecurity() to return two items
+     */
+    private static class SecurityHolder {
+        private final CodeSource cs;
+        private final PermissionCollection pc;
+
+        private SecurityHolder(CodeSource cs, PermissionCollection pc) {
+            this.cs = cs;
+            this.pc = pc;
+        }
     }
 }

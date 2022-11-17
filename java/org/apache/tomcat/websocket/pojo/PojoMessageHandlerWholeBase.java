@@ -16,41 +16,38 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.naming.NamingException;
-
 import jakarta.websocket.DecodeException;
 import jakarta.websocket.Decoder;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.WsSession;
 
+import javax.naming.NamingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Common implementation code for the POJO whole message handlers. All the real
  * work is done in this class and in the superclass.
  *
- * @param <T>   The type of message to handle
+ * @param <T> The type of message to handle
  */
 public abstract class PojoMessageHandlerWholeBase<T>
         extends PojoMessageHandlerBase<T> implements MessageHandler.Whole<T> {
 
-    private final Log log = LogFactory.getLog(PojoMessageHandlerWholeBase.class);  // must not be static
     private static final StringManager sm = StringManager.getManager(PojoMessageHandlerWholeBase.class);
-
     protected final List<Decoder> decoders = new ArrayList<>();
+    private final Log log = LogFactory.getLog(PojoMessageHandlerWholeBase.class);  // must not be static
 
     public PojoMessageHandlerWholeBase(Object pojo, Method method,
-            Session session, Object[] params, int indexPayload,
-            boolean convert, int indexSession, long maxMessageSize) {
+                                       Session session, Object[] params, int indexPayload,
+                                       boolean convert, int indexSession, long maxMessageSize) {
         super(pojo, method, session, params, indexPayload, convert,
                 indexSession, maxMessageSize);
     }
@@ -61,7 +58,8 @@ public abstract class PojoMessageHandlerWholeBase<T>
         InstanceManager instanceManager = ((WsSession) session).getInstanceManager();
         if (instanceManager == null) {
             return clazz.getConstructor().newInstance();
-        } else {
+        }
+        else {
             return (Decoder) instanceManager.newInstance(clazz);
         }
     }
@@ -89,7 +87,8 @@ public abstract class PojoMessageHandlerWholeBase<T>
             // Not decoded. Convert if required.
             if (convert) {
                 payload = convert(message);
-            } else {
+            }
+            else {
                 payload = message;
             }
         }

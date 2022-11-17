@@ -32,18 +32,21 @@ public class GenericObjectPoolConfig<T> extends BaseObjectPoolConfig<T> {
 
     /**
      * The default value for the {@code maxTotal} configuration attribute.
+     *
      * @see GenericObjectPool#getMaxTotal()
      */
     public static final int DEFAULT_MAX_TOTAL = 8;
 
     /**
      * The default value for the {@code maxIdle} configuration attribute.
+     *
      * @see GenericObjectPool#getMaxIdle()
      */
     public static final int DEFAULT_MAX_IDLE = 8;
 
     /**
      * The default value for the {@code minIdle} configuration attribute.
+     *
      * @see GenericObjectPool#getMinIdle()
      */
     public static final int DEFAULT_MIN_IDLE = 0;
@@ -69,50 +72,20 @@ public class GenericObjectPoolConfig<T> extends BaseObjectPoolConfig<T> {
      * Get the value for the {@code maxIdle} configuration attribute
      * for pools created with this configuration instance.
      *
-     * @return  The current setting of {@code maxIdle} for this
-     *          configuration instance
-     *
+     * @return The current setting of {@code maxIdle} for this
+     * configuration instance
      * @see GenericObjectPool#getMaxIdle()
      */
     public int getMaxIdle() {
         return maxIdle;
     }
 
-
-    /**
-     * Get the value for the {@code maxTotal} configuration attribute
-     * for pools created with this configuration instance.
-     *
-     * @return  The current setting of {@code maxTotal} for this
-     *          configuration instance
-     *
-     * @see GenericObjectPool#getMaxTotal()
-     */
-    public int getMaxTotal() {
-        return maxTotal;
-    }
-
-    /**
-     * Get the value for the {@code minIdle} configuration attribute
-     * for pools created with this configuration instance.
-     *
-     * @return  The current setting of {@code minIdle} for this
-     *          configuration instance
-     *
-     * @see GenericObjectPool#getMinIdle()
-     */
-    public int getMinIdle() {
-        return minIdle;
-    }
-
-
     /**
      * Set the value for the {@code maxIdle} configuration attribute for
      * pools created with this configuration instance.
      *
      * @param maxIdle The new setting of {@code maxIdle}
-     *        for this configuration instance
-     *
+     *                for this configuration instance
      * @see GenericObjectPool#setMaxIdle(int)
      */
     public void setMaxIdle(final int maxIdle) {
@@ -120,12 +93,23 @@ public class GenericObjectPoolConfig<T> extends BaseObjectPoolConfig<T> {
     }
 
     /**
+     * Get the value for the {@code maxTotal} configuration attribute
+     * for pools created with this configuration instance.
+     *
+     * @return The current setting of {@code maxTotal} for this
+     * configuration instance
+     * @see GenericObjectPool#getMaxTotal()
+     */
+    public int getMaxTotal() {
+        return maxTotal;
+    }
+
+    /**
      * Set the value for the {@code maxTotal} configuration attribute for
      * pools created with this configuration instance.
      *
      * @param maxTotal The new setting of {@code maxTotal}
-     *        for this configuration instance
-     *
+     *                 for this configuration instance
      * @see GenericObjectPool#setMaxTotal(int)
      */
     public void setMaxTotal(final int maxTotal) {
@@ -133,12 +117,23 @@ public class GenericObjectPoolConfig<T> extends BaseObjectPoolConfig<T> {
     }
 
     /**
+     * Get the value for the {@code minIdle} configuration attribute
+     * for pools created with this configuration instance.
+     *
+     * @return The current setting of {@code minIdle} for this
+     * configuration instance
+     * @see GenericObjectPool#getMinIdle()
+     */
+    public int getMinIdle() {
+        return minIdle;
+    }
+
+    /**
      * Set the value for the {@code minIdle} configuration attribute for
      * pools created with this configuration instance.
      *
      * @param minIdle The new setting of {@code minIdle}
-     *        for this configuration instance
-     *
+     *                for this configuration instance
      * @see GenericObjectPool#setMinIdle(int)
      */
     public void setMinIdle(final int minIdle) {

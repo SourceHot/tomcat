@@ -16,20 +16,15 @@
  */
 package org.apache.naming.factory;
 
+import org.apache.naming.ResourceLinkRef;
+import org.apache.naming.StringManager;
+
+import javax.naming.*;
+import javax.naming.spi.ObjectFactory;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.naming.Context;
-import javax.naming.Name;
-import javax.naming.NamingException;
-import javax.naming.RefAddr;
-import javax.naming.Reference;
-import javax.naming.spi.ObjectFactory;
-
-import org.apache.naming.ResourceLinkRef;
-import org.apache.naming.StringManager;
 
 /**
  * <p>Object factory for resource links.</p>
@@ -47,7 +42,7 @@ public class ResourceLinkFactory implements ObjectFactory {
      */
     private static Context globalContext = null;
 
-    private static Map<ClassLoader,Map<String,String>> globalResourceRegistrations =
+    private static final Map<ClassLoader, Map<String, String>> globalResourceRegistrations =
             new ConcurrentHashMap<>();
 
     // --------------------------------------------------------- Public Methods
@@ -61,17 +56,17 @@ public class ResourceLinkFactory implements ObjectFactory {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(
-                   ResourceLinkFactory.class.getName() + ".setGlobalContext"));
+                    ResourceLinkFactory.class.getName() + ".setGlobalContext"));
         }
         globalContext = newGlobalContext;
     }
 
 
     public static void registerGlobalResourceAccess(Context globalContext, String localName,
-            String globalName) {
+                                                    String globalName) {
         validateGlobalContext(globalContext);
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Map<String,String> registrations = globalResourceRegistrations.get(cl);
+        Map<String, String> registrations = globalResourceRegistrations.get(cl);
         if (registrations == null) {
             // Web application initialization is single threaded so this is
             // safe.
@@ -85,7 +80,7 @@ public class ResourceLinkFactory implements ObjectFactory {
     public static void deregisterGlobalResourceAccess(Context globalContext, String localName) {
         validateGlobalContext(globalContext);
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Map<String,String> registrations = globalResourceRegistrations.get(cl);
+        Map<String, String> registrations = globalResourceRegistrations.get(cl);
         if (registrations != null) {
             registrations.remove(localName);
         }
@@ -110,7 +105,7 @@ public class ResourceLinkFactory implements ObjectFactory {
     private static boolean validateGlobalResourceAccess(String globalName) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         while (cl != null) {
-            Map<String,String> registrations = globalResourceRegistrations.get(cl);
+            Map<String, String> registrations = globalResourceRegistrations.get(cl);
             if (registrations != null && registrations.containsValue(globalName)) {
                 return true;
             }
@@ -129,7 +124,7 @@ public class ResourceLinkFactory implements ObjectFactory {
      */
     @Override
     public Object getObjectInstance(Object obj, Name name, Context nameCtx,
-            Hashtable<?,?> environment) throws NamingException {
+                                    Hashtable<?, ?> environment) throws NamingException {
 
         if (!(obj instanceof ResourceLinkRef)) {
             return null;

@@ -16,17 +16,13 @@
  */
 package org.apache.tomcat.util.file;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.tomcat.util.buf.UriUtil;
+
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-
-import org.apache.tomcat.util.buf.UriUtil;
 
 /**
  * Abstracts configuration file storage. Allows Tomcat embedding using the regular
@@ -37,9 +33,10 @@ import org.apache.tomcat.util.buf.UriUtil;
  */
 public interface ConfigurationSource {
 
-    public static final ConfigurationSource DEFAULT = new ConfigurationSource() {
-        protected final File userDir = new File(System.getProperty("user.dir"));
-        protected final URI userDirUri = userDir.toURI();
+    ConfigurationSource DEFAULT = new ConfigurationSource() {
+        private final File userDir = new File(System.getProperty("user.dir"));
+        private final URI userDirUri = userDir.toURI();
+
         @Override
         public Resource getResource(String name) throws IOException {
             if (!UriUtil.isAbsoluteURI(name)) {
@@ -65,6 +62,7 @@ public interface ConfigurationSource {
                 throw new FileNotFoundException(name);
             }
         }
+
         @Override
         public URI getURI(String name) {
             if (!UriUtil.isAbsoluteURI(name)) {
@@ -81,24 +79,83 @@ public interface ConfigurationSource {
     };
 
     /**
+     * Returns the contents of the main conf/server.xml file.
+     *
+     * @return the server.xml as an InputStream
+     * @throws IOException if an error occurs or if the resource does not exist
+     */
+    default Resource getServerXml()
+            throws IOException {
+        return getConfResource("server.xml");
+    }
+
+    /**
+     * Returns the contents of the shared conf/web.xml file. This usually
+     * contains the declaration of the default and JSP servlets.
+     *
+     * @return the web.xml as an InputStream
+     * @throws IOException if an error occurs or if the resource does not exist
+     */
+    default Resource getSharedWebXml()
+            throws IOException {
+        return getConfResource("web.xml");
+    }
+
+    /**
+     * Get a resource, based on the conf path.
+     *
+     * @param name The resource name
+     * @return the resource as an InputStream
+     * @throws IOException if an error occurs or if the resource does not exist
+     */
+    default Resource getConfResource(String name)
+            throws IOException {
+        String fullName = "conf/" + name;
+        return getResource(fullName);
+    }
+
+    /**
+     * Get a resource, not based on the conf path.
+     *
+     * @param name The resource name
+     * @return the resource
+     * @throws IOException if an error occurs or if the resource does not exist
+     */
+    Resource getResource(String name)
+            throws IOException;
+
+    /**
+     * Get a URI to the given resource. Unlike getResource, this will also
+     * return URIs to locations where no resource exists.
+     *
+     * @param name The resource name
+     * @return a URI representing the resource location
+     */
+    URI getURI(String name);
+
+    /**
      * Represents a resource: a stream to the resource associated with
      * its URI.
      */
-    public class Resource implements AutoCloseable {
+    class Resource implements AutoCloseable {
         private final InputStream inputStream;
         private final URI uri;
+
         public Resource(InputStream inputStream, URI uri) {
             this.inputStream = inputStream;
             this.uri = uri;
         }
+
         public InputStream getInputStream() {
             return inputStream;
         }
+
         public URI getURI() {
             return uri;
         }
+
         public long getLastModified()
-                throws MalformedURLException, IOException {
+                throws IOException {
             URLConnection connection = null;
             try {
                 connection = uri.toURL().openConnection();
@@ -109,6 +166,7 @@ public interface ConfigurationSource {
                 }
             }
         }
+
         @Override
         public void close() throws IOException {
             if (inputStream != null) {
@@ -116,55 +174,5 @@ public interface ConfigurationSource {
             }
         }
     }
-
-    /**
-     * Returns the contents of the main conf/server.xml file.
-     * @return the server.xml as an InputStream
-     * @throws IOException if an error occurs or if the resource does not exist
-     */
-    public default Resource getServerXml()
-            throws IOException {
-        return getConfResource("server.xml");
-    }
-
-    /**
-     * Returns the contents of the shared conf/web.xml file. This usually
-     * contains the declaration of the default and JSP servlets.
-     * @return the web.xml as an InputStream
-     * @throws IOException if an error occurs or if the resource does not exist
-     */
-    public default Resource getSharedWebXml()
-            throws IOException {
-        return getConfResource("web.xml");
-    }
-
-    /**
-     * Get a resource, based on the conf path.
-     * @param name The resource name
-     * @return the resource as an InputStream
-     * @throws IOException if an error occurs or if the resource does not exist
-     */
-    public default Resource getConfResource(String name)
-            throws IOException {
-        String fullName = "conf/" + name;
-        return getResource(fullName);
-    }
-
-    /**
-     * Get a resource, not based on the conf path.
-     * @param name The resource name
-     * @return the resource
-     * @throws IOException if an error occurs or if the resource does not exist
-     */
-    public Resource getResource(String name)
-            throws IOException;
-
-    /**
-     * Get a URI to the given resource. Unlike getResource, this will also
-     * return URIs to locations where no resource exists.
-     * @param name The resource name
-     * @return a URI representing the resource location
-     */
-    public URI getURI(String name);
 
 }

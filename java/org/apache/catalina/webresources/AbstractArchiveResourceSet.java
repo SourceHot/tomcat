@@ -16,6 +16,11 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.WebResource;
+import org.apache.catalina.WebResourceRoot;
+import org.apache.catalina.util.ResourceSet;
+import org.apache.tomcat.util.compat.JreCompat;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,33 +32,29 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.util.ResourceSet;
-import org.apache.tomcat.util.compat.JreCompat;
-
 public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
 
+    protected final Object archiveLock = new Object();
+    protected Map<String, JarEntry> archiveEntries = null;
     private URL baseUrl;
     private String baseUrlString;
     private JarFile archive = null;
-    protected Map<String,JarEntry> archiveEntries = null;
-    protected final Object archiveLock = new Object();
     private long archiveUseCount = 0;
     private JarContents jarContents;
+
+    @Override
+    public final URL getBaseUrl() {
+        return baseUrl;
+    }
 
     protected final void setBaseUrl(URL baseUrl) {
         this.baseUrl = baseUrl;
         if (baseUrl == null) {
             this.baseUrlString = null;
-        } else {
+        }
+        else {
             this.baseUrlString = baseUrl.toString();
         }
-    }
-
-    @Override
-    public final URL getBaseUrl() {
-        return baseUrl;
     }
 
     protected final String getBaseUrlString() {
@@ -80,7 +81,8 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     if (name.charAt(name.length() - 1) == '/') {
                         name = name.substring(
                                 pathInJar.length(), name.length() - 1);
-                    } else {
+                    }
+                    else {
                         name = name.substring(pathInJar.length());
                     }
                     if (name.length() == 0) {
@@ -94,16 +96,18 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     }
                 }
             }
-        } else {
+        }
+        else {
             if (!path.endsWith("/")) {
                 path = path + "/";
             }
             if (webAppMount.startsWith(path)) {
                 int i = webAppMount.indexOf('/', path.length());
                 if (i == -1) {
-                    return new String[] {webAppMount.substring(path.length())};
-                } else {
-                    return new String[] {
+                    return new String[]{webAppMount.substring(path.length())};
+                }
+                else {
+                    return new String[]{
                             webAppMount.substring(path.length(), i)};
                 }
             }
@@ -140,7 +144,8 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     result.add(webAppMount + '/' + name.substring(getInternalPath().length()));
                 }
             }
-        } else {
+        }
+        else {
             if (!path.endsWith("/")) {
                 path = path + "/";
             }
@@ -148,7 +153,8 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                 int i = webAppMount.indexOf('/', path.length());
                 if (i == -1) {
                     result.add(webAppMount + "/");
-                } else {
+                }
+                else {
                     result.add(webAppMount.substring(0, i + 1));
                 }
             }
@@ -166,11 +172,10 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
      *               false, a map will always be returned. If true,
      *               implementations may use this as a hint in determining the
      *               optimum way to respond.
-     *
      * @return The archives entries mapped to their names or null if
-     *         {@link #getArchiveEntry(String)} should be used.
+     * {@link #getArchiveEntry(String)} should be used.
      */
-    protected abstract Map<String,JarEntry> getArchiveEntries(boolean single);
+    protected abstract Map<String, JarEntry> getArchiveEntries(boolean single);
 
 
     /**
@@ -180,7 +185,6 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
      * returns null should this method be used.
      *
      * @param pathInArchive The path in the archive of the entry required
-     *
      * @return The specified archive entry or null if it does not exist
      */
     protected abstract JarEntry getArchiveEntry(String pathInArchive);
@@ -251,17 +255,20 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                 }
                 return new JarResourceRoot(root, new File(getBase()),
                         baseUrlString, path);
-            } else {
+            }
+            else {
                 JarEntry jarEntry = null;
                 if (isMultiRelease()) {
                     // Calls JarFile.getJarEntry() which is multi-release aware
                     jarEntry = getArchiveEntry(pathInJar);
-                } else {
-                    Map<String,JarEntry> jarEntries = getArchiveEntries(true);
+                }
+                else {
+                    Map<String, JarEntry> jarEntries = getArchiveEntries(true);
                     if (!(pathInJar.charAt(pathInJar.length() - 1) == '/')) {
                         if (jarEntries == null) {
                             jarEntry = getArchiveEntry(pathInJar + '/');
-                        } else {
+                        }
+                        else {
                             jarEntry = jarEntries.get(pathInJar + '/');
                         }
                         if (jarEntry != null) {
@@ -271,18 +278,21 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     if (jarEntry == null) {
                         if (jarEntries == null) {
                             jarEntry = getArchiveEntry(pathInJar);
-                        } else {
+                        }
+                        else {
                             jarEntry = jarEntries.get(pathInJar);
                         }
                     }
                 }
                 if (jarEntry == null) {
                     return new EmptyResource(root, path);
-                } else {
+                }
+                else {
                     return createArchiveResource(jarEntry, path, getManifest());
                 }
             }
-        } else {
+        }
+        else {
             return new EmptyResource(root, path);
         }
     }
@@ -290,7 +300,7 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
     protected abstract boolean isMultiRelease();
 
     protected abstract WebResource createArchiveResource(JarEntry jarEntry,
-            String webAppPath, Manifest manifest);
+                                                         String webAppPath, Manifest manifest);
 
     @Override
     public final boolean isReadOnly() {

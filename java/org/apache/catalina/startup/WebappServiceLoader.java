@@ -16,26 +16,15 @@
  */
 package org.apache.catalina.startup;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import jakarta.servlet.ServletContext;
-
 import org.apache.catalina.Context;
 import org.apache.tomcat.util.scan.JarFactory;
+
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * A variation of Java's JAR ServiceLoader that respects exclusion rules for
@@ -54,7 +43,6 @@ import org.apache.tomcat.util.scan.JarFactory;
  * Provider classes will be loaded using the context's ClassLoader.
  *
  * @param <T> The type of service to load
- *
  * @see jakarta.servlet.ServletContainerInitializer
  * @see java.util.ServiceLoader
  */
@@ -79,7 +67,8 @@ public class WebappServiceLoader<T> {
         String containerSciFilter = context.getContainerSciFilter();
         if (containerSciFilter != null && containerSciFilter.length() > 0) {
             containerSciFilterPattern = Pattern.compile(containerSciFilter);
-        } else {
+        }
+        else {
             containerSciFilterPattern = null;
         }
     }
@@ -105,7 +94,8 @@ public class WebappServiceLoader<T> {
         Enumeration<URL> containerResources;
         if (loader == null) {
             containerResources = ClassLoader.getSystemResources(configFile);
-        } else {
+        }
+        else {
             containerResources = loader.getResources(configFile);
         }
 
@@ -155,7 +145,8 @@ public class WebappServiceLoader<T> {
                     parseConfigFile(applicationServiceClassNames, serviceConfigFile);
                 }
             }
-        } else {
+        }
+        else {
             // Ordered libs so only use services defined in those libs and any
             // in WEB-INF/classes
             URL unpacked = servletContext.getResource(CLASSES + configFile);
@@ -174,7 +165,8 @@ public class WebappServiceLoader<T> {
                 URL url;
                 if (base.endsWith("/")) {
                     url = new URL(base + configFile);
-                } else {
+                }
+                else {
                     url = JarFactory.getJarEntryURL(jarUrl, configFile);
                 }
                 try {
@@ -200,8 +192,8 @@ public class WebappServiceLoader<T> {
 
     void parseConfigFile(LinkedHashSet<String> servicesFound, URL url) throws IOException {
         try (InputStream is = url.openStream();
-            InputStreamReader in = new InputStreamReader(is, StandardCharsets.UTF_8);
-            BufferedReader reader = new BufferedReader(in)) {
+             InputStreamReader in = new InputStreamReader(is, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(in)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 int i = line.indexOf('#');

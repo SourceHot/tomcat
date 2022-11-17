@@ -22,15 +22,15 @@ import java.security.PrivilegedAction;
 public class Validation {
 
     // Java keywords, boolean literals & the null literal in alphabetical order
-    private static final String invalidIdentifiers[] = { "abstract", "assert",
-        "boolean", "break", "byte", "case", "catch", "char", "class", "const",
-        "continue", "default", "do", "double", "else", "enum", "extends",
-        "false", "final", "finally", "float", "for", "goto", "if", "implements",
-        "import", "instanceof", "int", "interface", "long", "native", "new",
-        "null", "package", "private", "protected", "public", "return", "short",
-        "static", "strictfp", "super", "switch", "synchronized", "this",
-        "throw", "throws", "transient", "true", "try", "void", "volatile",
-        "while" };
+    private static final String[] invalidIdentifiers = {"abstract", "assert",
+            "boolean", "break", "byte", "case", "catch", "char", "class", "const",
+            "continue", "default", "do", "double", "else", "enum", "extends",
+            "false", "final", "finally", "float", "for", "goto", "if", "implements",
+            "import", "instanceof", "int", "interface", "long", "native", "new",
+            "null", "package", "private", "protected", "public", "return", "short",
+            "static", "strictfp", "super", "switch", "synchronized", "this",
+            "throw", "throws", "transient", "true", "try", "void", "volatile",
+            "while"};
 
     private static final boolean IS_SECURITY_ENABLED =
             (System.getSecurityManager() != null);
@@ -42,7 +42,8 @@ public class Validation {
         if (IS_SECURITY_ENABLED) {
             skipIdentifierCheckStr = AccessController.doPrivileged(
                     (PrivilegedAction<String>) () -> System.getProperty("org.apache.el.parser.SKIP_IDENTIFIER_CHECK", "false"));
-        } else {
+        }
+        else {
             skipIdentifierCheckStr = System.getProperty(
                     "org.apache.el.parser.SKIP_IDENTIFIER_CHECK", "false");
         }
@@ -60,9 +61,8 @@ public class Validation {
      * {@code org.apache.el.parser.SKIP_IDENTIFIER_CHECK}
      *
      * @param key The string to test
-     *
      * @return {@code true} if the provided String should be treated as a Java
-     *         identifier, otherwise false
+     * identifier, otherwise false
      */
     public static boolean isIdentifier(String key) {
 
@@ -86,7 +86,8 @@ public class Validation {
             }
             if (result < 0) {
                 i = k + 1;
-            } else {
+            }
+            else {
                 j = k;
             }
         }

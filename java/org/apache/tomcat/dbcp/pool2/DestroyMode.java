@@ -24,9 +24,13 @@ package org.apache.tomcat.dbcp.pool2;
  */
 public enum DestroyMode {
 
-    /** Normal destroy. */
+    /**
+     * Normal destroy.
+     */
     NORMAL,
 
-    /** Destroy abandoned object. */
+    /**
+     * Destroy abandoned object.
+     */
     ABANDONED
 }

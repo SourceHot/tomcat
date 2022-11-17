@@ -16,9 +16,9 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
+
+import java.io.IOException;
 
 /**
  * This class is only for internal use in the protocol implementation. All
@@ -34,13 +34,11 @@ public interface InputBuffer {
      *
      * @param handler ApplicationBufferHandler that provides the buffer to read
      *                data into.
-     *
      * @return The number of bytes that have been added to the buffer or -1 for
-     *         end of stream
-     *
+     * end of stream
      * @throws IOException If an I/O error occurs reading from the input stream
      */
-    public int doRead(ApplicationBufferHandler handler) throws IOException;
+    int doRead(ApplicationBufferHandler handler) throws IOException;
 
 
     /**
@@ -50,6 +48,6 @@ public interface InputBuffer {
      *
      * @return The number of bytes that can be read without blocking
      */
-    public int available();
+    int available();
 
 }

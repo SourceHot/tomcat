@@ -17,13 +17,7 @@
 package jakarta.el;
 
 import java.beans.FeatureDescriptor;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class MapELResolver extends ELResolver {
 
@@ -44,7 +38,7 @@ public class MapELResolver extends ELResolver {
     public Class<?> getType(ELContext context, Object base, Object property) {
         Objects.requireNonNull(context);
 
-        if (base instanceof Map<?,?>) {
+        if (base instanceof Map<?, ?>) {
             context.setPropertyResolved(base, property);
             return Object.class;
         }
@@ -56,9 +50,9 @@ public class MapELResolver extends ELResolver {
     public Object getValue(ELContext context, Object base, Object property) {
         Objects.requireNonNull(context);
 
-        if (base instanceof Map<?,?>) {
+        if (base instanceof Map<?, ?>) {
             context.setPropertyResolved(base, property);
-            return ((Map<?,?>) base).get(property);
+            return ((Map<?, ?>) base).get(property);
         }
 
         return null;
@@ -66,7 +60,7 @@ public class MapELResolver extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         Objects.requireNonNull(context);
 
         if (base instanceof Map<?, ?>) {

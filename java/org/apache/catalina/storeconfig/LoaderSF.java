@@ -16,19 +16,19 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.Loader;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.PrintWriter;
 
 /**
  * Store Loader Element.
  */
 public class LoaderSF extends StoreFactoryBase {
 
-    private static Log log = LogFactory.getLog(LoaderSF.class);
+    private static final Log log = LogFactory.getLog(LoaderSF.class);
 
     /**
      * Store the only the Loader elements, when not default
@@ -51,7 +51,8 @@ public class LoaderSF extends StoreFactoryBase {
                 getStoreAppender().printTag(aWriter, indent + 2, loader,
                         elementDesc);
             }
-        } else {
+        }
+        else {
             if (log.isWarnEnabled()) {
                 log
                         .warn("Descriptor for element"
@@ -65,8 +66,7 @@ public class LoaderSF extends StoreFactoryBase {
      * Is this an instance of the default <code>Loader</code> configuration,
      * with all-default properties?
      *
-     * @param loader
-     *            Loader to be tested
+     * @param loader Loader to be tested
      * @return <code>true</code> if this is an instance of the default loader
      */
     protected boolean isDefaultLoader(Loader loader) {
@@ -75,11 +75,8 @@ public class LoaderSF extends StoreFactoryBase {
             return false;
         }
         WebappLoader wloader = (WebappLoader) loader;
-        if ((wloader.getDelegate() != false)
-                || !wloader.getLoaderClass().equals(
-                        "org.apache.catalina.loader.WebappClassLoader")) {
-            return false;
-        }
-        return true;
+        return (!wloader.getDelegate())
+                && wloader.getLoaderClass().equals(
+                "org.apache.catalina.loader.WebappClassLoader");
     }
 }

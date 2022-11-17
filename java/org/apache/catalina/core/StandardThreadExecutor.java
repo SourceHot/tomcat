@@ -16,8 +16,6 @@
  */
 package org.apache.catalina.core;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.catalina.Executor;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleState;
@@ -27,6 +25,8 @@ import org.apache.tomcat.util.threads.ResizableExecutor;
 import org.apache.tomcat.util.threads.TaskQueue;
 import org.apache.tomcat.util.threads.TaskThreadFactory;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+
+import java.util.concurrent.TimeUnit;
 
 public class StandardThreadExecutor extends LifecycleMBeanBase
         implements Executor, ResizableExecutor {
@@ -85,9 +85,10 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * threads being renewed.
      */
     protected long threadRenewalDelay =
-        org.apache.tomcat.util.threads.Constants.DEFAULT_THREAD_RENEWAL_DELAY;
+            org.apache.tomcat.util.threads.Constants.DEFAULT_THREAD_RENEWAL_DELAY;
 
     private TaskQueue taskqueue = null;
+
     // ---------------------------------------------- Constructors
     public StandardThreadExecutor() {
         //empty constructor for the digester
@@ -100,15 +101,15 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * Start the component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected void startInternal() throws LifecycleException {
 
         taskqueue = new TaskQueue(maxQueueSize);
-        TaskThreadFactory tf = new TaskThreadFactory(namePrefix,daemon,getThreadPriority());
-        executor = new ThreadPoolExecutor(getMinSpareThreads(), getMaxThreads(), maxIdleTime, TimeUnit.MILLISECONDS,taskqueue, tf);
+        TaskThreadFactory tf = new TaskThreadFactory(namePrefix, daemon, getThreadPriority());
+        executor = new ThreadPoolExecutor(getMinSpareThreads(), getMaxThreads(), maxIdleTime, TimeUnit.MILLISECONDS, taskqueue, tf);
         executor.setThreadRenewalDelay(threadRenewalDelay);
         taskqueue.setParent(executor);
 
@@ -120,8 +121,8 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * Stop the component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that needs to be reported
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that needs to be reported
      */
     @Override
     protected void stopInternal() throws LifecycleException {
@@ -139,8 +140,9 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
     @Deprecated
     public void execute(Runnable command, long timeout, TimeUnit unit) {
         if (executor != null) {
-            executor.execute(command,timeout,unit);
-        } else {
+            executor.execute(command, timeout, unit);
+        }
+        else {
             throw new IllegalStateException(sm.getString("standardThreadExecutor.notStarted"));
         }
     }
@@ -152,7 +154,8 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
             // Note any RejectedExecutionException due to the use of TaskQueue
             // will be handled by the o.a.t.u.threads.ThreadPoolExecutor
             executor.execute(command);
-        } else {
+        }
+        else {
             throw new IllegalStateException(sm.getString("standardThreadExecutor.notStarted"));
         }
     }
@@ -167,43 +170,29 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
         return threadPriority;
     }
 
+    public void setThreadPriority(int threadPriority) {
+        this.threadPriority = threadPriority;
+    }
+
     public boolean isDaemon() {
 
         return daemon;
-    }
-
-    public String getNamePrefix() {
-        return namePrefix;
-    }
-
-    public int getMaxIdleTime() {
-        return maxIdleTime;
-    }
-
-    @Override
-    public int getMaxThreads() {
-        return maxThreads;
-    }
-
-    public int getMinSpareThreads() {
-        return minSpareThreads;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public void setThreadPriority(int threadPriority) {
-        this.threadPriority = threadPriority;
     }
 
     public void setDaemon(boolean daemon) {
         this.daemon = daemon;
     }
 
+    public String getNamePrefix() {
+        return namePrefix;
+    }
+
     public void setNamePrefix(String namePrefix) {
         this.namePrefix = namePrefix;
+    }
+
+    public int getMaxIdleTime() {
+        return maxIdleTime;
     }
 
     public void setMaxIdleTime(int maxIdleTime) {
@@ -213,11 +202,20 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
         }
     }
 
+    @Override
+    public int getMaxThreads() {
+        return maxThreads;
+    }
+
     public void setMaxThreads(int maxThreads) {
         this.maxThreads = maxThreads;
         if (executor != null) {
             executor.setMaximumPoolSize(maxThreads);
         }
+    }
+
+    public int getMinSpareThreads() {
+        return minSpareThreads;
     }
 
     public void setMinSpareThreads(int minSpareThreads) {
@@ -227,16 +225,21 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
         }
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setMaxQueueSize(int size) {
-        this.maxQueueSize = size;
-    }
-
     public int getMaxQueueSize() {
         return maxQueueSize;
+    }
+
+    public void setMaxQueueSize(int size) {
+        this.maxQueueSize = size;
     }
 
     public long getThreadRenewalDelay() {

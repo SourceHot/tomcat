@@ -33,10 +33,11 @@ public class Remove implements TagPlugin {
 
         //remove attribute from certain scope.
         //default scope is "page".
-        if(hasScope){
+        if (hasScope) {
             int iScope = Util.getScope(ctxt.getConstantAttribute("scope"));
             ctxt.generateJavaSource("pageContext.removeAttribute(\"" + strVar + "\"," + iScope + ");");
-        }else{
+        }
+        else {
             ctxt.generateJavaSource("pageContext.removeAttribute(\"" + strVar + "\");");
         }
     }

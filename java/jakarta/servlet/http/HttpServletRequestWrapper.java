@@ -16,13 +16,13 @@
  */
 package jakarta.servlet.http;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequestWrapper;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequestWrapper;
 
 /**
  * Provides a convenient implementation of the HttpServletRequest interface that
@@ -40,9 +40,7 @@ public class HttpServletRequestWrapper extends ServletRequestWrapper implements
      * Constructs a request object wrapping the given request.
      *
      * @param request The request to wrap
-     *
-     * @throws java.lang.IllegalArgumentException
-     *             if the request is null
+     * @throws java.lang.IllegalArgumentException if the request is null
      */
     public HttpServletRequestWrapper(HttpServletRequest request) {
         super(request);
@@ -414,7 +412,7 @@ public class HttpServletRequestWrapper extends ServletRequestWrapper implements
      * @since Servlet 4.0
      */
     @Override
-    public Map<String,String> getTrailerFields() {
+    public Map<String, String> getTrailerFields() {
         return this._getHttpServletRequest().getTrailerFields();
     }
 

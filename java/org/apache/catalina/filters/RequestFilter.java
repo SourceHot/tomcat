@@ -17,15 +17,15 @@
 package org.apache.catalina.filters;
 
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of a Filter that performs filtering based on comparing the
@@ -58,29 +58,25 @@ public abstract class RequestFilter extends FilterBase {
     // ----------------------------------------------------- Instance Variables
 
     /**
+     * mime type -- "text/plain"
+     */
+    private static final String PLAIN_TEXT_MIME_TYPE = "text/plain";
+    /**
      * The regular expression used to test for allowed requests.
      */
     protected Pattern allow = null;
-
     /**
      * The regular expression used to test for denied requests.
      */
     protected Pattern deny = null;
-
     /**
      * The HTTP response status code that is used when rejecting denied
      * request. It is 403 by default, but may be changed to be 404.
      */
     protected int denyStatus = HttpServletResponse.SC_FORBIDDEN;
 
-    /**
-     * mime type -- "text/plain"
-     */
-    private static final String PLAIN_TEXT_MIME_TYPE = "text/plain";
-
 
     // ------------------------------------------------------------- Properties
-
 
     /**
      * @return the regular expression used to test for allowed requests for this
@@ -103,7 +99,8 @@ public abstract class RequestFilter extends FilterBase {
     public void setAllow(String allow) {
         if (allow == null || allow.length() == 0) {
             this.allow = null;
-        } else {
+        }
+        else {
             this.allow = Pattern.compile(allow);
         }
     }
@@ -130,7 +127,8 @@ public abstract class RequestFilter extends FilterBase {
     public void setDeny(String deny) {
         if (deny == null || deny.length() == 0) {
             this.deny = null;
-        } else {
+        }
+        else {
             this.deny = Pattern.compile(deny);
         }
     }
@@ -163,16 +161,15 @@ public abstract class RequestFilter extends FilterBase {
      * <code>process()</code> method to perform the actual filtering.
      * This method must be implemented by a concrete subclass.
      *
-     * @param request The servlet request to be processed
+     * @param request  The servlet request to be processed
      * @param response The servlet response to be created
-     * @param chain The filter chain
-     *
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet error occurs
+     * @param chain    The filter chain
+     * @throws IOException      if an input/output error occurs
+     * @throws ServletException if a servlet error occurs
      */
     @Override
     public abstract void doFilter(ServletRequest request,
-            ServletResponse response, FilterChain chain) throws IOException,
+                                  ServletResponse response, FilterChain chain) throws IOException,
             ServletException;
 
 
@@ -190,27 +187,28 @@ public abstract class RequestFilter extends FilterBase {
      * against the specified request property.
      *
      * @param property The request property on which to filter
-     * @param request The servlet request to be processed
+     * @param request  The servlet request to be processed
      * @param response The servlet response to be processed
-     * @param chain The filter chain
-     *
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet error occurs
+     * @param chain    The filter chain
+     * @throws IOException      if an input/output error occurs
+     * @throws ServletException if a servlet error occurs
      */
     protected void process(String property, ServletRequest request,
-            ServletResponse response, FilterChain chain)
+                           ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         if (isAllowed(property)) {
             chain.doFilter(request, response);
-        } else {
+        }
+        else {
             if (response instanceof HttpServletResponse) {
                 if (getLogger().isDebugEnabled()) {
                     getLogger().debug(sm.getString("requestFilter.deny",
                             ((HttpServletRequest) request).getRequestURI(), property));
                 }
                 ((HttpServletResponse) response).sendError(denyStatus);
-            } else {
+            }
+            else {
                 sendErrorWhenNotHttp(response);
             }
         }
@@ -220,9 +218,9 @@ public abstract class RequestFilter extends FilterBase {
     /**
      * Process the allow and deny rules for the provided property.
      *
-     * @param property  The property to test against the allow and deny lists
-     * @return          <code>true</code> if this request should be allowed,
-     *                  <code>false</code> otherwise
+     * @param property The property to test against the allow and deny lists
+     * @return <code>true</code> if this request should be allowed,
+     * <code>false</code> otherwise
      */
     private boolean isAllowed(String property) {
         if (deny != null && deny.matcher(property).matches()) {
@@ -235,12 +233,9 @@ public abstract class RequestFilter extends FilterBase {
         }
 
         // Allow if denies specified but not allows
-        if (deny != null && allow == null) {
-            return true;
-        }
+        return deny != null && allow == null;
 
         // Deny this request
-        return false;
     }
 
     private void sendErrorWhenNotHttp(ServletResponse response)

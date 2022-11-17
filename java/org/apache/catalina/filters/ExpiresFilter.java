@@ -16,34 +16,18 @@
  */
 package org.apache.catalina.filters;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.WriteListener;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import jakarta.servlet.http.MappingMatch;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -430,6 +414,679 @@ import org.apache.juli.logging.LogFactory;
 public class ExpiresFilter extends FilterBase {
 
     /**
+     * {@link Pattern} for a comma delimited string that support whitespace
+     * characters
+     */
+    private static final Pattern commaSeparatedValuesPattern = Pattern.compile("\\s*,\\s*");
+    private static final String HEADER_CACHE_CONTROL = "Cache-Control";
+    private static final String HEADER_EXPIRES = "Expires";
+    private static final String HEADER_LAST_MODIFIED = "Last-Modified";
+    private static final String PARAMETER_EXPIRES_BY_TYPE = "ExpiresByType";
+    private static final String PARAMETER_EXPIRES_DEFAULT = "ExpiresDefault";
+    private static final String PARAMETER_EXPIRES_EXCLUDED_RESPONSE_STATUS_CODES = "ExpiresExcludedResponseStatusCodes";
+    // Log must be non-static as loggers are created per class-loader and this
+    // Filter may be used in multiple class loaders
+    private final Log log = LogFactory.getLog(ExpiresFilter.class); // must not be static
+    /**
+     * Default Expires configuration.
+     */
+    private ExpiresConfiguration defaultExpiresConfiguration;
+    /**
+     * list of response status code for which the {@link ExpiresFilter} will not
+     * generate expiration headers.
+     */
+    private int[] excludedResponseStatusCodes = new int[]{HttpServletResponse.SC_NOT_MODIFIED};
+    /**
+     * Expires configuration by content type. Visible for test.
+     */
+    private Map<String, ExpiresConfiguration> expiresConfigurationByContentType = new LinkedHashMap<>();
+
+    /**
+     * Convert a comma delimited list of numbers into an {@code int[]}.
+     *
+     * @param commaDelimitedInts can be {@code null}
+     * @return never {@code null} array
+     */
+    protected static int[] commaDelimitedListToIntArray(
+            String commaDelimitedInts) {
+        String[] intsAsStrings = commaDelimitedListToStringArray(commaDelimitedInts);
+        int[] ints = new int[intsAsStrings.length];
+        for (int i = 0; i < intsAsStrings.length; i++) {
+            String intAsString = intsAsStrings[i];
+            try {
+                ints[i] = Integer.parseInt(intAsString);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException(sm.getString("expiresFilter.numberError",
+                        Integer.valueOf(i), commaDelimitedInts));
+            }
+        }
+        return ints;
+    }
+
+    /**
+     * Convert a given comma delimited list of strings into an array of String
+     *
+     * @param commaDelimitedStrings the string to be split
+     * @return array of patterns (non {@code null})
+     */
+    protected static String[] commaDelimitedListToStringArray(
+            String commaDelimitedStrings) {
+        return (commaDelimitedStrings == null || commaDelimitedStrings.length() == 0) ? new String[0]
+                : commaSeparatedValuesPattern.split(commaDelimitedStrings);
+    }
+
+    /**
+     * @param str       String that will be searched
+     * @param searchStr The substring to search
+     * @return {@code true} if the given {@code str} contains the given
+     * {@code searchStr}.
+     */
+    protected static boolean contains(String str, String searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        return str.contains(searchStr);
+    }
+
+    /**
+     * Convert an array of ints into a comma delimited string
+     *
+     * @param ints The int array
+     * @return a comma separated string
+     */
+    protected static String intsToCommaDelimitedString(int[] ints) {
+        if (ints == null) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < ints.length; i++) {
+            result.append(ints[i]);
+            if (i < (ints.length - 1)) {
+                result.append(", ");
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * @param str The String to check
+     * @return {@code true} if the given {@code str} is
+     * {@code null} or has a zero characters length.
+     */
+    protected static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
+    }
+
+    /**
+     * @param str The String to check
+     * @return {@code true} if the given {@code str} has at least one
+     * character (can be a whitespace).
+     */
+    protected static boolean isNotEmpty(String str) {
+        return !isEmpty(str);
+    }
+
+    /**
+     * @param string can be {@code null}
+     * @param prefix can be {@code null}
+     * @return {@code true} if the given {@code string} starts with the
+     * given {@code prefix} ignoring case.
+     */
+    protected static boolean startsWithIgnoreCase(String string, String prefix) {
+        if (string == null || prefix == null) {
+            return string == null && prefix == null;
+        }
+        if (prefix.length() > string.length()) {
+            return false;
+        }
+
+        return string.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    /**
+     * @param str       can be {@code null}
+     * @param separator can be {@code null}
+     * @return the subset of the given {@code str} that is before the first
+     * occurrence of the given {@code separator}. Return {@code null}
+     * if the given {@code str} or the given {@code separator} is
+     * null. Return and empty string if the {@code separator} is empty.
+     */
+    protected static String substringBefore(String str, String separator) {
+        if (str == null || str.isEmpty() || separator == null) {
+            return null;
+        }
+
+        if (separator.isEmpty()) {
+            return "";
+        }
+
+        int separatorIndex = str.indexOf(separator);
+        if (separatorIndex == -1) {
+            return str;
+        }
+        return str.substring(0, separatorIndex);
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
+        if (request instanceof HttpServletRequest &&
+                response instanceof HttpServletResponse) {
+            HttpServletRequest httpRequest = (HttpServletRequest) request;
+            HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+            if (response.isCommitted()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString(
+                            "expiresFilter.responseAlreadyCommitted",
+                            httpRequest.getRequestURL()));
+                }
+                chain.doFilter(request, response);
+            }
+            else {
+                XHttpServletResponse xResponse = new XHttpServletResponse(
+                        httpRequest, httpResponse);
+                chain.doFilter(request, xResponse);
+                if (!xResponse.isWriteResponseBodyStarted()) {
+                    // Empty response, manually trigger
+                    // onBeforeWriteResponseBody()
+                    onBeforeWriteResponseBody(httpRequest, xResponse);
+                }
+            }
+        }
+        else {
+            chain.doFilter(request, response);
+        }
+    }
+
+    public ExpiresConfiguration getDefaultExpiresConfiguration() {
+        return defaultExpiresConfiguration;
+    }
+
+    public void setDefaultExpiresConfiguration(
+            ExpiresConfiguration defaultExpiresConfiguration) {
+        this.defaultExpiresConfiguration = defaultExpiresConfiguration;
+    }
+
+    public String getExcludedResponseStatusCodes() {
+        return intsToCommaDelimitedString(excludedResponseStatusCodes);
+    }
+
+    public void setExcludedResponseStatusCodes(int[] excludedResponseStatusCodes) {
+        this.excludedResponseStatusCodes = excludedResponseStatusCodes;
+    }
+
+    public int[] getExcludedResponseStatusCodesAsInts() {
+        return excludedResponseStatusCodes;
+    }
+
+    /**
+     * Returns the expiration date of the given {@link XHttpServletResponse} or
+     * {@code null} if no expiration date has been configured for the
+     * declared content type.
+     * <p>
+     * {@code protected} for extension.
+     *
+     * @param request  The HTTP request
+     * @param response The wrapped HTTP response
+     * @return the expiration date
+     * @see HttpServletResponse#getContentType()
+     */
+    protected Date getExpirationDate(HttpServletRequest request, XHttpServletResponse response) {
+        String contentType = response.getContentType();
+        if (contentType == null && request != null &&
+                request.getHttpServletMapping().getMappingMatch() == MappingMatch.DEFAULT &&
+                response.getStatus() == HttpServletResponse.SC_NOT_MODIFIED) {
+            // Default servlet normally sets the content type but does not for
+            // 304 responses. Look it up.
+            String servletPath = request.getServletPath();
+            if (servletPath != null) {
+                int lastSlash = servletPath.lastIndexOf('/');
+                if (lastSlash > -1) {
+                    String fileName = servletPath.substring(lastSlash + 1);
+                    contentType = request.getServletContext().getMimeType(fileName);
+                }
+            }
+        }
+        if (contentType != null) {
+            contentType = contentType.toLowerCase(Locale.ENGLISH);
+        }
+
+        // lookup exact content-type match (e.g.
+        // "text/html; charset=iso-8859-1")
+        ExpiresConfiguration configuration = expiresConfigurationByContentType.get(contentType);
+        if (configuration != null) {
+            Date result = getExpirationDate(configuration, response);
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString(
+                        "expiresFilter.useMatchingConfiguration",
+                        configuration, contentType, contentType, result));
+            }
+            return result;
+        }
+
+        if (contains(contentType, ";")) {
+            // lookup content-type without charset match (e.g. "text/html")
+            String contentTypeWithoutCharset = substringBefore(contentType, ";").trim();
+            configuration = expiresConfigurationByContentType.get(contentTypeWithoutCharset);
+
+            if (configuration != null) {
+                Date result = getExpirationDate(configuration, response);
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString(
+                            "expiresFilter.useMatchingConfiguration",
+                            configuration, contentTypeWithoutCharset,
+                            contentType, result));
+                }
+                return result;
+            }
+        }
+
+        if (contains(contentType, "/")) {
+            // lookup major type match (e.g. "text")
+            String majorType = substringBefore(contentType, "/");
+            configuration = expiresConfigurationByContentType.get(majorType);
+            if (configuration != null) {
+                Date result = getExpirationDate(configuration, response);
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString(
+                            "expiresFilter.useMatchingConfiguration",
+                            configuration, majorType, contentType, result));
+                }
+                return result;
+            }
+        }
+
+        if (defaultExpiresConfiguration != null) {
+            Date result = getExpirationDate(defaultExpiresConfiguration,
+                    response);
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString("expiresFilter.useDefaultConfiguration",
+                        defaultExpiresConfiguration, contentType, result));
+            }
+            return result;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(sm.getString(
+                    "expiresFilter.noExpirationConfiguredForContentType",
+                    contentType));
+        }
+        return null;
+    }
+
+    /**
+     * <p>
+     * Returns the expiration date of the given {@link ExpiresConfiguration},
+     * {@link HttpServletRequest} and {@link XHttpServletResponse}.
+     * </p>
+     * <p>
+     * {@code protected} for extension.
+     * </p>
+     *
+     * @param configuration The parsed expires
+     * @param response      The Servlet response
+     * @return the expiration date
+     */
+    protected Date getExpirationDate(ExpiresConfiguration configuration,
+                                     XHttpServletResponse response) {
+        Calendar calendar;
+        switch (configuration.getStartingPoint()) {
+            case ACCESS_TIME:
+                calendar = Calendar.getInstance();
+                break;
+            case LAST_MODIFICATION_TIME:
+                if (response.isLastModifiedHeaderSet()) {
+                    try {
+                        long lastModified = response.getLastModifiedHeader();
+                        calendar = Calendar.getInstance();
+                        calendar.setTimeInMillis(lastModified);
+                    } catch (NumberFormatException e) {
+                        // default to now
+                        calendar = Calendar.getInstance();
+                    }
+                }
+                else {
+                    // Last-Modified header not found, use now
+                    calendar = Calendar.getInstance();
+                }
+                break;
+            default:
+                throw new IllegalStateException(sm.getString(
+                        "expiresFilter.unsupportedStartingPoint",
+                        configuration.getStartingPoint()));
+        }
+        for (Duration duration : configuration.getDurations()) {
+            calendar.add(duration.getUnit().getCalendardField(),
+                    duration.getAmount());
+        }
+
+        return calendar.getTime();
+    }
+
+    public Map<String, ExpiresConfiguration> getExpiresConfigurationByContentType() {
+        return expiresConfigurationByContentType;
+    }
+
+    public void setExpiresConfigurationByContentType(
+            Map<String, ExpiresConfiguration> expiresConfigurationByContentType) {
+        this.expiresConfigurationByContentType = expiresConfigurationByContentType;
+    }
+
+    @Override
+    protected Log getLogger() {
+        return log;
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        for (Enumeration<String> names = filterConfig.getInitParameterNames(); names.hasMoreElements(); ) {
+            String name = names.nextElement();
+            String value = filterConfig.getInitParameter(name);
+
+            try {
+                if (name.startsWith(PARAMETER_EXPIRES_BY_TYPE)) {
+                    String contentType = name.substring(
+                            PARAMETER_EXPIRES_BY_TYPE.length()).trim().toLowerCase(Locale.ENGLISH);
+                    ExpiresConfiguration expiresConfiguration = parseExpiresConfiguration(value);
+                    this.expiresConfigurationByContentType.put(contentType,
+                            expiresConfiguration);
+                }
+                else if (name.equalsIgnoreCase(PARAMETER_EXPIRES_DEFAULT)) {
+                    ExpiresConfiguration expiresConfiguration = parseExpiresConfiguration(value);
+                    this.defaultExpiresConfiguration = expiresConfiguration;
+                }
+                else if (name.equalsIgnoreCase(PARAMETER_EXPIRES_EXCLUDED_RESPONSE_STATUS_CODES)) {
+                    this.excludedResponseStatusCodes = commaDelimitedListToIntArray(value);
+                }
+                else {
+                    log.warn(sm.getString(
+                            "expiresFilter.unknownParameterIgnored", name,
+                            value));
+                }
+            } catch (RuntimeException e) {
+                throw new ServletException(sm.getString(
+                        "expiresFilter.exceptionProcessingParameter", name,
+                        value), e);
+            }
+        }
+
+        log.debug(sm.getString("expiresFilter.filterInitialized",
+                this.toString()));
+    }
+
+    /**
+     * <p>
+     * {@code protected} for extension.
+     * </p>
+     *
+     * @param request  The Servlet request
+     * @param response The Servlet response
+     * @return <code>true</code> if an expire header may be added
+     */
+    protected boolean isEligibleToExpirationHeaderGeneration(
+            HttpServletRequest request, XHttpServletResponse response) {
+        boolean expirationHeaderHasBeenSet = response.containsHeader(HEADER_EXPIRES) ||
+                contains(response.getCacheControlHeader(), "max-age");
+        if (expirationHeaderHasBeenSet) {
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString(
+                        "expiresFilter.expirationHeaderAlreadyDefined",
+                        request.getRequestURI(),
+                        Integer.valueOf(response.getStatus()),
+                        response.getContentType()));
+            }
+            return false;
+        }
+
+        for (int skippedStatusCode : this.excludedResponseStatusCodes) {
+            if (response.getStatus() == skippedStatusCode) {
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString("expiresFilter.skippedStatusCode",
+                            request.getRequestURI(),
+                            Integer.valueOf(response.getStatus()),
+                            response.getContentType()));
+                }
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * <p>
+     * If no expiration header has been set by the servlet and an expiration has
+     * been defined in the {@link ExpiresFilter} configuration, sets the
+     * '{@code Expires}' header and the attribute '{@code max-age}' of the
+     * '{@code Cache-Control}' header.
+     * </p>
+     * <p>
+     * Must be called on the "Start Write Response Body" event.
+     * </p>
+     * <p>
+     * Invocations to {@code Logger.debug(...)} are guarded by
+     * {@link Log#isDebugEnabled()} because
+     * {@link HttpServletRequest#getRequestURI()} and
+     * {@link HttpServletResponse#getContentType()} costs {@code String}
+     * objects instantiations (as of Tomcat 7).
+     * </p>
+     *
+     * @param request  The Servlet request
+     * @param response The Servlet response
+     */
+    public void onBeforeWriteResponseBody(HttpServletRequest request,
+                                          XHttpServletResponse response) {
+
+        if (!isEligibleToExpirationHeaderGeneration(request, response)) {
+            return;
+        }
+
+        Date expirationDate = getExpirationDate(request, response);
+        if (expirationDate == null) {
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString("expiresFilter.noExpirationConfigured",
+                        request.getRequestURI(),
+                        Integer.valueOf(response.getStatus()),
+                        response.getContentType()));
+            }
+        }
+        else {
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString("expiresFilter.setExpirationDate",
+                        request.getRequestURI(),
+                        Integer.valueOf(response.getStatus()),
+                        response.getContentType(), expirationDate));
+            }
+
+            String maxAgeDirective = "max-age=" +
+                    ((expirationDate.getTime() - System.currentTimeMillis()) / 1000);
+
+            String cacheControlHeader = response.getCacheControlHeader();
+            String newCacheControlHeader = (cacheControlHeader == null) ? maxAgeDirective
+                    : cacheControlHeader + ", " + maxAgeDirective;
+            response.setHeader(HEADER_CACHE_CONTROL, newCacheControlHeader);
+            response.setDateHeader(HEADER_EXPIRES, expirationDate.getTime());
+        }
+
+    }
+
+    /**
+     * Parse configuration lines like
+     * '{@code access plus 1 month 15 days 2 hours}' or
+     * '{@code modification 1 day 2 hours 5 seconds}'
+     *
+     * @param inputLine the input
+     * @return the parsed expires
+     */
+    protected ExpiresConfiguration parseExpiresConfiguration(String inputLine) {
+        String line = inputLine.trim();
+
+        StringTokenizer tokenizer = new StringTokenizer(line, " ");
+
+        String currentToken;
+
+        try {
+            currentToken = tokenizer.nextToken();
+        } catch (NoSuchElementException e) {
+            throw new IllegalStateException(sm.getString(
+                    "expiresFilter.startingPointNotFound", line));
+        }
+
+        StartingPoint startingPoint;
+        if ("access".equalsIgnoreCase(currentToken) ||
+                "now".equalsIgnoreCase(currentToken)) {
+            startingPoint = StartingPoint.ACCESS_TIME;
+        }
+        else if ("modification".equalsIgnoreCase(currentToken)) {
+            startingPoint = StartingPoint.LAST_MODIFICATION_TIME;
+        }
+        else if (!tokenizer.hasMoreTokens() &&
+                startsWithIgnoreCase(currentToken, "a")) {
+            startingPoint = StartingPoint.ACCESS_TIME;
+            // trick : convert duration configuration from old to new style
+            tokenizer = new StringTokenizer(currentToken.substring(1) +
+                    " seconds", " ");
+        }
+        else if (!tokenizer.hasMoreTokens() &&
+                startsWithIgnoreCase(currentToken, "m")) {
+            startingPoint = StartingPoint.LAST_MODIFICATION_TIME;
+            // trick : convert duration configuration from old to new style
+            tokenizer = new StringTokenizer(currentToken.substring(1) +
+                    " seconds", " ");
+        }
+        else {
+            throw new IllegalStateException(sm.getString(
+                    "expiresFilter.startingPointInvalid", currentToken, line));
+        }
+
+        try {
+            currentToken = tokenizer.nextToken();
+        } catch (NoSuchElementException e) {
+            throw new IllegalStateException(sm.getString(
+                    "expiresFilter.noDurationFound", line));
+        }
+
+        if ("plus".equalsIgnoreCase(currentToken)) {
+            // skip
+            try {
+                currentToken = tokenizer.nextToken();
+            } catch (NoSuchElementException e) {
+                throw new IllegalStateException(sm.getString(
+                        "expiresFilter.noDurationFound", line));
+            }
+        }
+
+        List<Duration> durations = new ArrayList<>();
+
+        while (currentToken != null) {
+            int amount;
+            try {
+                amount = Integer.parseInt(currentToken);
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException(sm.getString(
+                        "expiresFilter.invalidDurationNumber",
+                        currentToken, line));
+            }
+
+            try {
+                currentToken = tokenizer.nextToken();
+            } catch (NoSuchElementException e) {
+                throw new IllegalStateException(
+                        sm.getString(
+                                "expiresFilter.noDurationUnitAfterAmount",
+                                Integer.valueOf(amount), line));
+            }
+            DurationUnit durationUnit;
+            if ("year".equalsIgnoreCase(currentToken) ||
+                    "years".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.YEAR;
+            }
+            else if ("month".equalsIgnoreCase(currentToken) ||
+                    "months".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.MONTH;
+            }
+            else if ("week".equalsIgnoreCase(currentToken) ||
+                    "weeks".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.WEEK;
+            }
+            else if ("day".equalsIgnoreCase(currentToken) ||
+                    "days".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.DAY;
+            }
+            else if ("hour".equalsIgnoreCase(currentToken) ||
+                    "hours".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.HOUR;
+            }
+            else if ("minute".equalsIgnoreCase(currentToken) ||
+                    "minutes".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.MINUTE;
+            }
+            else if ("second".equalsIgnoreCase(currentToken) ||
+                    "seconds".equalsIgnoreCase(currentToken)) {
+                durationUnit = DurationUnit.SECOND;
+            }
+            else {
+                throw new IllegalStateException(
+                        sm.getString(
+                                "expiresFilter.invalidDurationUnit",
+                                currentToken, line));
+            }
+
+            Duration duration = new Duration(amount, durationUnit);
+            durations.add(duration);
+
+            if (tokenizer.hasMoreTokens()) {
+                currentToken = tokenizer.nextToken();
+            }
+            else {
+                currentToken = null;
+            }
+        }
+
+        return new ExpiresConfiguration(startingPoint, durations);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[excludedResponseStatusCode=[" +
+                intsToCommaDelimitedString(this.excludedResponseStatusCodes) +
+                "], default=" + this.defaultExpiresConfiguration + ", byType=" +
+                this.expiresConfigurationByContentType + "]";
+    }
+
+    /**
+     * Duration unit
+     */
+    protected enum DurationUnit {
+        DAY(Calendar.DAY_OF_YEAR), HOUR(Calendar.HOUR), MINUTE(Calendar.MINUTE), MONTH(
+                Calendar.MONTH), SECOND(Calendar.SECOND), WEEK(
+                Calendar.WEEK_OF_YEAR), YEAR(Calendar.YEAR);
+        private final int calendarField;
+
+        DurationUnit(int calendarField) {
+            this.calendarField = calendarField;
+        }
+
+        public int getCalendardField() {
+            return calendarField;
+        }
+
+    }
+
+    /**
+     * Expiration configuration starting point. Either the time the
+     * HTML-page/servlet-response was served ({@link StartingPoint#ACCESS_TIME})
+     * or the last time the HTML-page/servlet-response was modified (
+     * {@link StartingPoint#LAST_MODIFICATION_TIME}).
+     */
+    protected enum StartingPoint {
+        ACCESS_TIME, LAST_MODIFICATION_TIME
+    }
+
+    /**
      * Duration composed of an {@link #amount} and a {@link #unit}
      */
     protected static class Duration {
@@ -459,25 +1116,6 @@ public class ExpiresFilter extends FilterBase {
     }
 
     /**
-     * Duration unit
-     */
-    protected enum DurationUnit {
-        DAY(Calendar.DAY_OF_YEAR), HOUR(Calendar.HOUR), MINUTE(Calendar.MINUTE), MONTH(
-                Calendar.MONTH), SECOND(Calendar.SECOND), WEEK(
-                Calendar.WEEK_OF_YEAR), YEAR(Calendar.YEAR);
-        private final int calendarField;
-
-        private DurationUnit(int calendarField) {
-            this.calendarField = calendarField;
-        }
-
-        public int getCalendardField() {
-            return calendarField;
-        }
-
-    }
-
-    /**
      * <p>
      * Main piece of configuration of the filter.
      * </p>
@@ -497,7 +1135,7 @@ public class ExpiresFilter extends FilterBase {
         private final StartingPoint startingPoint;
 
         public ExpiresConfiguration(StartingPoint startingPoint,
-                List<Duration> durations) {
+                                    List<Duration> durations) {
             super();
             this.startingPoint = startingPoint;
             this.durations = durations;
@@ -519,16 +1157,6 @@ public class ExpiresFilter extends FilterBase {
     }
 
     /**
-     * Expiration configuration starting point. Either the time the
-     * HTML-page/servlet-response was served ({@link StartingPoint#ACCESS_TIME})
-     * or the last time the HTML-page/servlet-response was modified (
-     * {@link StartingPoint#LAST_MODIFICATION_TIME}).
-     */
-    protected enum StartingPoint {
-        ACCESS_TIME, LAST_MODIFICATION_TIME
-    }
-
-    /**
      * <p>
      * Wrapping extension of the {@link HttpServletResponse} to yrap the
      * "Start Write Response Body" event.
@@ -542,24 +1170,19 @@ public class ExpiresFilter extends FilterBase {
      */
     public class XHttpServletResponse extends HttpServletResponseWrapper {
 
+        private final HttpServletRequest request;
         /**
          * Value of the {@code Cache-Control} http response header if it has
          * been set.
          */
         private String cacheControlHeader;
-
         /**
          * Value of the {@code Last-Modified} http response header if it has
          * been set.
          */
         private long lastModifiedHeader;
-
         private boolean lastModifiedHeaderSet;
-
         private PrintWriter printWriter;
-
-        private final HttpServletRequest request;
-
         private ServletOutputStream servletOutputStream;
 
         /**
@@ -570,7 +1193,7 @@ public class ExpiresFilter extends FilterBase {
         private boolean writeResponseBodyStarted;
 
         public XHttpServletResponse(HttpServletRequest request,
-                HttpServletResponse response) {
+                                    HttpServletResponse response) {
             super(response);
             this.request = request;
         }
@@ -626,6 +1249,10 @@ public class ExpiresFilter extends FilterBase {
             return writeResponseBodyStarted;
         }
 
+        public void setWriteResponseBodyStarted(boolean writeResponseBodyStarted) {
+            this.writeResponseBodyStarted = writeResponseBodyStarted;
+        }
+
         @Override
         public void reset() {
             super.reset();
@@ -650,10 +1277,6 @@ public class ExpiresFilter extends FilterBase {
                 this.cacheControlHeader = value;
             }
         }
-
-        public void setWriteResponseBodyStarted(boolean writeResponseBodyStarted) {
-            this.writeResponseBodyStarted = writeResponseBodyStarted;
-        }
     }
 
     /**
@@ -668,7 +1291,7 @@ public class ExpiresFilter extends FilterBase {
         private final XHttpServletResponse response;
 
         public XPrintWriter(PrintWriter out, HttpServletRequest request,
-                XHttpServletResponse response) {
+                            XHttpServletResponse response) {
             super(out);
             this.out = out;
             this.request = request;
@@ -883,7 +1506,7 @@ public class ExpiresFilter extends FilterBase {
         private final ServletOutputStream servletOutputStream;
 
         public XServletOutputStream(ServletOutputStream servletOutputStream,
-                HttpServletRequest request, XHttpServletResponse response) {
+                                    HttpServletRequest request, XHttpServletResponse response) {
             super();
             this.servletOutputStream = servletOutputStream;
             this.response = response;
@@ -1032,645 +1655,5 @@ public class ExpiresFilter extends FilterBase {
         public void setWriteListener(WriteListener listener) {
         }
 
-    }
-
-    /**
-     * {@link Pattern} for a comma delimited string that support whitespace
-     * characters
-     */
-    private static final Pattern commaSeparatedValuesPattern = Pattern.compile("\\s*,\\s*");
-
-    private static final String HEADER_CACHE_CONTROL = "Cache-Control";
-
-    private static final String HEADER_EXPIRES = "Expires";
-
-    private static final String HEADER_LAST_MODIFIED = "Last-Modified";
-
-    // Log must be non-static as loggers are created per class-loader and this
-    // Filter may be used in multiple class loaders
-    private final Log log = LogFactory.getLog(ExpiresFilter.class); // must not be static
-
-    private static final String PARAMETER_EXPIRES_BY_TYPE = "ExpiresByType";
-
-    private static final String PARAMETER_EXPIRES_DEFAULT = "ExpiresDefault";
-
-    private static final String PARAMETER_EXPIRES_EXCLUDED_RESPONSE_STATUS_CODES = "ExpiresExcludedResponseStatusCodes";
-
-    /**
-     * Convert a comma delimited list of numbers into an {@code int[]}.
-     *
-     * @param commaDelimitedInts
-     *            can be {@code null}
-     * @return never {@code null} array
-     */
-    protected static int[] commaDelimitedListToIntArray(
-            String commaDelimitedInts) {
-        String[] intsAsStrings = commaDelimitedListToStringArray(commaDelimitedInts);
-        int[] ints = new int[intsAsStrings.length];
-        for (int i = 0; i < intsAsStrings.length; i++) {
-            String intAsString = intsAsStrings[i];
-            try {
-                ints[i] = Integer.parseInt(intAsString);
-            } catch (NumberFormatException e) {
-                throw new RuntimeException(sm.getString("expiresFilter.numberError",
-                        Integer.valueOf(i), commaDelimitedInts));
-            }
-        }
-        return ints;
-    }
-
-    /**
-     * Convert a given comma delimited list of strings into an array of String
-     *
-     * @param commaDelimitedStrings the string to be split
-     * @return array of patterns (non {@code null})
-     */
-    protected static String[] commaDelimitedListToStringArray(
-            String commaDelimitedStrings) {
-        return (commaDelimitedStrings == null || commaDelimitedStrings.length() == 0) ? new String[0]
-                : commaSeparatedValuesPattern.split(commaDelimitedStrings);
-    }
-
-    /**
-     * @return {@code true} if the given {@code str} contains the given
-     * {@code searchStr}.
-     * @param str String that will be searched
-     * @param searchStr The substring to search
-     */
-    protected static boolean contains(String str, String searchStr) {
-        if (str == null || searchStr == null) {
-            return false;
-        }
-        return str.contains(searchStr);
-    }
-
-    /**
-     * Convert an array of ints into a comma delimited string
-     * @param ints The int array
-     * @return a comma separated string
-     */
-    protected static String intsToCommaDelimitedString(int[] ints) {
-        if (ints == null) {
-            return "";
-        }
-
-        StringBuilder result = new StringBuilder();
-
-        for (int i = 0; i < ints.length; i++) {
-            result.append(ints[i]);
-            if (i < (ints.length - 1)) {
-                result.append(", ");
-            }
-        }
-        return result.toString();
-    }
-
-    /**
-     * @param str The String to check
-     * @return {@code true} if the given {@code str} is
-     * {@code null} or has a zero characters length.
-     */
-    protected static boolean isEmpty(String str) {
-        return str == null || str.length() == 0;
-    }
-
-    /**
-     * @param str The String to check
-     * @return {@code true} if the given {@code str} has at least one
-     * character (can be a whitespace).
-     */
-    protected static boolean isNotEmpty(String str) {
-        return !isEmpty(str);
-    }
-
-    /**
-     * @return {@code true} if the given {@code string} starts with the
-     * given {@code prefix} ignoring case.
-     *
-     * @param string
-     *            can be {@code null}
-     * @param prefix
-     *            can be {@code null}
-     */
-    protected static boolean startsWithIgnoreCase(String string, String prefix) {
-        if (string == null || prefix == null) {
-            return string == null && prefix == null;
-        }
-        if (prefix.length() > string.length()) {
-            return false;
-        }
-
-        return string.regionMatches(true, 0, prefix, 0, prefix.length());
-    }
-
-    /**
-     * @return the subset of the given {@code str} that is before the first
-     * occurrence of the given {@code separator}. Return {@code null}
-     * if the given {@code str} or the given {@code separator} is
-     * null. Return and empty string if the {@code separator} is empty.
-     *
-     * @param str
-     *            can be {@code null}
-     * @param separator
-     *            can be {@code null}
-     */
-    protected static String substringBefore(String str, String separator) {
-        if (str == null || str.isEmpty() || separator == null) {
-            return null;
-        }
-
-        if (separator.isEmpty()) {
-            return "";
-        }
-
-        int separatorIndex = str.indexOf(separator);
-        if (separatorIndex == -1) {
-            return str;
-        }
-        return str.substring(0, separatorIndex);
-    }
-
-    /**
-     * Default Expires configuration.
-     */
-    private ExpiresConfiguration defaultExpiresConfiguration;
-
-    /**
-     * list of response status code for which the {@link ExpiresFilter} will not
-     * generate expiration headers.
-     */
-    private int[] excludedResponseStatusCodes = new int[] { HttpServletResponse.SC_NOT_MODIFIED };
-
-    /**
-     * Expires configuration by content type. Visible for test.
-     */
-    private Map<String, ExpiresConfiguration> expiresConfigurationByContentType = new LinkedHashMap<>();
-
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
-        if (request instanceof HttpServletRequest &&
-                response instanceof HttpServletResponse) {
-            HttpServletRequest httpRequest = (HttpServletRequest) request;
-            HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-            if (response.isCommitted()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(sm.getString(
-                            "expiresFilter.responseAlreadyCommitted",
-                            httpRequest.getRequestURL()));
-                }
-                chain.doFilter(request, response);
-            } else {
-                XHttpServletResponse xResponse = new XHttpServletResponse(
-                        httpRequest, httpResponse);
-                chain.doFilter(request, xResponse);
-                if (!xResponse.isWriteResponseBodyStarted()) {
-                    // Empty response, manually trigger
-                    // onBeforeWriteResponseBody()
-                    onBeforeWriteResponseBody(httpRequest, xResponse);
-                }
-            }
-        } else {
-            chain.doFilter(request, response);
-        }
-    }
-
-    public ExpiresConfiguration getDefaultExpiresConfiguration() {
-        return defaultExpiresConfiguration;
-    }
-
-    public String getExcludedResponseStatusCodes() {
-        return intsToCommaDelimitedString(excludedResponseStatusCodes);
-    }
-
-    public int[] getExcludedResponseStatusCodesAsInts() {
-        return excludedResponseStatusCodes;
-    }
-
-
-    /**
-     * Returns the expiration date of the given {@link XHttpServletResponse} or
-     * {@code null} if no expiration date has been configured for the
-     * declared content type.
-     * <p>
-     * {@code protected} for extension.
-     *
-     * @param request  The HTTP request
-     * @param response The wrapped HTTP response
-     *
-     * @return the expiration date
-     * @see HttpServletResponse#getContentType()
-     */
-    protected Date getExpirationDate(HttpServletRequest request, XHttpServletResponse response) {
-        String contentType = response.getContentType();
-        if (contentType == null && request != null &&
-                request.getHttpServletMapping().getMappingMatch() == MappingMatch.DEFAULT &&
-                response.getStatus() == HttpServletResponse.SC_NOT_MODIFIED) {
-            // Default servlet normally sets the content type but does not for
-            // 304 responses. Look it up.
-            String servletPath = request.getServletPath();
-            if (servletPath != null) {
-                int lastSlash = servletPath.lastIndexOf('/');
-                if (lastSlash > -1) {
-                    String fileName = servletPath.substring(lastSlash + 1);
-                    contentType = request.getServletContext().getMimeType(fileName);
-                }
-            }
-        }
-        if (contentType != null) {
-            contentType = contentType.toLowerCase(Locale.ENGLISH);
-        }
-
-        // lookup exact content-type match (e.g.
-        // "text/html; charset=iso-8859-1")
-        ExpiresConfiguration configuration = expiresConfigurationByContentType.get(contentType);
-        if (configuration != null) {
-            Date result = getExpirationDate(configuration, response);
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString(
-                        "expiresFilter.useMatchingConfiguration",
-                        configuration, contentType, contentType, result));
-            }
-            return result;
-        }
-
-        if (contains(contentType, ";")) {
-            // lookup content-type without charset match (e.g. "text/html")
-            String contentTypeWithoutCharset = substringBefore(contentType, ";").trim();
-            configuration = expiresConfigurationByContentType.get(contentTypeWithoutCharset);
-
-            if (configuration != null) {
-                Date result = getExpirationDate(configuration, response);
-                if (log.isDebugEnabled()) {
-                    log.debug(sm.getString(
-                            "expiresFilter.useMatchingConfiguration",
-                            configuration, contentTypeWithoutCharset,
-                            contentType, result));
-                }
-                return result;
-            }
-        }
-
-        if (contains(contentType, "/")) {
-            // lookup major type match (e.g. "text")
-            String majorType = substringBefore(contentType, "/");
-            configuration = expiresConfigurationByContentType.get(majorType);
-            if (configuration != null) {
-                Date result = getExpirationDate(configuration, response);
-                if (log.isDebugEnabled()) {
-                    log.debug(sm.getString(
-                            "expiresFilter.useMatchingConfiguration",
-                            configuration, majorType, contentType, result));
-                }
-                return result;
-            }
-        }
-
-        if (defaultExpiresConfiguration != null) {
-            Date result = getExpirationDate(defaultExpiresConfiguration,
-                    response);
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("expiresFilter.useDefaultConfiguration",
-                        defaultExpiresConfiguration, contentType, result));
-            }
-            return result;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug(sm.getString(
-                    "expiresFilter.noExpirationConfiguredForContentType",
-                    contentType));
-        }
-        return null;
-    }
-
-    /**
-     * <p>
-     * Returns the expiration date of the given {@link ExpiresConfiguration},
-     * {@link HttpServletRequest} and {@link XHttpServletResponse}.
-     * </p>
-     * <p>
-     * {@code protected} for extension.
-     * </p>
-     * @param configuration The parsed expires
-     * @param response The Servlet response
-     * @return the expiration date
-     */
-    protected Date getExpirationDate(ExpiresConfiguration configuration,
-            XHttpServletResponse response) {
-        Calendar calendar;
-        switch (configuration.getStartingPoint()) {
-        case ACCESS_TIME:
-            calendar = Calendar.getInstance();
-            break;
-        case LAST_MODIFICATION_TIME:
-            if (response.isLastModifiedHeaderSet()) {
-                try {
-                    long lastModified = response.getLastModifiedHeader();
-                    calendar = Calendar.getInstance();
-                    calendar.setTimeInMillis(lastModified);
-                } catch (NumberFormatException e) {
-                    // default to now
-                    calendar = Calendar.getInstance();
-                }
-            } else {
-                // Last-Modified header not found, use now
-                calendar = Calendar.getInstance();
-            }
-            break;
-        default:
-            throw new IllegalStateException(sm.getString(
-                    "expiresFilter.unsupportedStartingPoint",
-                    configuration.getStartingPoint()));
-        }
-        for (Duration duration : configuration.getDurations()) {
-            calendar.add(duration.getUnit().getCalendardField(),
-                    duration.getAmount());
-        }
-
-        return calendar.getTime();
-    }
-
-    public Map<String, ExpiresConfiguration> getExpiresConfigurationByContentType() {
-        return expiresConfigurationByContentType;
-    }
-
-    @Override
-    protected Log getLogger() {
-        return log;
-    }
-
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        for (Enumeration<String> names = filterConfig.getInitParameterNames(); names.hasMoreElements();) {
-            String name = names.nextElement();
-            String value = filterConfig.getInitParameter(name);
-
-            try {
-                if (name.startsWith(PARAMETER_EXPIRES_BY_TYPE)) {
-                    String contentType = name.substring(
-                            PARAMETER_EXPIRES_BY_TYPE.length()).trim().toLowerCase(Locale.ENGLISH);
-                    ExpiresConfiguration expiresConfiguration = parseExpiresConfiguration(value);
-                    this.expiresConfigurationByContentType.put(contentType,
-                            expiresConfiguration);
-                } else if (name.equalsIgnoreCase(PARAMETER_EXPIRES_DEFAULT)) {
-                    ExpiresConfiguration expiresConfiguration = parseExpiresConfiguration(value);
-                    this.defaultExpiresConfiguration = expiresConfiguration;
-                } else if (name.equalsIgnoreCase(PARAMETER_EXPIRES_EXCLUDED_RESPONSE_STATUS_CODES)) {
-                    this.excludedResponseStatusCodes = commaDelimitedListToIntArray(value);
-                } else {
-                    log.warn(sm.getString(
-                            "expiresFilter.unknownParameterIgnored", name,
-                            value));
-                }
-            } catch (RuntimeException e) {
-                throw new ServletException(sm.getString(
-                        "expiresFilter.exceptionProcessingParameter", name,
-                        value), e);
-            }
-        }
-
-        log.debug(sm.getString("expiresFilter.filterInitialized",
-                this.toString()));
-    }
-
-    /**
-     * <p>
-     * {@code protected} for extension.
-     * </p>
-     * @param request The Servlet request
-     * @param response The Servlet response
-     * @return <code>true</code> if an expire header may be added
-     */
-    protected boolean isEligibleToExpirationHeaderGeneration(
-            HttpServletRequest request, XHttpServletResponse response) {
-        boolean expirationHeaderHasBeenSet = response.containsHeader(HEADER_EXPIRES) ||
-                contains(response.getCacheControlHeader(), "max-age");
-        if (expirationHeaderHasBeenSet) {
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString(
-                        "expiresFilter.expirationHeaderAlreadyDefined",
-                        request.getRequestURI(),
-                        Integer.valueOf(response.getStatus()),
-                        response.getContentType()));
-            }
-            return false;
-        }
-
-        for (int skippedStatusCode : this.excludedResponseStatusCodes) {
-            if (response.getStatus() == skippedStatusCode) {
-                if (log.isDebugEnabled()) {
-                    log.debug(sm.getString("expiresFilter.skippedStatusCode",
-                            request.getRequestURI(),
-                            Integer.valueOf(response.getStatus()),
-                            response.getContentType()));
-                }
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * <p>
-     * If no expiration header has been set by the servlet and an expiration has
-     * been defined in the {@link ExpiresFilter} configuration, sets the
-     * '{@code Expires}' header and the attribute '{@code max-age}' of the
-     * '{@code Cache-Control}' header.
-     * </p>
-     * <p>
-     * Must be called on the "Start Write Response Body" event.
-     * </p>
-     * <p>
-     * Invocations to {@code Logger.debug(...)} are guarded by
-     * {@link Log#isDebugEnabled()} because
-     * {@link HttpServletRequest#getRequestURI()} and
-     * {@link HttpServletResponse#getContentType()} costs {@code String}
-     * objects instantiations (as of Tomcat 7).
-     * </p>
-     * @param request The Servlet request
-     * @param response The Servlet response
-     */
-    public void onBeforeWriteResponseBody(HttpServletRequest request,
-            XHttpServletResponse response) {
-
-        if (!isEligibleToExpirationHeaderGeneration(request, response)) {
-            return;
-        }
-
-        Date expirationDate = getExpirationDate(request, response);
-        if (expirationDate == null) {
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("expiresFilter.noExpirationConfigured",
-                        request.getRequestURI(),
-                        Integer.valueOf(response.getStatus()),
-                        response.getContentType()));
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("expiresFilter.setExpirationDate",
-                        request.getRequestURI(),
-                        Integer.valueOf(response.getStatus()),
-                        response.getContentType(), expirationDate));
-            }
-
-            String maxAgeDirective = "max-age=" +
-                    ((expirationDate.getTime() - System.currentTimeMillis()) / 1000);
-
-            String cacheControlHeader = response.getCacheControlHeader();
-            String newCacheControlHeader = (cacheControlHeader == null) ? maxAgeDirective
-                    : cacheControlHeader + ", " + maxAgeDirective;
-            response.setHeader(HEADER_CACHE_CONTROL, newCacheControlHeader);
-            response.setDateHeader(HEADER_EXPIRES, expirationDate.getTime());
-        }
-
-    }
-
-    /**
-     * Parse configuration lines like
-     * '{@code access plus 1 month 15 days 2 hours}' or
-     * '{@code modification 1 day 2 hours 5 seconds}'
-     *
-     * @param inputLine the input
-     * @return the parsed expires
-     */
-    protected ExpiresConfiguration parseExpiresConfiguration(String inputLine) {
-        String line = inputLine.trim();
-
-        StringTokenizer tokenizer = new StringTokenizer(line, " ");
-
-        String currentToken;
-
-        try {
-            currentToken = tokenizer.nextToken();
-        } catch (NoSuchElementException e) {
-            throw new IllegalStateException(sm.getString(
-                    "expiresFilter.startingPointNotFound", line));
-        }
-
-        StartingPoint startingPoint;
-        if ("access".equalsIgnoreCase(currentToken) ||
-                "now".equalsIgnoreCase(currentToken)) {
-            startingPoint = StartingPoint.ACCESS_TIME;
-        } else if ("modification".equalsIgnoreCase(currentToken)) {
-            startingPoint = StartingPoint.LAST_MODIFICATION_TIME;
-        } else if (!tokenizer.hasMoreTokens() &&
-                startsWithIgnoreCase(currentToken, "a")) {
-            startingPoint = StartingPoint.ACCESS_TIME;
-            // trick : convert duration configuration from old to new style
-            tokenizer = new StringTokenizer(currentToken.substring(1) +
-                    " seconds", " ");
-        } else if (!tokenizer.hasMoreTokens() &&
-                startsWithIgnoreCase(currentToken, "m")) {
-            startingPoint = StartingPoint.LAST_MODIFICATION_TIME;
-            // trick : convert duration configuration from old to new style
-            tokenizer = new StringTokenizer(currentToken.substring(1) +
-                    " seconds", " ");
-        } else {
-            throw new IllegalStateException(sm.getString(
-                    "expiresFilter.startingPointInvalid", currentToken, line));
-        }
-
-        try {
-            currentToken = tokenizer.nextToken();
-        } catch (NoSuchElementException e) {
-            throw new IllegalStateException(sm.getString(
-                    "expiresFilter.noDurationFound", line));
-        }
-
-        if ("plus".equalsIgnoreCase(currentToken)) {
-            // skip
-            try {
-                currentToken = tokenizer.nextToken();
-            } catch (NoSuchElementException e) {
-                throw new IllegalStateException(sm.getString(
-                        "expiresFilter.noDurationFound", line));
-            }
-        }
-
-        List<Duration> durations = new ArrayList<>();
-
-        while (currentToken != null) {
-            int amount;
-            try {
-                amount = Integer.parseInt(currentToken);
-            } catch (NumberFormatException e) {
-                throw new IllegalStateException(sm.getString(
-                        "expiresFilter.invalidDurationNumber",
-                        currentToken, line));
-            }
-
-            try {
-                currentToken = tokenizer.nextToken();
-            } catch (NoSuchElementException e) {
-                throw new IllegalStateException(
-                        sm.getString(
-                                "expiresFilter.noDurationUnitAfterAmount",
-                                Integer.valueOf(amount), line));
-            }
-            DurationUnit durationUnit;
-            if ("year".equalsIgnoreCase(currentToken) ||
-                    "years".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.YEAR;
-            } else if ("month".equalsIgnoreCase(currentToken) ||
-                    "months".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.MONTH;
-            } else if ("week".equalsIgnoreCase(currentToken) ||
-                    "weeks".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.WEEK;
-            } else if ("day".equalsIgnoreCase(currentToken) ||
-                    "days".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.DAY;
-            } else if ("hour".equalsIgnoreCase(currentToken) ||
-                    "hours".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.HOUR;
-            } else if ("minute".equalsIgnoreCase(currentToken) ||
-                    "minutes".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.MINUTE;
-            } else if ("second".equalsIgnoreCase(currentToken) ||
-                    "seconds".equalsIgnoreCase(currentToken)) {
-                durationUnit = DurationUnit.SECOND;
-            } else {
-                throw new IllegalStateException(
-                        sm.getString(
-                                "expiresFilter.invalidDurationUnit",
-                                currentToken, line));
-            }
-
-            Duration duration = new Duration(amount, durationUnit);
-            durations.add(duration);
-
-            if (tokenizer.hasMoreTokens()) {
-                currentToken = tokenizer.nextToken();
-            } else {
-                currentToken = null;
-            }
-        }
-
-        return new ExpiresConfiguration(startingPoint, durations);
-    }
-
-    public void setDefaultExpiresConfiguration(
-            ExpiresConfiguration defaultExpiresConfiguration) {
-        this.defaultExpiresConfiguration = defaultExpiresConfiguration;
-    }
-
-    public void setExcludedResponseStatusCodes(int[] excludedResponseStatusCodes) {
-        this.excludedResponseStatusCodes = excludedResponseStatusCodes;
-    }
-
-    public void setExpiresConfigurationByContentType(
-            Map<String, ExpiresConfiguration> expiresConfigurationByContentType) {
-        this.expiresConfigurationByContentType = expiresConfigurationByContentType;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[excludedResponseStatusCode=[" +
-                intsToCommaDelimitedString(this.excludedResponseStatusCodes) +
-                "], default=" + this.defaultExpiresConfiguration + ", byType=" +
-                this.expiresConfigurationByContentType + "]";
     }
 }

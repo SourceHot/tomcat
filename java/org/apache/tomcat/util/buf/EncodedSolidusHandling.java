@@ -16,9 +16,9 @@
  */
 package org.apache.tomcat.util.buf;
 
-import java.util.Locale;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.Locale;
 
 public enum EncodedSolidusHandling {
     DECODE("decode"),
@@ -33,10 +33,6 @@ public enum EncodedSolidusHandling {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
-
     public static EncodedSolidusHandling fromString(String from) {
         String trimmedLower = from.trim().toLowerCase(Locale.ENGLISH);
 
@@ -47,5 +43,9 @@ public enum EncodedSolidusHandling {
         }
 
         throw new IllegalStateException(sm.getString("encodedSolidusHandling.invalid", from));
+    }
+
+    public String getValue() {
+        return value;
     }
 }

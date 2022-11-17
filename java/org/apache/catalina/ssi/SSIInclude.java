@@ -17,10 +17,11 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import org.apache.tomcat.util.res.StringManager;
 /**
  * Implements the Server-side #include command
  *
@@ -31,12 +32,13 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public final class SSIInclude implements SSICommand {
     private static final StringManager sm = StringManager.getManager(SSIInclude.class);
+
     /**
      * @see SSICommand
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer) {
+                        String[] paramNames, String[] paramValues, PrintWriter writer) {
         long lastModified = 0;
         String configErrMsg = ssiMediator.getConfigErrMsg();
         for (int i = 0; i < paramNames.length; i++) {
@@ -53,7 +55,8 @@ public final class SSIInclude implements SSICommand {
                     String text = ssiMediator.getFileText(substitutedValue,
                             virtual);
                     writer.write(text);
-                } else {
+                }
+                else {
                     ssiMediator.log(sm.getString("ssiCommand.invalidAttribute", paramName));
                     writer.write(configErrMsg);
                 }

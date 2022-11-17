@@ -16,15 +16,10 @@
  */
 package org.apache.catalina.storeconfig;
 
+import org.apache.catalina.tribes.*;
+
 import java.io.PrintWriter;
 import java.util.Iterator;
-
-import org.apache.catalina.tribes.Channel;
-import org.apache.catalina.tribes.ChannelInterceptor;
-import org.apache.catalina.tribes.ChannelReceiver;
-import org.apache.catalina.tribes.ChannelSender;
-import org.apache.catalina.tribes.ManagedChannel;
-import org.apache.catalina.tribes.MembershipService;
 
 /**
  * Generate Channel Element
@@ -34,19 +29,14 @@ public class ChannelSF extends StoreFactoryBase {
     /**
      * Store the specified Channel children.
      *
-     * @param aWriter
-     *            PrintWriter to which we are storing
-     * @param indent
-     *            Number of spaces to indent this element
-     * @param aChannel
-     *            Channel whose properties are being stored
-     *
-     * @exception Exception
-     *                if an exception occurs while storing
+     * @param aWriter  PrintWriter to which we are storing
+     * @param indent   Number of spaces to indent this element
+     * @param aChannel Channel whose properties are being stored
+     * @throws Exception if an exception occurs while storing
      */
     @Override
     public void storeChildren(PrintWriter aWriter, int indent, Object aChannel,
-            StoreDescription parentDesc) throws Exception {
+                              StoreDescription parentDesc) throws Exception {
         if (aChannel instanceof Channel) {
             Channel channel = (Channel) aChannel;
             if (channel instanceof ManagedChannel) {
@@ -72,6 +62,6 @@ public class ChannelSF extends StoreFactoryBase {
                     storeElement(aWriter, indent, interceptor);
                 }
             }
-       }
+        }
     }
 }

@@ -16,15 +16,14 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.util.Collections;
-import java.util.List;
-
 import jakarta.websocket.Decoder;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.Session;
-
 import org.apache.tomcat.InstanceManager;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Wrapper class for instances of POJOs annotated with
@@ -35,14 +34,14 @@ public class PojoEndpointClient extends PojoEndpointBase {
 
     @Deprecated
     public PojoEndpointClient(Object pojo,
-            List<Class<? extends Decoder>> decoders) throws DeploymentException {
-        super(Collections.<String,String>emptyMap());
+                              List<Class<? extends Decoder>> decoders) throws DeploymentException {
+        super(Collections.emptyMap());
         setPojo(pojo);
         setMethodMapping(new PojoMethodMapping(pojo.getClass(), decoders, null));
     }
 
     public PojoEndpointClient(Object pojo, List<Class<? extends Decoder>> decoders, InstanceManager instanceManager) throws DeploymentException {
-        super(Collections.<String,String>emptyMap());
+        super(Collections.emptyMap());
         setPojo(pojo);
         setMethodMapping(new PojoMethodMapping(pojo.getClass(), decoders, null, instanceManager));
     }

@@ -16,20 +16,14 @@
  */
 package org.apache.jasper.compiler;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.servlet.jsp.tagext.FunctionInfo;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.tomcat.util.security.PrivilegedGetTccl;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
 
 /**
  * This class generates functions mappers for the EL expressions in the page.
@@ -52,7 +46,7 @@ public class ELFunctionMapper {
      * @throws JasperException EL error
      */
     public static void map(Node.Nodes page)
-                throws JasperException {
+            throws JasperException {
 
         ELFunctionMapper map = new ELFunctionMapper();
         map.ds = new StringBuilder();
@@ -172,6 +166,7 @@ public class ELFunctionMapper {
             class Fvisitor extends ELNode.Visitor {
                 private final List<ELNode.Function> funcs = new ArrayList<>();
                 private final Set<String> keySet = new HashSet<>();
+
                 @Override
                 public void visit(ELNode.Function n) throws JasperException {
                     String key = n.getPrefix() + ":" + n.getName();
@@ -212,7 +207,8 @@ public class ELFunctionMapper {
             String funcMethod = null;
             if (functions.size() == 1) {
                 funcMethod = ".getMapForFunction";
-            } else {
+            }
+            else {
                 ds.append(".getInstance();\n");
                 funcMethod = "  " + decName + ".mapFunction";
             }
@@ -225,12 +221,13 @@ public class ELFunctionMapper {
                     // Added via Lambda or ImportHandler. EL will expect a
                     // function mapper even if one isn't used so just pass null
                     ds.append(funcMethod + "(null, null, null, null);\n");
-                } else {
+                }
+                else {
                     ds.append(funcMethod + "(\"" + fnQName + "\", " +
                             getCanonicalName(funcInfo.getFunctionClass()) +
                             ".class, " + '\"' + f.getMethodName() + "\", " +
                             "new Class[] {");
-                    String params[] = f.getParameters();
+                    String[] params = f.getParameters();
                     for (int k = 0; k < params.length; k++) {
                         if (k != 0) {
                             ds.append(", ");
@@ -238,7 +235,8 @@ public class ELFunctionMapper {
                         int iArray = params[k].indexOf('[');
                         if (iArray < 0) {
                             ds.append(params[k] + ".class");
-                        } else {
+                        }
+                        else {
                             String baseType = params[k].substring(0, iArray);
                             ds.append("java.lang.reflect.Array.newInstance(");
                             ds.append(baseType);
@@ -246,14 +244,15 @@ public class ELFunctionMapper {
 
                             // Count the number of array dimension
                             int aCount = 0;
-                            for (int jj = iArray; jj < params[k].length(); jj++ ) {
+                            for (int jj = iArray; jj < params[k].length(); jj++) {
                                 if (params[k].charAt(jj) == '[') {
                                     aCount++;
                                 }
                             }
                             if (aCount == 1) {
                                 ds.append("0).getClass()");
-                            } else {
+                            }
+                            else {
                                 ds.append("new int[" + aCount + "]).getClass()");
                             }
                         }
@@ -269,10 +268,11 @@ public class ELFunctionMapper {
         /**
          * Find the name of the function mapper for an EL.  Reuse a
          * previously generated one if possible.
+         *
          * @param functions A List of ELNode.Function instances that
          *                  represents the functions in an EL
          * @return A previous generated function mapper name that can be used
-         *         by this EL; null if none found.
+         * by this EL; null if none found.
          */
         private String matchMap(List<ELNode.Function> functions) {
 
@@ -285,7 +285,8 @@ public class ELFunctionMapper {
                 }
                 if (mapName == null) {
                     mapName = temName;
-                } else if (!temName.equals(mapName)) {
+                }
+                else if (!temName.equals(mapName)) {
                     // If not all in the previous match, then no match.
                     return null;
                 }
@@ -305,7 +306,7 @@ public class ELFunctionMapper {
          * when generating Java source code.
          *
          * @param className Binary class name
-         * @return          Canonical equivalent
+         * @return Canonical equivalent
          */
         private String getCanonicalName(String className) throws JasperException {
             Class<?> clazz;
@@ -314,7 +315,8 @@ public class ELFunctionMapper {
             if (Constants.IS_SECURITY_ENABLED) {
                 PrivilegedAction<ClassLoader> pa = new PrivilegedGetTccl();
                 tccl = AccessController.doPrivileged(pa);
-            } else {
+            }
+            else {
                 tccl = Thread.currentThread().getContextClassLoader();
             }
 

@@ -16,10 +16,6 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
-import java.io.IOException;
-
-import javax.management.ObjectName;
-
 import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.MembershipProvider;
 import org.apache.catalina.tribes.MembershipService;
@@ -29,6 +25,9 @@ import org.apache.catalina.tribes.membership.MembershipServiceBase;
 import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import javax.management.ObjectName;
+import java.io.IOException;
 
 /**
  * A {@link org.apache.catalina.tribes.MembershipService} that uses Kubernetes API(default) or DNS to retrieve
@@ -41,7 +40,7 @@ import org.apache.juli.logging.LogFactory;
  * <p>
  * <strong>Configuration example</strong>
  * </p>
- *
+ * <p>
  * {@code server.xml }
  *
  * <pre>
@@ -62,22 +61,19 @@ import org.apache.juli.logging.LogFactory;
  *         ...
  *  }
  *  </pre>
- *
  */
 
 public class CloudMembershipService extends MembershipServiceBase
         implements CloudMembershipServiceMBean {
 
-    private static final Log log = LogFactory.getLog(CloudMembershipService.class);
-    protected static final StringManager sm = StringManager.getManager(CloudMembershipService.class);
-
     public static final String MEMBERSHIP_PROVIDER_CLASS_NAME = "membershipProviderClassName";
+    protected static final StringManager sm = StringManager.getManager(CloudMembershipService.class);
+    protected static final byte[] INITIAL_ID = new byte[16];
+    private static final Log log = LogFactory.getLog(CloudMembershipService.class);
     private static final String KUBE = "kubernetes";
     private static final String DNS = "dns";
     private static final String KUBE_PROVIDER_CLASS = "org.apache.catalina.tribes.membership.cloud.KubernetesMembershipProvider";
     private static final String DNS_PROVIDER_CLASS = "org.apache.catalina.tribes.membership.cloud.DNSMembershipProvider";
-    protected static final byte[] INITIAL_ID = new byte[16];
-
     private MembershipProvider membershipProvider;
     private MemberImpl localMember;
 
@@ -88,6 +84,7 @@ public class CloudMembershipService extends MembershipServiceBase
 
     /**
      * Return a property.
+     *
      * @param name the property name
      * @return the property value
      */
@@ -97,7 +94,8 @@ public class CloudMembershipService extends MembershipServiceBase
 
     /**
      * Set a property.
-     * @param name the property name
+     *
+     * @param name  the property name
      * @param value the property value
      * @return <code>true</code> if the property was successfully set
      */
@@ -107,6 +105,7 @@ public class CloudMembershipService extends MembershipServiceBase
 
     /**
      * Return the membership provider class.
+     *
      * @return the classname
      */
     public String getMembershipProviderClassName() {
@@ -115,6 +114,7 @@ public class CloudMembershipService extends MembershipServiceBase
 
     /**
      * Set the membership provider class.
+     *
      * @param membershipProviderClassName the class name
      */
     public void setMembershipProviderClassName(String membershipProviderClassName) {
@@ -137,7 +137,8 @@ public class CloudMembershipService extends MembershipServiceBase
             String provider = getMembershipProviderClassName();
             if (provider == null || KUBE.equals(provider)) {
                 provider = KUBE_PROVIDER_CLASS;
-            } else if (DNS.equals(provider)) {
+            }
+            else if (DNS.equals(provider)) {
                 provider = DNS_PROVIDER_CLASS;
             }
             if (log.isDebugEnabled()) {

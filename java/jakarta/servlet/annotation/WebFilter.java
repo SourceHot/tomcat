@@ -16,46 +16,41 @@
  */
 package jakarta.servlet.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 import jakarta.servlet.DispatcherType;
+
+import java.lang.annotation.*;
 
 /**
  * The annotation used to declare a Servlet {@link jakarta.servlet.Filter}. <br>
  * <br>
- *
+ * <p>
  * This annotation will be processed by the container during deployment, the
  * Filter class in which it is found will be created as per the configuration
  * and applied to the URL patterns, {@link jakarta.servlet.Servlet}s and
  * {@link jakarta.servlet.DispatcherType}s.<br>
  * <br>
- *
+ * <p>
  * If the name attribute is not defined, the fully qualified name of the class
  * is used.<br>
  * <br>
- *
+ * <p>
  * At least one URL pattern MUST be declared in either the {@code value} or
  * {@code urlPattern} attribute of the annotation, but not both.<br>
  * <br>
- *
+ * <p>
  * The {@code value} attribute is recommended for use when the URL pattern is
  * the only attribute being set, otherwise the {@code urlPattern} attribute
  * should be used.<br>
  * <br>
- *
+ * <p>
  * The annotated class MUST implement {@link jakarta.servlet.Filter}.
- *
+ * <p>
  * E.g.
  *
  * <code>@WebFilter("/path/*")</code><br>
  * <code>public class AnExampleFilter implements Filter { ... </code><br>
  *
  * @since Servlet 3.0 (Section 8.1.2)
- *
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

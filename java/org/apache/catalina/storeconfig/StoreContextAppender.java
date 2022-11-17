@@ -16,13 +16,13 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardHost;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * store StandardContext Attributes ...
@@ -36,11 +36,11 @@ public class StoreContextAppender extends StoreAppender {
     @Override
     protected void printAttribute(PrintWriter writer, int indent, Object bean, StoreDescription desc, String attributeName, Object bean2, Object value) {
         if (isPrintValue(bean, bean2, attributeName, desc)) {
-            if(attributeName.equals("docBase")) {
-                if(bean instanceof StandardContext) {
-                    String docBase = ((StandardContext)bean).getOriginalDocBase() ;
-                    if(docBase != null) {
-                        value = docBase ;
+            if (attributeName.equals("docBase")) {
+                if (bean instanceof StandardContext) {
+                    String docBase = ((StandardContext) bean).getOriginalDocBase();
+                    if (docBase != null) {
+                        value = docBase;
                     }
                 }
             }
@@ -54,27 +54,29 @@ public class StoreContextAppender extends StoreAppender {
      * generate docBase for host.appBase webapps <LI></ul>
      *
      * @see org.apache.catalina.storeconfig.StoreAppender#isPrintValue(java.lang.Object,
-     *      java.lang.Object, java.lang.String,
-     *      org.apache.catalina.storeconfig.StoreDescription)
+     * java.lang.Object, java.lang.String,
+     * org.apache.catalina.storeconfig.StoreDescription)
      */
     @Override
     public boolean isPrintValue(Object bean, Object bean2, String attrName,
-            StoreDescription desc) {
+                                StoreDescription desc) {
         boolean isPrint = super.isPrintValue(bean, bean2, attrName, desc);
         if (isPrint) {
             StandardContext context = ((StandardContext) bean);
             if ("workDir".equals(attrName)) {
                 String defaultWorkDir = getDefaultWorkDir(context);
                 isPrint = !defaultWorkDir.equals(context.getWorkDir());
-            } else if ("path".equals(attrName)) {
+            }
+            else if ("path".equals(attrName)) {
                 isPrint = desc.isStoreSeparate()
-                            && desc.isExternalAllowed()
-                            && context.getConfigFile() == null;
-            } else if ("docBase".equals(attrName)) {
+                        && desc.isExternalAllowed()
+                        && context.getConfigFile() == null;
+            }
+            else if ("docBase".equals(attrName)) {
                 Container host = context.getParent();
                 if (host instanceof StandardHost) {
                     File appBase = getAppBase(((StandardHost) host));
-                    File docBase = getDocBase(context,appBase);
+                    File docBase = getDocBase(context, appBase);
                     isPrint = !appBase.equals(docBase.getParentFile());
                 }
             }
@@ -101,9 +103,9 @@ public class StoreContextAppender extends StoreAppender {
 
     protected File getDocBase(StandardContext context, File appBase) {
         File docBase;
-        String contextDocBase = context.getOriginalDocBase() ;
-        if(contextDocBase == null) {
-            contextDocBase = context.getDocBase() ;
+        String contextDocBase = context.getOriginalDocBase();
+        if (contextDocBase == null) {
+            contextDocBase = context.getDocBase();
         }
         File file = new File(contextDocBase);
         if (!file.isAbsolute()) {
@@ -138,7 +140,8 @@ public class StoreContextAppender extends StoreAppender {
             String hostWorkDir = ((StandardHost) host).getWorkDir();
             if (hostWorkDir != null) {
                 defaultWorkDir = hostWorkDir + File.separator + contextWorkDir;
-            } else {
+            }
+            else {
                 String engineName = context.getParent().getParent().getName();
                 String hostName = context.getParent().getName();
                 defaultWorkDir = "work" + File.separator + engineName
@@ -173,7 +176,8 @@ public class StoreContextAppender extends StoreAppender {
              * .getConfigBase(), "context.xml.default")); }
              */
             return defaultContext;
-        } else {
+        }
+        else {
             return super.defaultInstance(bean);
         }
     }

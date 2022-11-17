@@ -16,6 +16,8 @@
  */
 package org.apache.catalina.ant;
 
+import org.apache.tools.ant.BuildException;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,8 +27,6 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.util.regex.Pattern;
-
-import org.apache.tools.ant.BuildException;
 
 /**
  * Ant task that implements the <code>/deploy</code> command, supported by the
@@ -43,6 +43,23 @@ public class DeployTask extends AbstractCatalinaCommandTask {
      * URL of the context configuration file for this application, if any.
      */
     protected String config = null;
+    /**
+     * URL of the server local web application archive (WAR) file to be
+     * deployed.
+     */
+    protected String localWar = null;
+    /**
+     * Tag to associate with this to be deployed webapp.
+     */
+    protected String tag = null;
+    /**
+     * Update existing webapps.
+     */
+    protected boolean update = false;
+    /**
+     * URL of the web application archive (WAR) file to be deployed.
+     */
+    protected String war = null;
 
     public String getConfig() {
         return this.config;
@@ -52,13 +69,6 @@ public class DeployTask extends AbstractCatalinaCommandTask {
         this.config = config;
     }
 
-
-    /**
-     * URL of the server local web application archive (WAR) file to be
-     * deployed.
-     */
-    protected String localWar = null;
-
     public String getLocalWar() {
         return this.localWar;
     }
@@ -66,12 +76,6 @@ public class DeployTask extends AbstractCatalinaCommandTask {
     public void setLocalWar(String localWar) {
         this.localWar = localWar;
     }
-
-
-    /**
-     * Tag to associate with this to be deployed webapp.
-     */
-    protected String tag = null;
 
     public String getTag() {
         return this.tag;
@@ -81,12 +85,6 @@ public class DeployTask extends AbstractCatalinaCommandTask {
         this.tag = tag;
     }
 
-
-    /**
-     * Update existing webapps.
-     */
-    protected boolean update = false;
-
     public boolean getUpdate() {
         return this.update;
     }
@@ -94,12 +92,6 @@ public class DeployTask extends AbstractCatalinaCommandTask {
     public void setUpdate(boolean update) {
         this.update = update;
     }
-
-
-    /**
-     * URL of the web application archive (WAR) file to be deployed.
-     */
-    protected String war = null;
 
     public String getWar() {
         return this.war;
@@ -113,7 +105,7 @@ public class DeployTask extends AbstractCatalinaCommandTask {
     /**
      * Execute the requested operation.
      *
-     * @exception BuildException if an error occurs
+     * @throws BuildException if an error occurs
      */
     @Override
     public void execute() throws BuildException {
@@ -123,7 +115,7 @@ public class DeployTask extends AbstractCatalinaCommandTask {
         }
         if ((war == null) && (localWar == null) && (config == null) && (tag == null)) {
             throw new BuildException(
-                            "Must specify either 'war', 'localWar', 'config', or 'tag' attribute");
+                    "Must specify either 'war', 'localWar', 'config', or 'tag' attribute");
         }
         // Building an input stream on the WAR to upload, if any
         BufferedInputStream stream = null;
@@ -139,8 +131,9 @@ public class DeployTask extends AbstractCatalinaCommandTask {
                 } catch (IOException e) {
                     throw new BuildException(e);
                 }
-            } else {
-                FileInputStream fsInput= null;
+            }
+            else {
+                FileInputStream fsInput = null;
                 try {
                     fsInput = new FileInputStream(war);
                     FileChannel fsChannel = fsInput.getChannel();

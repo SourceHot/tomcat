@@ -17,7 +17,6 @@
 package org.apache.tomcat.util.descriptor.web;
 
 
-
 /**
  * Representation of an application resource reference, as represented in
  * an <code>&lt;res-env-refy&gt;</code> element in the deployment descriptor.
@@ -89,9 +88,6 @@ public class ContextResourceEnvRef extends ResourceBase {
             return false;
         }
         ContextResourceEnvRef other = (ContextResourceEnvRef) obj;
-        if (override != other.override) {
-            return false;
-        }
-        return true;
+        return override == other.override;
     }
 }

@@ -16,21 +16,16 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.websocket.CloseReason;
-import jakarta.websocket.Endpoint;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.MessageHandler;
-import jakarta.websocket.Session;
-
+import jakarta.websocket.*;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Base implementation (client and server have different concrete
@@ -39,15 +34,14 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public abstract class PojoEndpointBase extends Endpoint {
 
-    private final Log log = LogFactory.getLog(PojoEndpointBase.class); // must not be static
     private static final StringManager sm = StringManager.getManager(PojoEndpointBase.class);
-
+    private final Log log = LogFactory.getLog(PojoEndpointBase.class); // must not be static
+    private final Map<String, String> pathParameters;
     private Object pojo;
-    private final Map<String,String> pathParameters;
     private PojoMethodMapping methodMapping;
 
 
-    protected PojoEndpointBase(Map<String,String> pathParameters) {
+    protected PojoEndpointBase(Map<String, String> pathParameters) {
         this.pathParameters = pathParameters;
     }
 
@@ -129,7 +123,8 @@ public abstract class PojoEndpointBase extends Endpoint {
         if (methodMapping.getOnError() == null) {
             log.error(sm.getString("pojoEndpointBase.onError",
                     pojo.getClass().getName()), throwable);
-        } else {
+        }
+        else {
             try {
                 methodMapping.getOnError().invoke(
                         pojo,
@@ -143,11 +138,19 @@ public abstract class PojoEndpointBase extends Endpoint {
         }
     }
 
-    protected Object getPojo() { return pojo; }
-    protected void setPojo(Object pojo) { this.pojo = pojo; }
+    protected Object getPojo() {
+        return pojo;
+    }
+
+    protected void setPojo(Object pojo) {
+        this.pojo = pojo;
+    }
 
 
-    protected PojoMethodMapping getMethodMapping() { return methodMapping; }
+    protected PojoMethodMapping getMethodMapping() {
+        return methodMapping;
+    }
+
     protected void setMethodMapping(PojoMethodMapping methodMapping) {
         this.methodMapping = methodMapping;
     }

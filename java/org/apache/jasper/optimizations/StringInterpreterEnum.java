@@ -27,7 +27,7 @@ public class StringInterpreterEnum extends DefaultStringInterpreter {
     @Override
     protected String coerceToOtherType(Class<?> c, String s, boolean isNamedAttribute) {
         if (c.isEnum() && !isNamedAttribute) {
-            @SuppressWarnings({ "unchecked", "rawtypes" })
+            @SuppressWarnings({"unchecked", "rawtypes"})
             Enum<?> enumValue = Enum.valueOf((Class<? extends Enum>) c, s);
             return c.getName() + "." + enumValue.name();
         }

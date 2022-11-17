@@ -16,18 +16,14 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.sql.Timestamp;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.*;
+import java.sql.Timestamp;
 
 /**
  * Move server.xml or context.xml as backup
- *
+ * <p>
  * TODO Get Encoding from Registry
  */
 public class StoreFileMover {
@@ -45,6 +41,27 @@ public class StoreFileMover {
     private File configNew;
 
     private File configSave;
+
+    /**
+     * Calculate file objects for the old and new configuration files.
+     *
+     * @param basename The base path
+     * @param encoding The encoding of the file
+     * @param filename The file name
+     */
+    public StoreFileMover(String basename, String filename, String encoding) {
+        setBasename(basename);
+        setEncoding(encoding);
+        setFilename(filename);
+        init();
+    }
+
+    /**
+     * Calculate file objects for the old and new configuration files.
+     */
+    public StoreFileMover() {
+        init();
+    }
 
     /**
      * @return Returns the configNew.
@@ -75,8 +92,7 @@ public class StoreFileMover {
     }
 
     /**
-     * @param basename
-     *            The basename to set.
+     * @param basename The basename to set.
      */
     public void setBasename(String basename) {
         this.basename = basename;
@@ -108,26 +124,6 @@ public class StoreFileMover {
      */
     public void setEncoding(String string) {
         encoding = string;
-    }
-
-    /**
-     * Calculate file objects for the old and new configuration files.
-     * @param basename The base path
-     * @param encoding The encoding of the file
-     * @param filename The file name
-     */
-    public StoreFileMover(String basename, String filename, String encoding) {
-        setBasename(basename);
-        setEncoding(encoding);
-        setFilename(filename);
-        init();
-    }
-
-    /**
-     * Calculate file objects for the old and new configuration files.
-     */
-    public StoreFileMover() {
-        init();
     }
 
     /**
@@ -167,13 +163,15 @@ public class StoreFileMover {
                 throw new IOException(sm.getString("storeFileMover.renameError",
                         configNew.getAbsolutePath(), configOld.getAbsolutePath()));
             }
-        } else {
+        }
+        else {
             if (!configOld.exists()) {
                 if (!configNew.renameTo(configOld)) {
                     throw new IOException(sm.getString("storeFileMover.renameError",
                             configNew.getAbsolutePath(), configOld.getAbsolutePath()));
                 }
-            } else {
+            }
+            else {
                 throw new IOException(sm.getString("storeFileMover.renameError",
                         configOld.getAbsolutePath(), configSave.getAbsolutePath()));
             }
@@ -200,15 +198,14 @@ public class StoreFileMover {
         String ts = (new Timestamp(System.currentTimeMillis())).toString();
         //        yyyy-mm-dd hh:mm:ss
         //        0123456789012345678
-        StringBuilder sb = new StringBuilder(".");
-        sb.append(ts, 0, 10);
-        sb.append('.');
-        sb.append(ts, 11, 13);
-        sb.append('-');
-        sb.append(ts, 14, 16);
-        sb.append('-');
-        sb.append(ts, 17, 19);
-        return sb.toString();
+        String sb = "." + ts.substring(0, 10) +
+                '.' +
+                ts.substring(11, 13) +
+                '-' +
+                ts.substring(14, 16) +
+                '-' +
+                ts.substring(17, 19);
+        return sb;
     }
 
 }

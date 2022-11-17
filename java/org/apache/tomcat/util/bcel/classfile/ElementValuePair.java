@@ -17,18 +17,17 @@
  */
 package org.apache.tomcat.util.bcel.classfile;
 
+import org.apache.tomcat.util.bcel.Const;
+
 import java.io.DataInput;
 import java.io.IOException;
-
-import org.apache.tomcat.util.bcel.Const;
 
 /**
  * an annotation's element value pair
  *
  * @since 6.0
  */
-public class ElementValuePair
-{
+public class ElementValuePair {
     private final ElementValue elementValue;
 
     private final ConstantPool constantPool;
@@ -41,15 +40,13 @@ public class ElementValuePair
         this.elementValue = ElementValue.readElementValue(file, constantPool);
     }
 
-    public String getNameString()
-    {
+    public String getNameString() {
         final ConstantUtf8 c = (ConstantUtf8) constantPool.getConstant(
                 elementNameIndex, Const.CONSTANT_Utf8);
         return c.getBytes();
     }
 
-    public final ElementValue getValue()
-    {
+    public final ElementValue getValue() {
         return elementValue;
     }
 }

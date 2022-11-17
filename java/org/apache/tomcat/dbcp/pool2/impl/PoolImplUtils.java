@@ -16,6 +16,8 @@
  */
 package org.apache.tomcat.dbcp.pool2.impl;
 
+import org.apache.tomcat.dbcp.pool2.PooledObjectFactory;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -24,8 +26,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.tomcat.dbcp.pool2.PooledObjectFactory;
 
 /**
  * Implementation specific utilities.
@@ -38,7 +38,6 @@ class PoolImplUtils {
      * Identifies the concrete type of object that an object factory creates.
      *
      * @param factoryClass The factory to examine
-     *
      * @return the type of object the factory creates
      */
     @SuppressWarnings("rawtypes")
@@ -70,10 +69,9 @@ class PoolImplUtils {
     /**
      * Gets the concrete type used by an implementation of an interface that uses a generic type.
      *
-     * @param type The interface that defines a generic type
+     * @param type  The interface that defines a generic type
      * @param clazz The class that implements the interface with a concrete type
-     * @param <T> The interface type
-     *
+     * @param <T>   The interface type
      * @return concrete type used by the implementation
      */
     private static <T> Object getGenericType(final Class<T> type, final Class<? extends T> clazz) {
@@ -89,8 +87,7 @@ class PoolImplUtils {
         }
 
         // Interface not found on this class. Look at the superclass.
-        @SuppressWarnings("unchecked")
-        final Class<? extends T> superClass = (Class<? extends T>) clazz.getSuperclass();
+        @SuppressWarnings("unchecked") final Class<? extends T> superClass = (Class<? extends T>) clazz.getSuperclass();
 
         final Object result = getGenericType(type, superClass);
         if (result instanceof Class<?>) {
@@ -110,9 +107,9 @@ class PoolImplUtils {
     /**
      * Gets the matching parameterized type or null.
      *
-     * @param type The interface that defines a generic type.
+     * @param type  The interface that defines a generic type.
      * @param clazz The class that implements the interface with a concrete type.
-     * @param <T> The interface type.
+     * @param <T>   The interface type.
      * @return the matching parameterized type or null.
      */
     private static <T> ParameterizedType getParameterizedType(final Class<T> type, final Class<? extends T> clazz) {
@@ -133,11 +130,10 @@ class PoolImplUtils {
      * For a generic parameter, return either the Class used or if the type is unknown, the index for the type in
      * definition of the class
      *
-     * @param clazz defining class
+     * @param clazz   defining class
      * @param argType the type argument of interest
-     *
      * @return An instance of {@link Class} representing the type used by the type parameter or an instance of
-     *         {@link Integer} representing the index for the type in the definition of the defining class
+     * {@link Integer} representing the index for the type in the definition of the defining class
      */
     private static Object getTypeParameter(final Class<?> clazz, final Type argType) {
         if (argType instanceof Class<?>) {
@@ -183,7 +179,7 @@ class PoolImplUtils {
     /**
      * Returns a non-null duration, value if non-null, otherwise defaultValue.
      *
-     * @param value May be null.
+     * @param value        May be null.
      * @param defaultValue May not be null/
      * @return value if non-null, otherwise defaultValue.
      */
@@ -200,29 +196,29 @@ class PoolImplUtils {
     static ChronoUnit toChronoUnit(final TimeUnit timeUnit) {
         // TODO when using Java >= 9: Use TimeUnit.toChronoUnit().
         switch (Objects.requireNonNull(timeUnit)) {
-        case NANOSECONDS:
-            return ChronoUnit.NANOS;
-        case MICROSECONDS:
-            return ChronoUnit.MICROS;
-        case MILLISECONDS:
-            return ChronoUnit.MILLIS;
-        case SECONDS:
-            return ChronoUnit.SECONDS;
-        case MINUTES:
-            return ChronoUnit.MINUTES;
-        case HOURS:
-            return ChronoUnit.HOURS;
-        case DAYS:
-            return ChronoUnit.DAYS;
-        default:
-            throw new IllegalArgumentException(timeUnit.toString());
+            case NANOSECONDS:
+                return ChronoUnit.NANOS;
+            case MICROSECONDS:
+                return ChronoUnit.MICROS;
+            case MILLISECONDS:
+                return ChronoUnit.MILLIS;
+            case SECONDS:
+                return ChronoUnit.SECONDS;
+            case MINUTES:
+                return ChronoUnit.MINUTES;
+            case HOURS:
+                return ChronoUnit.HOURS;
+            case DAYS:
+                return ChronoUnit.DAYS;
+            default:
+                throw new IllegalArgumentException(timeUnit.toString());
         }
     }
 
     /**
      * Converts am amount and TimeUnit into a Duration.
      *
-     * @param amount the amount of the duration, measured in terms of the unit, positive or negative
+     * @param amount   the amount of the duration, measured in terms of the unit, positive or negative
      * @param timeUnit the unit that the duration is measured in, must have an exact duration, not null
      * @return a Duration.
      */

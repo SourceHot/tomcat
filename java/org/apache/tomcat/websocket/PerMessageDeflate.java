@@ -16,6 +16,11 @@
  */
 package org.apache.tomcat.websocket;
 
+import jakarta.websocket.Extension;
+import jakarta.websocket.Extension.Parameter;
+import jakarta.websocket.SendHandler;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -24,26 +29,16 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-import jakarta.websocket.Extension;
-import jakarta.websocket.Extension.Parameter;
-import jakarta.websocket.SendHandler;
-
-import org.apache.tomcat.util.res.StringManager;
-
 public class PerMessageDeflate implements Transformation {
 
+    public static final String NAME = "permessage-deflate";
     private static final StringManager sm = StringManager.getManager(PerMessageDeflate.class);
-
     private static final String SERVER_NO_CONTEXT_TAKEOVER = "server_no_context_takeover";
     private static final String CLIENT_NO_CONTEXT_TAKEOVER = "client_no_context_takeover";
     private static final String SERVER_MAX_WINDOW_BITS = "server_max_window_bits";
     private static final String CLIENT_MAX_WINDOW_BITS = "client_max_window_bits";
-
     private static final int RSV_BITMASK = 0b100;
-    private static final byte[] EOM_BYTES = new byte[] {0, 0, -1, -1};
-
-    public static final String NAME = "permessage-deflate";
-
+    private static final byte[] EOM_BYTES = new byte[]{0, 0, -1, -1};
     private final boolean serverContextTakeover;
     private final int serverMaxWindowBits;
     private final boolean clientContextTakeover;
@@ -61,6 +56,15 @@ public class PerMessageDeflate implements Transformation {
     // Flag to track if a message is completely empty
     private volatile boolean emptyMessage = true;
 
+    private PerMessageDeflate(boolean serverContextTakeover, int serverMaxWindowBits,
+                              boolean clientContextTakeover, int clientMaxWindowBits, boolean isServer) {
+        this.serverContextTakeover = serverContextTakeover;
+        this.serverMaxWindowBits = serverMaxWindowBits;
+        this.clientContextTakeover = clientContextTakeover;
+        this.clientMaxWindowBits = clientMaxWindowBits;
+        this.isServer = isServer;
+    }
+
     static PerMessageDeflate negotiate(List<List<Parameter>> preferences, boolean isServer) {
         // Accept the first preference that the endpoint is able to support
         for (List<Parameter> preference : preferences) {
@@ -74,22 +78,26 @@ public class PerMessageDeflate implements Transformation {
                 if (SERVER_NO_CONTEXT_TAKEOVER.equals(param.getName())) {
                     if (serverContextTakeover) {
                         serverContextTakeover = false;
-                    } else {
+                    }
+                    else {
                         // Duplicate definition
                         throw new IllegalArgumentException(sm.getString(
                                 "perMessageDeflate.duplicateParameter",
-                                SERVER_NO_CONTEXT_TAKEOVER ));
+                                SERVER_NO_CONTEXT_TAKEOVER));
                     }
-                } else if (CLIENT_NO_CONTEXT_TAKEOVER.equals(param.getName())) {
+                }
+                else if (CLIENT_NO_CONTEXT_TAKEOVER.equals(param.getName())) {
                     if (clientContextTakeover) {
                         clientContextTakeover = false;
-                    } else {
+                    }
+                    else {
                         // Duplicate definition
                         throw new IllegalArgumentException(sm.getString(
                                 "perMessageDeflate.duplicateParameter",
-                                CLIENT_NO_CONTEXT_TAKEOVER ));
+                                CLIENT_NO_CONTEXT_TAKEOVER));
                     }
-                } else if (SERVER_MAX_WINDOW_BITS.equals(param.getName())) {
+                }
+                else if (SERVER_MAX_WINDOW_BITS.equals(param.getName())) {
                     if (serverMaxWindowBits == -1) {
                         serverMaxWindowBits = Integer.parseInt(param.getValue());
                         if (serverMaxWindowBits < 8 || serverMaxWindowBits > 15) {
@@ -109,13 +117,15 @@ public class PerMessageDeflate implements Transformation {
                             // server uses a smaller window everything will
                             // still work
                         }
-                    } else {
+                    }
+                    else {
                         // Duplicate definition
                         throw new IllegalArgumentException(sm.getString(
                                 "perMessageDeflate.duplicateParameter",
-                                SERVER_MAX_WINDOW_BITS ));
+                                SERVER_MAX_WINDOW_BITS));
                     }
-                } else if (CLIENT_MAX_WINDOW_BITS.equals(param.getName())) {
+                }
+                else if (CLIENT_MAX_WINDOW_BITS.equals(param.getName())) {
                     if (clientMaxWindowBits == -1) {
                         if (param.getValue() == null) {
                             // Hint to server that the client supports this
@@ -123,7 +133,8 @@ public class PerMessageDeflate implements Transformation {
                             // expose the API to control the Window size. It is
                             // effectively hard-coded to 15
                             clientMaxWindowBits = 15;
-                        } else {
+                        }
+                        else {
                             clientMaxWindowBits = Integer.parseInt(param.getValue());
                             if (clientMaxWindowBits < 8 || clientMaxWindowBits > 15) {
                                 throw new IllegalArgumentException(sm.getString(
@@ -143,13 +154,15 @@ public class PerMessageDeflate implements Transformation {
                             // client uses a smaller window everything will
                             // still work
                         }
-                    } else {
+                    }
+                    else {
                         // Duplicate definition
                         throw new IllegalArgumentException(sm.getString(
                                 "perMessageDeflate.duplicateParameter",
-                                CLIENT_MAX_WINDOW_BITS ));
+                                CLIENT_MAX_WINDOW_BITS));
                     }
-                } else {
+                }
+                else {
                     // Unknown parameter
                     throw new IllegalArgumentException(sm.getString(
                             "perMessageDeflate.unknownParameter", param.getName()));
@@ -163,17 +176,6 @@ public class PerMessageDeflate implements Transformation {
         // Failed to negotiate agreeable terms
         return null;
     }
-
-
-    private PerMessageDeflate(boolean serverContextTakeover, int serverMaxWindowBits,
-            boolean clientContextTakeover, int clientMaxWindowBits, boolean isServer) {
-        this.serverContextTakeover = serverContextTakeover;
-        this.serverMaxWindowBits = serverMaxWindowBits;
-        this.clientContextTakeover = clientContextTakeover;
-        this.clientMaxWindowBits = clientMaxWindowBits;
-        this.isServer = isServer;
-    }
-
 
     @Override
     public TransformationResult getMoreData(byte opCode, boolean fin, int rsv, ByteBuffer dest)
@@ -209,29 +211,34 @@ public class PerMessageDeflate implements Transformation {
             }
             dest.position(dest.position() + written);
 
-            if (inflater.needsInput() && !usedEomBytes ) {
+            if (inflater.needsInput() && !usedEomBytes) {
                 readBuffer.clear();
                 TransformationResult nextResult = next.getMoreData(opCode, fin, (rsv ^ RSV_BITMASK), readBuffer);
                 inflater.setInput(readBuffer.array(), readBuffer.arrayOffset(), readBuffer.position());
                 if (dest.hasRemaining()) {
                     if (TransformationResult.UNDERFLOW.equals(nextResult)) {
                         return nextResult;
-                    } else if (TransformationResult.END_OF_FRAME.equals(nextResult) &&
+                    }
+                    else if (TransformationResult.END_OF_FRAME.equals(nextResult) &&
                             readBuffer.position() == 0) {
                         if (fin) {
                             inflater.setInput(EOM_BYTES);
                             usedEomBytes = true;
-                        } else {
+                        }
+                        else {
                             return TransformationResult.END_OF_FRAME;
                         }
                     }
-                } else if (readBuffer.position() > 0) {
+                }
+                else if (readBuffer.position() > 0) {
                     return TransformationResult.OVERFLOW;
-                } else if (fin) {
+                }
+                else if (fin) {
                     inflater.setInput(EOM_BYTES);
                     usedEomBytes = true;
                 }
-            } else if (written == 0) {
+            }
+            else if (written == 0) {
                 if (fin && (isServer && !clientContextTakeover ||
                         !isServer && !serverContextTakeover)) {
                     try {
@@ -253,21 +260,25 @@ public class PerMessageDeflate implements Transformation {
         if (Util.isControl(opCode)) {
             if ((rsv & RSV_BITMASK) != 0) {
                 return false;
-            } else {
+            }
+            else {
                 if (next == null) {
                     return true;
-                } else {
+                }
+                else {
                     return next.validateRsv(rsv, opCode);
                 }
             }
-        } else {
+        }
+        else {
             int rsvNext = rsv;
             if ((rsv & RSV_BITMASK) != 0) {
                 rsvNext = rsv ^ RSV_BITMASK;
             }
             if (next == null) {
                 return true;
-            } else {
+            }
+            else {
                 return next.validateRsv(rsvNext, opCode);
             }
         }
@@ -303,7 +314,8 @@ public class PerMessageDeflate implements Transformation {
     public void setNext(Transformation t) {
         if (next == null) {
             this.next = t;
-        } else {
+        }
+        else {
             next.setNext(t);
         }
     }
@@ -316,7 +328,8 @@ public class PerMessageDeflate implements Transformation {
         }
         if (next == null) {
             return true;
-        } else {
+        }
+        else {
             return next.validateRsvBits(i | RSV_BITMASK);
         }
     }
@@ -334,11 +347,13 @@ public class PerMessageDeflate implements Transformation {
                 // Control messages can appear in the middle of other messages
                 // and must not be compressed. Pass it straight through
                 allCompressedParts.add(uncompressedPart);
-            } else if (emptyMessage && uncompressedPart.isFin()) {
+            }
+            else if (emptyMessage && uncompressedPart.isFin()) {
                 // Zero length messages can't be compressed so pass the
                 // final (empty) part straight through.
                 allCompressedParts.add(uncompressedPart);
-            } else {
+            }
+            else {
                 List<MessagePart> compressedParts = new ArrayList<>();
                 ByteBuffer uncompressedPayload = uncompressedPart.getPayload();
                 SendHandler uncompressedIntermediateHandler =
@@ -393,20 +408,23 @@ public class PerMessageDeflate implements Transformation {
                                 uncompressedIntermediateHandler, blockingWriteTimeoutExpiry);
                         deflateRequired = false;
                         startNewMessage();
-                    } else if (full && !needsInput) {
+                    }
+                    else if (full && !needsInput) {
                         // Write buffer full and input message not fully read.
                         // Output and start new compressed part.
                         compressedPart = new MessagePart(false, getRsv(uncompressedPart),
                                 opCode, compressedPayload, uncompressedIntermediateHandler,
                                 uncompressedIntermediateHandler, blockingWriteTimeoutExpiry);
-                    } else if (!fin && full && needsInput) {
+                    }
+                    else if (!fin && full && needsInput) {
                         // Write buffer full and input message not fully read.
                         // Output and get more data.
                         compressedPart = new MessagePart(false, getRsv(uncompressedPart),
                                 opCode, compressedPayload, uncompressedIntermediateHandler,
                                 uncompressedIntermediateHandler, blockingWriteTimeoutExpiry);
                         deflateRequired = false;
-                    } else if (fin && full && needsInput) {
+                    }
+                    else if (fin && full && needsInput) {
                         // Write buffer full. Input fully read. Deflater may be
                         // in one of four states:
                         // - output complete (just happened to align with end of
@@ -429,7 +447,8 @@ public class PerMessageDeflate implements Transformation {
                                     blockingWriteTimeoutExpiry);
                             deflateRequired = false;
                             startNewMessage();
-                        } else {
+                        }
+                        else {
                             // More data to write
                             // Copy bytes to new write buffer
                             writeBuffer.put(EOM_BUFFER, 0, eomBufferWritten);
@@ -438,7 +457,8 @@ public class PerMessageDeflate implements Transformation {
                                     uncompressedIntermediateHandler, uncompressedIntermediateHandler,
                                     blockingWriteTimeoutExpiry);
                         }
-                    } else {
+                    }
+                    else {
                         throw new IllegalStateException(sm.getString("perMessageDeflate.invalidState"));
                     }
 
@@ -459,7 +479,8 @@ public class PerMessageDeflate implements Transformation {
 
         if (next == null) {
             return allCompressedParts;
-        } else {
+        }
+        else {
             return next.sendMessagePart(allCompressedParts);
         }
     }

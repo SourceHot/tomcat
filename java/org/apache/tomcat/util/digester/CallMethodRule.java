@@ -64,12 +64,45 @@ public class CallMethodRule extends Rule {
     // ----------------------------------------------------------- Constructors
 
     /**
+     * location of the target object for the call, relative to the
+     * top of the digester object stack. The default value of zero
+     * means the target object is the one on top of the stack.
+     */
+    protected final int targetOffset;
+    /**
+     * The method name to call on the parent object.
+     */
+    protected final String methodName;
+    /**
+     * The number of parameters to collect from <code>MethodParam</code> rules.
+     * If this value is zero, a single parameter will be collected from the
+     * body of this element.
+     */
+    protected final int paramCount;
+    /**
+     * The body text collected from this element.
+     */
+    protected String bodyText = null;
+
+
+    // ----------------------------------------------------- Instance Variables
+    /**
+     * The parameter types of the parameters to be collected.
+     */
+    protected Class<?>[] paramTypes = null;
+    /**
+     * Should <code>MethodUtils.invokeExactMethod</code> be used for reflection.
+     */
+    protected boolean useExactMatch = false;
+
+
+    /**
      * Construct a "call method" rule with the specified method name.  The
      * parameter types (if any) default to java.lang.String.
      *
      * @param methodName Method name of the parent method to call
      * @param paramCount The number of parameters to collect, or
-     *  zero for a single argument from the body of this element.
+     *                   zero for a single argument from the body of this element.
      */
     public CallMethodRule(String methodName, int paramCount) {
         this(0, methodName, paramCount);
@@ -81,20 +114,21 @@ public class CallMethodRule extends Rule {
      * parameter types (if any) default to java.lang.String.
      *
      * @param targetOffset location of the target object. Positive numbers are
-     * relative to the top of the digester object stack. Negative numbers
-     * are relative to the bottom of the stack. Zero implies the top
-     * object on the stack.
-     * @param methodName Method name of the parent method to call
-     * @param paramCount The number of parameters to collect, or
-     *  zero for a single argument from the body of this element.
+     *                     relative to the top of the digester object stack. Negative numbers
+     *                     are relative to the bottom of the stack. Zero implies the top
+     *                     object on the stack.
+     * @param methodName   Method name of the parent method to call
+     * @param paramCount   The number of parameters to collect, or
+     *                     zero for a single argument from the body of this element.
      */
     public CallMethodRule(int targetOffset, String methodName, int paramCount) {
         this.targetOffset = targetOffset;
         this.methodName = methodName;
         this.paramCount = paramCount;
         if (paramCount == 0) {
-            this.paramTypes = new Class[] { String.class };
-        } else {
+            this.paramTypes = new Class[]{String.class};
+        }
+        else {
             this.paramTypes = new Class[paramCount];
             for (int i = 0; i < this.paramTypes.length; i++) {
                 this.paramTypes[i] = String.class;
@@ -122,20 +156,20 @@ public class CallMethodRule extends Rule {
      * case the rule will call the specified method with no arguments.
      *
      * @param targetOffset location of the target object. Positive numbers are
-     * relative to the top of the digester object stack. Negative numbers
-     * are relative to the bottom of the stack. Zero implies the top
-     * object on the stack.
-     * @param methodName Method name of the parent method to call
-     * @param paramCount The number of parameters to collect, or
-     *  zero for a single argument from the body of this element
-     * @param paramTypes The Java classes that represent the
-     *  parameter types of the method arguments
-     *  (if you wish to use a primitive type, specify the corresponding
-     *  Java wrapper class instead, such as <code>java.lang.Boolean.TYPE</code>
-     *  for a <code>boolean</code> parameter)
+     *                     relative to the top of the digester object stack. Negative numbers
+     *                     are relative to the bottom of the stack. Zero implies the top
+     *                     object on the stack.
+     * @param methodName   Method name of the parent method to call
+     * @param paramCount   The number of parameters to collect, or
+     *                     zero for a single argument from the body of this element
+     * @param paramTypes   The Java classes that represent the
+     *                     parameter types of the method arguments
+     *                     (if you wish to use a primitive type, specify the corresponding
+     *                     Java wrapper class instead, such as <code>java.lang.Boolean.TYPE</code>
+     *                     for a <code>boolean</code> parameter)
      */
     public CallMethodRule(int targetOffset, String methodName, int paramCount,
-            Class<?> paramTypes[]) {
+                          Class<?>[] paramTypes) {
 
         this.targetOffset = targetOffset;
         this.methodName = methodName;
@@ -145,53 +179,12 @@ public class CallMethodRule extends Rule {
             for (int i = 0; i < this.paramTypes.length; i++) {
                 this.paramTypes[i] = String.class;
             }
-        } else {
+        }
+        else {
             this.paramTypes = new Class[paramTypes.length];
             System.arraycopy(paramTypes, 0, this.paramTypes, 0, this.paramTypes.length);
         }
     }
-
-
-    // ----------------------------------------------------- Instance Variables
-
-    /**
-     * The body text collected from this element.
-     */
-    protected String bodyText = null;
-
-
-    /**
-     * location of the target object for the call, relative to the
-     * top of the digester object stack. The default value of zero
-     * means the target object is the one on top of the stack.
-     */
-    protected final int targetOffset;
-
-
-    /**
-     * The method name to call on the parent object.
-     */
-    protected final String methodName;
-
-
-    /**
-     * The number of parameters to collect from <code>MethodParam</code> rules.
-     * If this value is zero, a single parameter will be collected from the
-     * body of this element.
-     */
-    protected final int paramCount;
-
-
-    /**
-     * The parameter types of the parameters to be collected.
-     */
-    protected Class<?> paramTypes[] = null;
-
-
-    /**
-     * Should <code>MethodUtils.invokeExactMethod</code> be used for reflection.
-     */
-    protected boolean useExactMatch = false;
 
 
     // --------------------------------------------------------- Public Methods
@@ -199,6 +192,7 @@ public class CallMethodRule extends Rule {
     /**
      * Should <code>MethodUtils.invokeExactMethod</code>
      * be used for the reflection.
+     *
      * @return <code>true</code> if invokeExactMethod is used
      */
     public boolean getUseExactMatch() {
@@ -209,6 +203,7 @@ public class CallMethodRule extends Rule {
     /**
      * Set whether <code>MethodUtils.invokeExactMethod</code>
      * should be used for the reflection.
+     *
      * @param useExactMatch The flag value
      */
     public void setUseExactMatch(boolean useExactMatch) {
@@ -219,11 +214,11 @@ public class CallMethodRule extends Rule {
     /**
      * Process the start of this element.
      *
-     * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     * @param namespace  the namespace URI of the matching element, or an
+     *                   empty string if the parser is not namespace aware or the element has
+     *                   no namespace
+     * @param name       the local name if the parser is namespace aware, or just
+     *                   the element name otherwise
      * @param attributes The attribute list for this element
      */
     @Override
@@ -232,7 +227,7 @@ public class CallMethodRule extends Rule {
 
         // Push an array to capture the parameter values if necessary
         if (paramCount > 0) {
-            Object parameters[] = new Object[paramCount];
+            Object[] parameters = new Object[paramCount];
             for (int i = 0; i < parameters.length; i++) {
                 parameters[i] = null;
             }
@@ -246,11 +241,11 @@ public class CallMethodRule extends Rule {
      * Process the body text of this element.
      *
      * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
-     * @param bodyText The body text of this element
+     *                  empty string if the parser is not namespace aware or the element has
+     *                  no namespace
+     * @param name      the local name if the parser is namespace aware, or just
+     *                  the element name otherwise
+     * @param bodyText  The body text of this element
      */
     @Override
     public void body(String namespace, String name, String bodyText)
@@ -267,24 +262,24 @@ public class CallMethodRule extends Rule {
      * Process the end of this element.
      *
      * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     *                  empty string if the parser is not namespace aware or the element has
+     *                  no namespace
+     * @param name      the local name if the parser is namespace aware, or just
+     *                  the element name otherwise
      */
     @SuppressWarnings("null") // parameters can't trigger NPE
     @Override
     public void end(String namespace, String name) throws Exception {
 
         // Retrieve or construct the parameter values array
-        Object parameters[] = null;
+        Object[] parameters = null;
         if (paramCount > 0) {
 
             parameters = (Object[]) digester.popParams();
 
             if (digester.log.isTraceEnabled()) {
-                for (int i=0,size=parameters.length;i<size;i++) {
-                    digester.log.trace("[CallMethodRule](" + i + ")" + parameters[i]) ;
+                for (int i = 0, size = parameters.length; i < size; i++) {
+                    digester.log.trace("[CallMethodRule](" + i + ")" + parameters[i]);
                 }
             }
 
@@ -296,7 +291,8 @@ public class CallMethodRule extends Rule {
                 return;
             }
 
-        } else if (paramTypes != null && paramTypes.length != 0) {
+        }
+        else if (paramTypes != null && paramTypes.length != 0) {
 
             // In the case where the parameter for the method
             // is taken from the body text, but there is no
@@ -313,20 +309,22 @@ public class CallMethodRule extends Rule {
         // Construct the parameter values array we will need
         // We only do the conversion if the param value is a String and
         // the specified paramType is not String.
-        Object paramValues[] = new Object[paramTypes.length];
+        Object[] paramValues = new Object[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
             // convert nulls and convert stringy parameters
             // for non-stringy param types
             Object param = parameters[i];
             // Tolerate null non-primitive values
-            if(null == param && !paramTypes[i].isPrimitive()) {
+            if (null == param && !paramTypes[i].isPrimitive()) {
                 paramValues[i] = null;
-            } else if(param instanceof String &&
+            }
+            else if (param instanceof String &&
                     !String.class.isAssignableFrom(paramTypes[i])) {
 
                 paramValues[i] =
                         IntrospectionUtils.convert((String) parameters[i], paramTypes[i]);
-            } else {
+            }
+            else {
                 paramValues[i] = parameters[i];
             }
         }
@@ -335,21 +333,21 @@ public class CallMethodRule extends Rule {
         Object target;
         if (targetOffset >= 0) {
             target = digester.peek(targetOffset);
-        } else {
-            target = digester.peek( digester.getCount() + targetOffset );
+        }
+        else {
+            target = digester.peek(digester.getCount() + targetOffset);
         }
 
         if (target == null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[CallMethodRule]{");
-            sb.append(digester.match);
-            sb.append("} Call target is null (");
-            sb.append("targetOffset=");
-            sb.append(targetOffset);
-            sb.append(",stackdepth=");
-            sb.append(digester.getCount());
-            sb.append(')');
-            throw new org.xml.sax.SAXException(sb.toString());
+            String sb = "[CallMethodRule]{" +
+                    digester.match +
+                    "} Call target is null (" +
+                    "targetOffset=" +
+                    targetOffset +
+                    ",stackdepth=" +
+                    digester.getCount() +
+                    ')';
+            throw new org.xml.sax.SAXException(sb);
         }
 
         // Invoke the required method on the top object
@@ -367,13 +365,15 @@ public class CallMethodRule extends Rule {
                 }
                 if (paramValues[i] == null) {
                     sb.append("null");
-                } else {
+                }
+                else {
                     sb.append(paramValues[i].toString());
                 }
                 sb.append('/');
                 if (paramTypes[i] == null) {
                     sb.append("null");
-                } else {
+                }
+                else {
                     sb.append(paramTypes[i].getName());
                 }
             }
@@ -394,9 +394,11 @@ public class CallMethodRule extends Rule {
                 }
                 if (bodyText != null) {
                     code.append("\"").append(IntrospectionUtils.escape(bodyText)).append("\"");
-                } else if (paramValues[i] instanceof String) {
+                }
+                else if (paramValues[i] instanceof String) {
                     code.append("\"").append(IntrospectionUtils.escape(paramValues[i].toString())).append("\"");
-                } else {
+                }
+                else {
                     code.append(digester.toVariableName(paramValues[i]));
                 }
             }

@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.jni;
 
-/** Lock
+/**
+ * Lock
  *
  * @author Mladen Turk
- *
- * @deprecated  The scope of the APR/Native Library will be reduced in Tomcat
- *              10.1.x / Tomcat Native 2.x onwards to only include those
- *              components required to provide OpenSSL integration with the NIO
- *              and NIO2 connectors.
+ * @deprecated The scope of the APR/Native Library will be reduced in Tomcat
+ * 10.1.x / Tomcat Native 2.x onwards to only include those
+ * components required to provide OpenSSL integration with the NIO
+ * and NIO2 connectors.
  */
 @Deprecated
 public class Lock {
@@ -31,57 +31,75 @@ public class Lock {
     /**
      * Enumerated potential types for APR process locking methods
      * <br><b>Warning :</b> Check APR_HAS_foo_SERIALIZE defines to see if the platform supports
-     *          APR_LOCK_foo.  Only APR_LOCK_DEFAULT is portable.
+     * APR_LOCK_foo.  Only APR_LOCK_DEFAULT is portable.
      */
 
-    public static final int APR_LOCK_FCNTL        = 0; /** fcntl() */
-    public static final int APR_LOCK_FLOCK        = 1; /** flock() */
-    public static final int APR_LOCK_SYSVSEM      = 2; /** System V Semaphores */
-    public static final int APR_LOCK_PROC_PTHREAD = 3; /** POSIX pthread process-based locking */
-    public static final int APR_LOCK_POSIXSEM     = 4; /** POSIX semaphore process-based locking */
-    public static final int APR_LOCK_DEFAULT      = 5; /** Use the default process lock */
+    public static final int APR_LOCK_FCNTL = 0;
+    /**
+     * fcntl()
+     */
+    public static final int APR_LOCK_FLOCK = 1;
+    /**
+     * flock()
+     */
+    public static final int APR_LOCK_SYSVSEM = 2;
+    /**
+     * System V Semaphores
+     */
+    public static final int APR_LOCK_PROC_PTHREAD = 3;
+    /**
+     * POSIX pthread process-based locking
+     */
+    public static final int APR_LOCK_POSIXSEM = 4;
+    /**
+     * POSIX semaphore process-based locking
+     */
+    public static final int APR_LOCK_DEFAULT = 5; /** Use the default process lock */
 
     /**
      * Create and initialize a mutex that can be used to synchronize processes.
      * <br><b>Warning :</b> Check APR_HAS_foo_SERIALIZE defines to see if the platform supports
-     *          APR_LOCK_foo.  Only APR_LOCK_DEFAULT is portable.
+     * APR_LOCK_foo.  Only APR_LOCK_DEFAULT is portable.
+     *
      * @param fname A file name to use if the lock mechanism requires one.  This
-     *        argument should always be provided.  The lock code itself will
-     *        determine if it should be used.
-     * @param mech The mechanism to use for the interprocess lock, if any; one of
-     * <PRE>
-     *            APR_LOCK_FCNTL
-     *            APR_LOCK_FLOCK
-     *            APR_LOCK_SYSVSEM
-     *            APR_LOCK_POSIXSEM
-     *            APR_LOCK_PROC_PTHREAD
-     *            APR_LOCK_DEFAULT     pick the default mechanism for the platform
-     * </PRE>
-     * @param pool the pool from which to allocate the mutex.
+     *              argument should always be provided.  The lock code itself will
+     *              determine if it should be used.
+     * @param mech  The mechanism to use for the interprocess lock, if any; one of
+     *              <PRE>
+     *              APR_LOCK_FCNTL
+     *              APR_LOCK_FLOCK
+     *              APR_LOCK_SYSVSEM
+     *              APR_LOCK_POSIXSEM
+     *              APR_LOCK_PROC_PTHREAD
+     *              APR_LOCK_DEFAULT     pick the default mechanism for the platform
+     *              </PRE>
+     * @param pool  the pool from which to allocate the mutex.
      * @return Newly created mutex.
      * @throws Error An error occurred
      */
     public static native long create(String fname, int mech, long pool)
-        throws Error;
+            throws Error;
 
     /**
      * Re-open a mutex in a child process.
      * This function must be called to maintain portability, even
      * if the underlying lock mechanism does not require it.
+     *
      * @param fname A file name to use if the mutex mechanism requires one.  This
      *              argument should always be provided.  The mutex code itself will
      *              determine if it should be used.  This filename should be the
      *              same one that was passed to apr_proc_mutex_create().
-     * @param pool The pool to operate on.
+     * @param pool  The pool to operate on.
      * @return Newly opened mutex.
      * @throws Error An error occurred
      */
     public static native long childInit(String fname, long pool)
-        throws Error;
+            throws Error;
 
     /**
      * Acquire the lock for the given mutex. If the mutex is already locked,
      * the current thread will be put to sleep until the lock becomes available.
+     *
      * @param mutex the mutex on which to acquire the lock.
      * @return the operation status
      */
@@ -92,6 +110,7 @@ public class Lock {
      * been acquired, the call returns immediately with APR_EBUSY. Note: it
      * is important that the APR_STATUS_IS_EBUSY(s) macro be used to determine
      * if the return value was APR_EBUSY, for portability reasons.
+     *
      * @param mutex the mutex on which to attempt the lock acquiring.
      * @return the operation status
      */
@@ -99,6 +118,7 @@ public class Lock {
 
     /**
      * Release the lock for the given mutex.
+     *
      * @param mutex the mutex from which to release the lock.
      * @return the operation status
      */
@@ -106,6 +126,7 @@ public class Lock {
 
     /**
      * Destroy the mutex and free the memory associated with the lock.
+     *
      * @param mutex the mutex to destroy.
      * @return the operation status
      */
@@ -114,6 +135,7 @@ public class Lock {
     /**
      * Return the name of the lockfile for the mutex, or NULL
      * if the mutex doesn't use a lock file
+     *
      * @param mutex the name of the mutex
      * @return the name of the lock file
      */
@@ -122,6 +144,7 @@ public class Lock {
     /**
      * Display the name of the mutex, as it relates to the actual method used.
      * This matches the valid options for Apache's AcceptMutex directive
+     *
      * @param mutex the name of the mutex
      * @return the name of the mutex
      */
@@ -129,6 +152,7 @@ public class Lock {
 
     /**
      * Display the name of the default mutex: APR_LOCK_DEFAULT
+     *
      * @return the default name
      */
     public static native String defname();

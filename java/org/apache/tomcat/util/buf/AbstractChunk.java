@@ -16,17 +16,14 @@
  */
 package org.apache.tomcat.util.buf;
 
-import java.io.Serializable;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.Serializable;
 
 /**
  * Base class for the *Chunk implementation to reduce duplication.
  */
 public abstract class AbstractChunk implements Cloneable, Serializable {
-
-    private static final long serialVersionUID = 1L;
-    protected static final StringManager sm = StringManager.getManager(AbstractChunk.class);
 
     /*
      * JVMs may limit the maximum array size to slightly less than
@@ -35,17 +32,18 @@ public abstract class AbstractChunk implements Cloneable, Serializable {
      * that it may be as low as MAX_VALUE - 8 on some systems.
      */
     public static final int ARRAY_MAX_SIZE = Integer.MAX_VALUE - 8;
-
-    private int hashCode = 0;
+    protected static final StringManager sm = StringManager.getManager(AbstractChunk.class);
+    private static final long serialVersionUID = 1L;
     protected boolean hasHashCode = false;
-
     protected boolean isSet;
-
-    private int limit = -1;
-
     protected int start;
     protected int end;
+    private int hashCode = 0;
+    private int limit = -1;
 
+    public int getLimit() {
+        return limit;
+    }
 
     /**
      * Maximum amount of data in this buffer. If -1 or not set, the buffer will
@@ -59,16 +57,11 @@ public abstract class AbstractChunk implements Cloneable, Serializable {
         this.limit = limit;
     }
 
-
-    public int getLimit() {
-        return limit;
-    }
-
-
     protected int getLimitInternal() {
         if (limit > 0) {
             return limit;
-        } else {
+        }
+        else {
             return ARRAY_MAX_SIZE;
         }
     }
@@ -129,13 +122,14 @@ public abstract class AbstractChunk implements Cloneable, Serializable {
         // Look for first char
         int srcEnd = srcOff + srcLen;
 
-        mainLoop: for (int i = myOff + start; i <= (end - srcLen); i++) {
+        mainLoop:
+        for (int i = myOff + start; i <= (end - srcLen); i++) {
             if (getBufferElement(i) != first) {
                 continue;
             }
             // found first char, now look for a match
             int myPos = i + 1;
-            for (int srcPos = srcOff + 1; srcPos < srcEnd;) {
+            for (int srcPos = srcOff + 1; srcPos < srcEnd; ) {
                 if (getBufferElement(myPos++) != src.charAt(srcPos++)) {
                     continue mainLoop;
                 }

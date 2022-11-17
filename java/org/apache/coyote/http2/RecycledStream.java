@@ -64,7 +64,8 @@ class RecycledStream extends AbstractNonZeroStream {
     ByteBuffer getInputByteBuffer() {
         if (remainingFlowControlWindow < 0) {
             return ZERO_LENGTH_BYTEBUFFER;
-        } else {
+        }
+        else {
             return null;
         }
     }

@@ -16,30 +16,22 @@
  */
 package org.apache.catalina.session;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import org.apache.catalina.Container;
+import org.apache.catalina.Globals;
+import org.apache.catalina.Session;
+import org.apache.juli.logging.Log;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Session;
-import org.apache.juli.logging.Log;
 
 /**
  * Implementation of the {@link org.apache.catalina.Store Store}
@@ -52,67 +44,56 @@ import org.apache.juli.logging.Log;
 public class DataSourceStore extends StoreBase {
 
     /**
-     * Context name associated with this Store
-     */
-    private String name = null;
-
-    /**
      * Name to register for this Store, used for logging.
      */
     protected static final String storeName = "dataSourceStore";
-
     /**
      * name of the JNDI resource
      */
     protected String dataSourceName = null;
-
-    /**
-     * Context local datasource.
-     */
-    private boolean localDataSource = false;
-
     /**
      * DataSource to use
      */
     protected DataSource dataSource = null;
-
-
-    // ------------------------------------------------------------ Table & cols
-
     /**
      * Table to use.
      */
     protected String sessionTable = "tomcat$sessions";
-
     /**
      * Column to use for /Engine/Host/Context name
      */
     protected String sessionAppCol = "app";
 
+
+    // ------------------------------------------------------------ Table & cols
     /**
      * Id column to use.
      */
     protected String sessionIdCol = "id";
-
     /**
      * Data column to use.
      */
     protected String sessionDataCol = "data";
-
     /**
      * {@code Is Valid} column to use.
      */
     protected String sessionValidCol = "valid";
-
     /**
      * Max Inactive column to use.
      */
     protected String sessionMaxInactiveCol = "maxinactive";
-
     /**
      * Last Accessed column to use.
      */
     protected String sessionLastAccessedCol = "lastaccess";
+    /**
+     * Context name associated with this Store
+     */
+    private String name = null;
+    /**
+     * Context local datasource.
+     */
+    private boolean localDataSource = false;
 
     // -------------------------------------------------------------- Properties
 
@@ -150,6 +131,13 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
+     * @return the table for this Store.
+     */
+    public String getSessionTable() {
+        return sessionTable;
+    }
+
+    /**
      * Set the table for this Store.
      *
      * @param sessionTable The new table
@@ -163,10 +151,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the table for this Store.
+     * @return the web application name column for the table.
      */
-    public String getSessionTable() {
-        return sessionTable;
+    public String getSessionAppCol() {
+        return this.sessionAppCol;
     }
 
     /**
@@ -183,10 +171,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the web application name column for the table.
+     * @return the Id column for the table.
      */
-    public String getSessionAppCol() {
-        return this.sessionAppCol;
+    public String getSessionIdCol() {
+        return this.sessionIdCol;
     }
 
     /**
@@ -203,10 +191,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the Id column for the table.
+     * @return the data column for the table
      */
-    public String getSessionIdCol() {
-        return this.sessionIdCol;
+    public String getSessionDataCol() {
+        return this.sessionDataCol;
     }
 
     /**
@@ -223,10 +211,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the data column for the table
+     * @return the {@code Is Valid} column
      */
-    public String getSessionDataCol() {
-        return this.sessionDataCol;
+    public String getSessionValidCol() {
+        return this.sessionValidCol;
     }
 
     /**
@@ -243,10 +231,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the {@code Is Valid} column
+     * @return the {@code Max Inactive} column
      */
-    public String getSessionValidCol() {
-        return this.sessionValidCol;
+    public String getSessionMaxInactiveCol() {
+        return this.sessionMaxInactiveCol;
     }
 
     /**
@@ -263,10 +251,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the {@code Max Inactive} column
+     * @return the {@code Last Accessed} column
      */
-    public String getSessionMaxInactiveCol() {
-        return this.sessionMaxInactiveCol;
+    public String getSessionLastAccessedCol() {
+        return this.sessionLastAccessedCol;
     }
 
     /**
@@ -283,10 +271,10 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the {@code Last Accessed} column
+     * @return the name of the JNDI DataSource-factory
      */
-    public String getSessionLastAccessedCol() {
-        return this.sessionLastAccessedCol;
+    public String getDataSourceName() {
+        return this.dataSourceName;
     }
 
     /**
@@ -304,13 +292,6 @@ public class DataSourceStore extends StoreBase {
     }
 
     /**
-     * @return the name of the JNDI DataSource-factory
-     */
-    public String getDataSourceName() {
-        return this.dataSourceName;
-    }
-
-    /**
      * @return if the datasource will be looked up in the webapp JNDI Context.
      */
     public boolean getLocalDataSource() {
@@ -324,7 +305,7 @@ public class DataSourceStore extends StoreBase {
      * @param localDataSource the new flag value
      */
     public void setLocalDataSource(boolean localDataSource) {
-      this.localDataSource = localDataSource;
+        this.localDataSource = localDataSource;
     }
 
 
@@ -346,13 +327,12 @@ public class DataSourceStore extends StoreBase {
      * zero-length array is returned.
      *
      * @param expiredOnly flag, whether only keys of expired sessions should
-     *        be returned
+     *                    be returned
      * @return array containing the list of session IDs
-     *
-     * @exception IOException if an input/output error occurred
+     * @throws IOException if an input/output error occurred
      */
     private String[] keys(boolean expiredOnly) throws IOException {
-        String keys[] = null;
+        String[] keys = null;
         int numberOfTries = 2;
         while (numberOfTries > 0) {
 
@@ -403,8 +383,7 @@ public class DataSourceStore extends StoreBase {
      * <code>0</code> is returned.
      *
      * @return the count of all sessions currently saved in this Store
-     *
-     * @exception IOException if an input/output error occurred
+     * @throws IOException if an input/output error occurred
      */
     @Override
     public int getSize() throws IOException {
@@ -421,7 +400,7 @@ public class DataSourceStore extends StoreBase {
                 return size;
             }
 
-            try (PreparedStatement preparedSizeSql = _conn.prepareStatement(sizeSql)){
+            try (PreparedStatement preparedSizeSql = _conn.prepareStatement(sizeSql)) {
                 preparedSizeSql.setString(1, getName());
                 try (ResultSet rst = preparedSizeSql.executeQuery()) {
                     if (rst.next()) {
@@ -446,8 +425,8 @@ public class DataSourceStore extends StoreBase {
      *
      * @param id a value of type <code>String</code>
      * @return the stored <code>Session</code>
-     * @exception ClassNotFoundException if an error occurs
-     * @exception IOException if an input/output error occurred
+     * @throws ClassNotFoundException if an error occurs
+     * @throws IOException            if an input/output error occurred
      */
     @Override
     public Session load(String id) throws ClassNotFoundException, IOException {
@@ -468,13 +447,13 @@ public class DataSourceStore extends StoreBase {
 
             ClassLoader oldThreadContextCL = context.bind(Globals.IS_SECURITY_ENABLED, null);
 
-            try (PreparedStatement preparedLoadSql = _conn.prepareStatement(loadSql)){
+            try (PreparedStatement preparedLoadSql = _conn.prepareStatement(loadSql)) {
                 preparedLoadSql.setString(1, id);
                 preparedLoadSql.setString(2, getName());
                 try (ResultSet rst = preparedLoadSql.executeQuery()) {
                     if (rst.next()) {
                         try (ObjectInputStream ois =
-                                getObjectInputStream(rst.getBinaryStream(2))) {
+                                     getObjectInputStream(rst.getBinaryStream(2))) {
                             if (contextLog.isDebugEnabled()) {
                                 contextLog.debug(sm.getString(
                                         getStoreName() + ".loading", id, sessionTable));
@@ -484,7 +463,8 @@ public class DataSourceStore extends StoreBase {
                             _session.readObjectData(ois);
                             _session.setManager(manager);
                         }
-                    } else if (context.getLogger().isDebugEnabled()) {
+                    }
+                    else if (context.getLogger().isDebugEnabled()) {
                         contextLog.debug(getStoreName() + ": No persisted data object found");
                     }
                     // Break out after the finally block
@@ -507,8 +487,7 @@ public class DataSourceStore extends StoreBase {
      * takes no action.
      *
      * @param id Session identifier of the Session to be removed
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     public void remove(String id) throws IOException {
@@ -543,7 +522,7 @@ public class DataSourceStore extends StoreBase {
      * this Store, if present.  If no such Session is present, this method
      * takes no action.
      *
-     * @param id Session identifier of the Session to be removed
+     * @param id    Session identifier of the Session to be removed
      * @param _conn open connection to be used
      * @throws SQLException if an error occurs while talking to the database
      */
@@ -561,7 +540,7 @@ public class DataSourceStore extends StoreBase {
     /**
      * Remove all of the Sessions in this Store.
      *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     public void clear() throws IOException {
@@ -575,7 +554,7 @@ public class DataSourceStore extends StoreBase {
                 return;
             }
 
-            try (PreparedStatement preparedClearSql = _conn.prepareStatement(clearSql)){
+            try (PreparedStatement preparedClearSql = _conn.prepareStatement(clearSql)) {
                 preparedClearSql.setString(1, getName());
                 preparedClearSql.execute();
                 // Break out after the finally block
@@ -593,7 +572,7 @@ public class DataSourceStore extends StoreBase {
      * Save a session to the Store.
      *
      * @param session the session to be stored
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     public void save(Session session) throws IOException {
@@ -621,14 +600,14 @@ public class DataSourceStore extends StoreBase {
 
                     bos = new ByteArrayOutputStream();
                     try (ObjectOutputStream oos =
-                            new ObjectOutputStream(new BufferedOutputStream(bos))) {
+                                 new ObjectOutputStream(new BufferedOutputStream(bos))) {
                         ((StandardSession) session).writeObjectData(oos);
                     }
                     byte[] obs = bos.toByteArray();
                     int size = obs.length;
                     try (ByteArrayInputStream bis = new ByteArrayInputStream(obs, 0, size);
-                            InputStream in = new BufferedInputStream(bis, size);
-                            PreparedStatement preparedSaveSql = _conn.prepareStatement(saveSql)) {
+                         InputStream in = new BufferedInputStream(bis, size);
+                         PreparedStatement preparedSaveSql = _conn.prepareStatement(saveSql)) {
                         preparedSaveSql.setString(1, session.getIdInternal());
                         preparedSaveSql.setString(2, getName());
                         preparedSaveSql.setBinaryStream(3, in, size);
@@ -690,8 +669,7 @@ public class DataSourceStore extends StoreBase {
      * this Store.
      *
      * @return database connection ready to use
-     *
-     * @exception SQLException if a database error occurs
+     * @throws SQLException if a database error occurs
      */
     protected Connection open() throws SQLException {
         if (dataSourceName != null && dataSource == null) {
@@ -719,7 +697,8 @@ public class DataSourceStore extends StoreBase {
 
         if (dataSource != null) {
             return dataSource.getConnection();
-        } else {
+        }
+        else {
             throw new IllegalStateException(sm.getString(getStoreName() + ".missingDataSource"));
         }
     }

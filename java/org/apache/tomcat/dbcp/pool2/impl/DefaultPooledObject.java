@@ -16,15 +16,15 @@
  */
 package org.apache.tomcat.dbcp.pool2.impl;
 
+import org.apache.tomcat.dbcp.pool2.PooledObject;
+import org.apache.tomcat.dbcp.pool2.PooledObjectState;
+import org.apache.tomcat.dbcp.pool2.TrackedUse;
+
 import java.io.PrintWriter;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Deque;
-
-import org.apache.tomcat.dbcp.pool2.PooledObject;
-import org.apache.tomcat.dbcp.pool2.PooledObjectState;
-import org.apache.tomcat.dbcp.pool2.TrackedUse;
 
 /**
  * This wrapper is used to track the additional information, such as state, for
@@ -34,19 +34,17 @@ import org.apache.tomcat.dbcp.pool2.TrackedUse;
  * </p>
  *
  * @param <T> the type of object in the pool
- *
  * @since 2.0
  */
 public class DefaultPooledObject<T> implements PooledObject<T> {
 
     private final T object;
-    private PooledObjectState state = PooledObjectState.IDLE; // @GuardedBy("this") to ensure transitions are valid
     private final Clock systemClock = Clock.systemUTC();
     private final Instant createInstant = now();
-
     private volatile Instant lastBorrowInstant = createInstant;
     private volatile Instant lastUseInstant = createInstant;
     private volatile Instant lastReturnInstant = createInstant;
+    private PooledObjectState state = PooledObjectState.IDLE; // @GuardedBy("this") to ensure transitions are valid
     private volatile boolean logAbandoned;
     private volatile CallStack borrowedBy = NoOpCallStack.INSTANCE;
     private volatile CallStack usedBy = NoOpCallStack.INSTANCE;
@@ -107,7 +105,7 @@ public class DefaultPooledObject<T> implements PooledObject<T> {
      * or {@link PooledObjectState#RETURNING RETURNING}.
      *
      * @return {@code true} if the state was {@link PooledObjectState#ALLOCATED ALLOCATED}
-     *         or {@link PooledObjectState#RETURNING RETURNING}.
+     * or {@link PooledObjectState#RETURNING RETURNING}.
      */
     @Override
     public synchronized boolean deallocate() {
@@ -145,6 +143,7 @@ public class DefaultPooledObject<T> implements PooledObject<T> {
 
     /**
      * Gets the number of times this object has been borrowed.
+     *
      * @return The number of times this object has been borrowed.
      * @since 2.1
      */
@@ -240,6 +239,7 @@ public class DefaultPooledObject<T> implements PooledObject<T> {
 
     /**
      * Gets the state of this object.
+     *
      * @return state
      */
     @Override
@@ -307,10 +307,10 @@ public class DefaultPooledObject<T> implements PooledObject<T> {
     @Override
     public void setRequireFullStackTrace(final boolean requireFullStackTrace) {
         borrowedBy = CallStackUtils.newCallStack("'Pooled object created' " +
-            "yyyy-MM-dd HH:mm:ss Z 'by the following code has not been returned to the pool:'",
-            true, requireFullStackTrace);
+                        "yyyy-MM-dd HH:mm:ss Z 'by the following code has not been returned to the pool:'",
+                true, requireFullStackTrace);
         usedBy = CallStackUtils.newCallStack("The last code to use this object was:",
-            false, requireFullStackTrace);
+                false, requireFullStackTrace);
     }
 
     @Override

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.apache.catalina.tribes.transport;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
  * A very simple thread pool class.  The pool size is set at
  * construction time and remains fixed.  Threads are cycled
  * through a FIFO idle queue.
+ *
  * @version 1.0
  */
 public class RxTaskPool {
@@ -31,15 +33,13 @@ public class RxTaskPool {
     final List<AbstractRxTask> used = new LinkedList<>();
 
     final Object mutex = new Object();
+    private final TaskCreator creator;
     boolean running = true;
-
     private int maxTasks;
     private int minTasks;
 
-    private final TaskCreator creator;
 
-
-    public RxTaskPool (int maxTasks, int minTasks, TaskCreator creator) throws Exception {
+    public RxTaskPool(int maxTasks, int minTasks, TaskCreator creator) throws Exception {
         // fill up the pool with worker threads
         this.maxTasks = maxTasks;
         this.minTasks = minTasks;
@@ -58,13 +58,13 @@ public class RxTaskPool {
 
     /**
      * Find an idle worker thread, if any.  Could return null.
+     *
      * @return a worker
      */
-    public AbstractRxTask getRxTask()
-    {
+    public AbstractRxTask getRxTask() {
         AbstractRxTask worker = null;
         synchronized (mutex) {
-            while ( worker == null && running ) {
+            while (worker == null && running) {
                 if (idle.size() > 0) {
                     try {
                         worker = idle.remove(0);
@@ -72,10 +72,12 @@ public class RxTaskPool {
                         //this means that there are no available workers
                         worker = null;
                     }
-                } else if ( used.size() < this.maxTasks && creator != null) {
+                }
+                else if (used.size() < this.maxTasks && creator != null) {
                     worker = creator.createRxTask();
                     configureTask(worker);
-                } else {
+                }
+                else {
                     try {
                         mutex.wait();
                     } catch (java.lang.InterruptedException x) {
@@ -83,7 +85,7 @@ public class RxTaskPool {
                     }
                 }
             }//while
-            if ( worker != null ) {
+            if (worker != null) {
                 used.add(worker);
             }
         }
@@ -97,21 +99,24 @@ public class RxTaskPool {
     /**
      * Called by the worker thread to return itself to the
      * idle pool.
+     *
      * @param worker The worker
      */
-    public void returnWorker (AbstractRxTask worker) {
-        if ( running ) {
+    public void returnWorker(AbstractRxTask worker) {
+        if (running) {
             synchronized (mutex) {
                 used.remove(worker);
                 //if ( idle.size() < minThreads && !idle.contains(worker)) idle.add(worker);
-                if ( idle.size() < maxTasks && !idle.contains(worker)) {
+                if (idle.size() < maxTasks && !idle.contains(worker)) {
                     idle.add(worker); //let max be the upper limit
-                } else {
+                }
+                else {
                     worker.close();
                 }
                 mutex.notifyAll();
             }
-        } else {
+        }
+        else {
             worker.close();
         }
     }
@@ -128,7 +133,7 @@ public class RxTaskPool {
         running = false;
         synchronized (mutex) {
             Iterator<AbstractRxTask> i = idle.iterator();
-            while ( i.hasNext() ) {
+            while (i.hasNext()) {
                 AbstractRxTask worker = i.next();
                 returnWorker(worker);
                 i.remove();
@@ -148,7 +153,7 @@ public class RxTaskPool {
         return this.creator;
     }
 
-    public static interface TaskCreator  {
-        public AbstractRxTask createRxTask();
+    public interface TaskCreator {
+        AbstractRxTask createRxTask();
     }
 }

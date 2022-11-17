@@ -16,11 +16,11 @@
  */
 package org.apache.catalina;
 
+import org.ietf.jgss.GSSCredential;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Enumeration;
-
-import org.ietf.jgss.GSSCredential;
 
 /**
  * Defines additional methods implemented by {@link Principal}s created by
@@ -81,8 +81,8 @@ public interface TomcatPrincipal extends Principal {
      *
      * @param name a <code>String</code> specifying the name of the attribute
      * @return an <code>Object</code> containing the value of the attribute, or
-     *         <code>null</code> if the attribute does not exist, or if
-     *         <code>null</code> has been specified as the attribute's name
+     * <code>null</code> if the attribute does not exist, or if
+     * <code>null</code> has been specified as the attribute's name
      */
     default Object getAttribute(String name) {
         return null;
@@ -95,7 +95,7 @@ public interface TomcatPrincipal extends Principal {
      * it.
      *
      * @return an <code>Enumeration</code> of strings containing the names of
-     *         the Principal's attributes
+     * the Principal's attributes
      */
     default Enumeration<String> getAttributeNames() {
         return Collections.emptyEnumeration();

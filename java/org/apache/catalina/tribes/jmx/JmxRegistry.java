@@ -16,29 +16,24 @@
  */
 package org.apache.catalina.tribes.jmx;
 
-import java.lang.management.ManagementFactory;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
 import org.apache.catalina.tribes.Channel;
 import org.apache.catalina.tribes.JmxChannel;
 import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import javax.management.*;
+import java.lang.management.ManagementFactory;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class JmxRegistry {
 
-    private static final Log log = LogFactory.getLog(JmxRegistry.class);
     protected static final StringManager sm = StringManager.getManager(JmxRegistry.class);
-    private static ConcurrentHashMap<String, JmxRegistry> registryCache = new ConcurrentHashMap<>();
+    private static final Log log = LogFactory.getLog(JmxRegistry.class);
+    private static final ConcurrentHashMap<String, JmxRegistry> registryCache = new ConcurrentHashMap<>();
 
-    private MBeanServer mbserver = ManagementFactory.getPlatformMBeanServer();
+    private final MBeanServer mbserver = ManagementFactory.getPlatformMBeanServer();
     private ObjectName baseOname = null;
 
     private JmxRegistry() {
@@ -131,7 +126,7 @@ public class JmxRegistry {
     }
 
     public void unregisterJmx(ObjectName oname) {
-        if (oname ==null) {
+        if (oname == null) {
             return;
         }
         try {

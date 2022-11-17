@@ -16,25 +16,19 @@
  */
 package org.apache.jasper.runtime;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.el.CompositeELResolver;
-import jakarta.el.ELContext;
-import jakarta.el.ELContextEvent;
-import jakarta.el.ELContextListener;
-import jakarta.el.ELResolver;
-import jakarta.el.ExpressionFactory;
+import jakarta.el.*;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.jsp.JspApplicationContext;
 import jakarta.servlet.jsp.JspContext;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.compiler.Localizer;
 import org.apache.jasper.el.ELContextImpl;
 import org.apache.jasper.el.JasperELResolver;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implementation of JspApplicationContext
@@ -60,14 +54,6 @@ public class JspApplicationContextImpl implements JspApplicationContext {
 
     }
 
-    @Override
-    public void addELContextListener(ELContextListener listener) {
-        if (listener == null) {
-            throw new IllegalArgumentException(Localizer.getMessage("jsp.error.nullArgument"));
-        }
-        this.contextListeners.add(listener);
-    }
-
     public static JspApplicationContextImpl getInstance(ServletContext context) {
         if (context == null) {
             throw new IllegalArgumentException(Localizer.getMessage("jsp.error.nullArgument"));
@@ -81,6 +67,14 @@ public class JspApplicationContextImpl implements JspApplicationContext {
         return impl;
     }
 
+    @Override
+    public void addELContextListener(ELContextListener listener) {
+        if (listener == null) {
+            throw new IllegalArgumentException(Localizer.getMessage("jsp.error.nullArgument"));
+        }
+        this.contextListeners.add(listener);
+    }
+
     public ELContextImpl createELContext(JspContext context) {
         if (context == null) {
             throw new IllegalArgumentException(Localizer.getMessage("jsp.error.nullArgument"));
@@ -91,7 +85,8 @@ public class JspApplicationContextImpl implements JspApplicationContext {
         ELContextImpl ctx;
         if (Constants.IS_SECURITY_ENABLED) {
             ctx = AccessController.doPrivileged((PrivilegedAction<ELContextImpl>) () -> new ELContextImpl(r));
-        } else {
+        }
+        else {
             ctx = new ELContextImpl(r);
         }
         ctx.putContext(JspContext.class, context);

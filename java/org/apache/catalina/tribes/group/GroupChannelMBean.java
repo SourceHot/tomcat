@@ -16,47 +16,42 @@
  */
 package org.apache.catalina.tribes.group;
 
-import java.io.Serializable;
+import org.apache.catalina.tribes.*;
 
-import org.apache.catalina.tribes.ChannelException;
-import org.apache.catalina.tribes.ChannelListener;
-import org.apache.catalina.tribes.ErrorHandler;
-import org.apache.catalina.tribes.Member;
-import org.apache.catalina.tribes.MembershipListener;
-import org.apache.catalina.tribes.UniqueId;
+import java.io.Serializable;
 
 public interface GroupChannelMBean {
 
     // Attributes
-    public boolean getOptionCheck();
+    boolean getOptionCheck();
 
-    public boolean getHeartbeat();
+    boolean getHeartbeat();
 
-    public long getHeartbeatSleeptime();
+    long getHeartbeatSleeptime();
 
     // Operations
-    public void start(int svc) throws ChannelException;
+    void start(int svc) throws ChannelException;
 
-    public void stop(int svc) throws ChannelException;
+    void stop(int svc) throws ChannelException;
 
-    public UniqueId send(Member[] destination, Serializable msg, int options)
+    UniqueId send(Member[] destination, Serializable msg, int options)
             throws ChannelException;
 
-    public UniqueId send(Member[] destination, Serializable msg, int options, ErrorHandler handler)
+    UniqueId send(Member[] destination, Serializable msg, int options, ErrorHandler handler)
             throws ChannelException;
 
-    public void addMembershipListener(MembershipListener listener);
+    void addMembershipListener(MembershipListener listener);
 
-    public void addChannelListener(ChannelListener listener);
+    void addChannelListener(ChannelListener listener);
 
-    public void removeMembershipListener(MembershipListener listener);
+    void removeMembershipListener(MembershipListener listener);
 
-    public void removeChannelListener(ChannelListener listener);
+    void removeChannelListener(ChannelListener listener);
 
-    public boolean hasMembers() ;
+    boolean hasMembers();
 
-    public Member[] getMembers() ;
+    Member[] getMembers();
 
-    public Member getLocalMember(boolean incAlive);
+    Member getLocalMember(boolean incAlive);
 
 }

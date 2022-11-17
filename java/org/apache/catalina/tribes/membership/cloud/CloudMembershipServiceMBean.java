@@ -16,25 +16,25 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
-import java.util.Properties;
-
 import org.apache.catalina.tribes.Member;
+
+import java.util.Properties;
 
 public interface CloudMembershipServiceMBean {
 
     // Attributes
-    public int getConnectTimeout();
+    int getConnectTimeout();
 
-    public int getReadTimeout();
+    int getReadTimeout();
 
-    public long getExpirationTime();
+    long getExpirationTime();
 
     // Operation
-    public Properties getProperties();
+    Properties getProperties();
 
-    public boolean hasMembers();
+    boolean hasMembers();
 
-    public String[] getMembersByName();
+    String[] getMembersByName();
 
-    public Member findMemberByName(String name);
+    Member findMemberByName(String name);
 }

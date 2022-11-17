@@ -16,11 +16,11 @@
  */
 package org.apache.catalina.webresources;
 
-import java.util.jar.JarEntry;
-import java.util.jar.Manifest;
-
 import org.apache.catalina.WebResource;
 import org.apache.catalina.WebResourceRoot;
+
+import java.util.jar.JarEntry;
+import java.util.jar.Manifest;
 
 /**
  * Represents a {@link org.apache.catalina.WebResourceSet} based on a WAR file.
@@ -38,17 +38,16 @@ public class WarResourceSet extends AbstractSingleArchiveResourceSet {
      * Creates a new {@link org.apache.catalina.WebResourceSet} based on a WAR
      * file.
      *
-     * @param root          The {@link WebResourceRoot} this new
-     *                          {@link org.apache.catalina.WebResourceSet} will
-     *                          be added to.
-     * @param webAppMount   The path within the web application at which this
-     *                          {@link org.apache.catalina.WebResourceSet} will
-     *                          be mounted.
-     * @param base          The absolute path to the WAR file on the file system
-     *                          from which the resources will be served.
-     *
+     * @param root        The {@link WebResourceRoot} this new
+     *                    {@link org.apache.catalina.WebResourceSet} will
+     *                    be added to.
+     * @param webAppMount The path within the web application at which this
+     *                    {@link org.apache.catalina.WebResourceSet} will
+     *                    be mounted.
+     * @param base        The absolute path to the WAR file on the file system
+     *                    from which the resources will be served.
      * @throws IllegalArgumentException if the webAppMount is not valid (valid
-     *         paths must start with '/')
+     *                                  paths must start with '/')
      */
     public WarResourceSet(WebResourceRoot root, String webAppMount, String base)
             throws IllegalArgumentException {
@@ -58,7 +57,7 @@ public class WarResourceSet extends AbstractSingleArchiveResourceSet {
 
     @Override
     protected WebResource createArchiveResource(JarEntry jarEntry,
-            String webAppPath, Manifest manifest) {
+                                                String webAppPath, Manifest manifest) {
         return new WarResource(this, webAppPath, getBaseUrlString(), jarEntry);
     }
 }

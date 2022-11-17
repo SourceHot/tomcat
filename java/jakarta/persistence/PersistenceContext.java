@@ -26,8 +26,12 @@ import java.lang.annotation.Target;
 
 public @interface PersistenceContext {
     String name() default "";
+
     String unitName() default "";
+
     PersistenceContextType type() default PersistenceContextType.TRANSACTION;
+
     PersistenceProperty[] properties() default {};
+
     SynchronizationType synchronization() default SynchronizationType.SYNCHRONIZED;
 }

@@ -16,12 +16,12 @@
  */
 package jakarta.servlet.http;
 
+import jakarta.servlet.ServletResponseWrapper;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import jakarta.servlet.ServletResponseWrapper;
 
 /**
  * Provides a convenient implementation of the HttpServletResponse interface
@@ -29,8 +29,8 @@ import jakarta.servlet.ServletResponseWrapper;
  * Servlet. This class implements the Wrapper or Decorator pattern. Methods
  * default to calling through to the wrapped response object.
  *
- * @since Servlet 2.3
  * @see jakarta.servlet.http.HttpServletResponse
+ * @since Servlet 2.3
  */
 public class HttpServletResponseWrapper extends ServletResponseWrapper
         implements HttpServletResponse {
@@ -39,9 +39,7 @@ public class HttpServletResponseWrapper extends ServletResponseWrapper
      * Constructs a response adaptor wrapping the given response.
      *
      * @param response The response to be wrapped
-     *
-     * @throws java.lang.IllegalArgumentException
-     *             if the response is null
+     * @throws java.lang.IllegalArgumentException if the response is null
      */
     public HttpServletResponseWrapper(HttpServletResponse response) {
         super(response);
@@ -193,15 +191,6 @@ public class HttpServletResponseWrapper extends ServletResponseWrapper
     }
 
     /**
-     * The default behavior of this method is to call setStatus(int sc) on the
-     * wrapped response object.
-     */
-    @Override
-    public void setStatus(int sc) {
-        this._getHttpServletResponse().setStatus(sc);
-    }
-
-    /**
      * The default behavior of this method is to call setStatus(int sc, String
      * sm) on the wrapped response object.
      *
@@ -225,6 +214,15 @@ public class HttpServletResponseWrapper extends ServletResponseWrapper
     @Override
     public int getStatus() {
         return this._getHttpServletResponse().getStatus();
+    }
+
+    /**
+     * The default behavior of this method is to call setStatus(int sc) on the
+     * wrapped response object.
+     */
+    @Override
+    public void setStatus(int sc) {
+        this._getHttpServletResponse().setStatus(sc);
     }
 
     /**
@@ -273,20 +271,6 @@ public class HttpServletResponseWrapper extends ServletResponseWrapper
      * {@inheritDoc}
      * <p>
      * The default implementation is to call
-     * {@link HttpServletResponse#setTrailerFields(Supplier)}
-     * on the wrapped {@link HttpServletResponse}.
-     *
-     * @since Servlet 4.0
-     */
-    @Override
-    public void setTrailerFields(Supplier<Map<String, String>> supplier) {
-        this._getHttpServletResponse().setTrailerFields(supplier);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The default implementation is to call
      * {@link HttpServletResponse#getTrailerFields()}
      * on the wrapped {@link HttpServletResponse}.
      *
@@ -295,5 +279,19 @@ public class HttpServletResponseWrapper extends ServletResponseWrapper
     @Override
     public Supplier<Map<String, String>> getTrailerFields() {
         return this._getHttpServletResponse().getTrailerFields();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The default implementation is to call
+     * {@link HttpServletResponse#setTrailerFields(Supplier)}
+     * on the wrapped {@link HttpServletResponse}.
+     *
+     * @since Servlet 4.0
+     */
+    @Override
+    public void setTrailerFields(Supplier<Map<String, String>> supplier) {
+        this._getHttpServletResponse().setTrailerFields(supplier);
     }
 }

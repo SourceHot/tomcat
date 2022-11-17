@@ -16,6 +16,9 @@
  */
 package org.apache.tomcat.websocket;
 
+import org.apache.tomcat.util.res.StringManager;
+import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.security.AccessController;
@@ -26,9 +29,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.threads.ThreadPoolExecutor;
-
 /**
  * This is a utility class that enables multiple {@link WsWebSocketContainer}
  * instances to share a single {@link AsynchronousChannelGroup} while ensuring
@@ -38,10 +38,9 @@ public class AsyncChannelGroupUtil {
 
     private static final StringManager sm =
             StringManager.getManager(AsyncChannelGroupUtil.class);
-
+    private static final Object lock = new Object();
     private static AsynchronousChannelGroup group = null;
     private static int usageCount = 0;
-    private static final Object lock = new Object();
 
 
     private AsyncChannelGroupUtil() {
@@ -126,12 +125,16 @@ public class AsyncChannelGroupUtil {
         // explicitly
         private static class NewThreadPrivilegedAction implements PrivilegedAction<Thread> {
 
-            private static AtomicInteger count = new AtomicInteger(0);
+            private static final AtomicInteger count = new AtomicInteger(0);
 
             private final Runnable r;
 
             public NewThreadPrivilegedAction(Runnable r) {
                 this.r = r;
+            }
+
+            private static void load() {
+                // NO-OP. Just provides a hook to enable the class to be loaded
             }
 
             @Override
@@ -141,10 +144,6 @@ public class AsyncChannelGroupUtil {
                 t.setContextClassLoader(this.getClass().getClassLoader());
                 t.setDaemon(true);
                 return t;
-            }
-
-            private static void load() {
-                // NO-OP. Just provides a hook to enable the class to be loaded
             }
         }
     }

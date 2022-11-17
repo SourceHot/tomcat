@@ -1,33 +1,20 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package jakarta.servlet.jsp.el;
-
-import java.beans.FeatureDescriptor;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Vector;
 
 import jakarta.el.ELContext;
 import jakarta.el.ELResolver;
@@ -38,6 +25,9 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.jsp.JspContext;
 import jakarta.servlet.jsp.PageContext;
 
+import java.beans.FeatureDescriptor;
+import java.util.*;
+
 /**
  * Provides resolution in EL for the implicit variables of a JSP page.
  *
@@ -45,10 +35,10 @@ import jakarta.servlet.jsp.PageContext;
  */
 public class ImplicitObjectELResolver extends ELResolver {
 
-    private static final String[] SCOPE_NAMES = new String[] {
+    private static final String[] SCOPE_NAMES = new String[]{
             "applicationScope", "cookie", "header", "headerValues",
             "initParam", "pageContext", "pageScope", "param", "paramValues",
-            "requestScope", "sessionScope" };
+            "requestScope", "sessionScope"};
 
     private static final int APPLICATIONSCOPE = 0;
 
@@ -91,28 +81,28 @@ public class ImplicitObjectELResolver extends ELResolver {
                         .getContext(JspContext.class);
                 context.setPropertyResolved(base, property);
                 switch (idx) {
-                case APPLICATIONSCOPE:
-                    return ScopeManager.get(page).getApplicationScope();
-                case COOKIE:
-                    return ScopeManager.get(page).getCookie();
-                case HEADER:
-                    return ScopeManager.get(page).getHeader();
-                case HEADERVALUES:
-                    return ScopeManager.get(page).getHeaderValues();
-                case INITPARAM:
-                    return ScopeManager.get(page).getInitParam();
-                case PAGECONTEXT:
-                    return ScopeManager.get(page).getPageContext();
-                case PAGESCOPE:
-                    return ScopeManager.get(page).getPageScope();
-                case PARAM:
-                    return ScopeManager.get(page).getParam();
-                case PARAM_VALUES:
-                    return ScopeManager.get(page).getParamValues();
-                case REQUEST_SCOPE:
-                    return ScopeManager.get(page).getRequestScope();
-                case SESSION_SCOPE:
-                    return ScopeManager.get(page).getSessionScope();
+                    case APPLICATIONSCOPE:
+                        return ScopeManager.get(page).getApplicationScope();
+                    case COOKIE:
+                        return ScopeManager.get(page).getCookie();
+                    case HEADER:
+                        return ScopeManager.get(page).getHeader();
+                    case HEADERVALUES:
+                        return ScopeManager.get(page).getHeaderValues();
+                    case INITPARAM:
+                        return ScopeManager.get(page).getInitParam();
+                    case PAGECONTEXT:
+                        return ScopeManager.get(page).getPageContext();
+                    case PAGESCOPE:
+                        return ScopeManager.get(page).getPageScope();
+                    case PARAM:
+                        return ScopeManager.get(page).getParam();
+                    case PARAM_VALUES:
+                        return ScopeManager.get(page).getParamValues();
+                    case REQUEST_SCOPE:
+                        return ScopeManager.get(page).getRequestScope();
+                    case SESSION_SCOPE:
+                        return ScopeManager.get(page).getSessionScope();
                 }
             }
         }
@@ -134,7 +124,7 @@ public class ImplicitObjectELResolver extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         Objects.requireNonNull(context);
 
         if (base == null && property != null) {
@@ -191,25 +181,25 @@ public class ImplicitObjectELResolver extends ELResolver {
 
         private final PageContext page;
 
-        private Map<String,Object> applicationScope;
+        private Map<String, Object> applicationScope;
 
-        private Map<String,Cookie> cookie;
+        private Map<String, Cookie> cookie;
 
-        private Map<String,String> header;
+        private Map<String, String> header;
 
-        private Map<String,String[]> headerValues;
+        private Map<String, String[]> headerValues;
 
-        private Map<String,String> initParam;
+        private Map<String, String> initParam;
 
-        private Map<String,Object> pageScope;
+        private Map<String, Object> pageScope;
 
-        private Map<String,String> param;
+        private Map<String, String> param;
 
-        private Map<String,String[]> paramValues;
+        private Map<String, String[]> paramValues;
 
-        private Map<String,Object> requestScope;
+        private Map<String, Object> requestScope;
 
-        private Map<String,Object> sessionScope;
+        private Map<String, Object> sessionScope;
 
         public ScopeManager(PageContext page) {
             this.page = page;
@@ -224,7 +214,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return mngr;
         }
 
-        public Map<String,Object> getApplicationScope() {
+        public Map<String, Object> getApplicationScope() {
             if (this.applicationScope == null) {
                 this.applicationScope = new ScopeMap<Object>() {
                     @Override
@@ -251,7 +241,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.applicationScope;
         }
 
-        public Map<String,Cookie> getCookie() {
+        public Map<String, Cookie> getCookie() {
             if (this.cookie == null) {
                 this.cookie = new ScopeMap<Cookie>() {
                     @Override
@@ -285,7 +275,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.cookie;
         }
 
-        public Map<String,String> getHeader() {
+        public Map<String, String> getHeader() {
             if (this.header == null) {
                 this.header = new ScopeMap<String>() {
                     @Override
@@ -304,7 +294,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.header;
         }
 
-        public Map<String,String[]> getHeaderValues() {
+        public Map<String, String[]> getHeaderValues() {
             if (this.headerValues == null) {
                 this.headerValues = new ScopeMap<String[]>() {
                     @Override
@@ -316,8 +306,8 @@ public class ImplicitObjectELResolver extends ELResolver {
                     @Override
                     protected String[] getAttribute(String name) {
                         Enumeration<String> e =
-                            ((HttpServletRequest) page.getRequest())
-                                    .getHeaders(name);
+                                ((HttpServletRequest) page.getRequest())
+                                        .getHeaders(name);
                         if (e != null) {
                             List<String> list = new ArrayList<>();
                             while (e.hasMoreElements()) {
@@ -333,7 +323,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.headerValues;
         }
 
-        public Map<String,String> getInitParam() {
+        public Map<String, String> getInitParam() {
             if (this.initParam == null) {
                 this.initParam = new ScopeMap<String>() {
                     @Override
@@ -354,7 +344,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.page;
         }
 
-        public Map<String,Object> getPageScope() {
+        public Map<String, Object> getPageScope() {
             if (this.pageScope == null) {
                 this.pageScope = new ScopeMap<Object>() {
                     @Override
@@ -382,7 +372,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.pageScope;
         }
 
-        public Map<String,String> getParam() {
+        public Map<String, String> getParam() {
             if (this.param == null) {
                 this.param = new ScopeMap<String>() {
                     @Override
@@ -399,7 +389,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.param;
         }
 
-        public Map<String,String[]> getParamValues() {
+        public Map<String, String[]> getParamValues() {
             if (this.paramValues == null) {
                 this.paramValues = new ScopeMap<String[]>() {
                     @Override
@@ -416,7 +406,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.paramValues;
         }
 
-        public Map<String,Object> getRequestScope() {
+        public Map<String, Object> getRequestScope() {
             if (this.requestScope == null) {
                 this.requestScope = new ScopeMap<Object>() {
                     @Override
@@ -443,7 +433,7 @@ public class ImplicitObjectELResolver extends ELResolver {
             return this.requestScope;
         }
 
-        public Map<String,Object> getSessionScope() {
+        public Map<String, Object> getSessionScope() {
             if (this.sessionScope == null) {
                 this.sessionScope = new ScopeMap<Object>() {
                     @Override
@@ -483,7 +473,7 @@ public class ImplicitObjectELResolver extends ELResolver {
         }
     }
 
-    private abstract static class ScopeMap<V> extends AbstractMap<String,V> {
+    private abstract static class ScopeMap<V> extends AbstractMap<String, V> {
 
         protected abstract Enumeration<String> getAttributeNames();
 
@@ -500,7 +490,7 @@ public class ImplicitObjectELResolver extends ELResolver {
         }
 
         @Override
-        public final Set<Map.Entry<String,V>> entrySet() {
+        public final Set<Map.Entry<String, V>> entrySet() {
             Enumeration<String> e = getAttributeNames();
             Set<Map.Entry<String, V>> set = new HashSet<>();
             if (e != null) {
@@ -540,7 +530,34 @@ public class ImplicitObjectELResolver extends ELResolver {
             return false;
         }
 
-        private class ScopeEntry implements Map.Entry<String,V> {
+        @Override
+        public final V get(Object key) {
+            if (key != null) {
+                return getAttribute((String) key);
+            }
+            return null;
+        }
+
+        @Override
+        public final V put(String key, V value) {
+            Objects.requireNonNull(key);
+            if (value == null) {
+                this.removeAttribute(key);
+            }
+            else {
+                this.setAttribute(key, value);
+            }
+            return null;
+        }
+
+        @Override
+        public final V remove(Object key) {
+            Objects.requireNonNull(key);
+            this.removeAttribute((String) key);
+            return null;
+        }
+
+        private class ScopeEntry implements Map.Entry<String, V> {
 
             private final String key;
 
@@ -562,7 +579,8 @@ public class ImplicitObjectELResolver extends ELResolver {
             public V setValue(Object value) {
                 if (value == null) {
                     removeAttribute(this.key);
-                } else {
+                }
+                else {
                     setAttribute(this.key, value);
                 }
                 return null;
@@ -578,32 +596,6 @@ public class ImplicitObjectELResolver extends ELResolver {
                 return this.key.hashCode();
             }
 
-        }
-
-        @Override
-        public final V get(Object key) {
-            if (key != null) {
-                return getAttribute((String) key);
-            }
-            return null;
-        }
-
-        @Override
-        public final V put(String key, V value) {
-            Objects.requireNonNull(key);
-            if (value == null) {
-                this.removeAttribute(key);
-            } else {
-                this.setAttribute(key, value);
-            }
-            return null;
-        }
-
-        @Override
-        public final V remove(Object key) {
-            Objects.requireNonNull(key);
-            this.removeAttribute((String) key);
-            return null;
         }
     }
 }

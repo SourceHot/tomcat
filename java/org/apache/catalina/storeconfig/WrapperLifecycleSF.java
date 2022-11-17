@@ -16,14 +16,14 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.core.StandardContext;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.PrintWriter;
+
 public class WrapperLifecycleSF extends StoreFactoryBase {
-    private static Log log = LogFactory.getLog(WrapperLifecycleSF.class);
+    private static final Log log = LogFactory.getLog(WrapperLifecycleSF.class);
 
     /*
      * Store nested Element Value Arrays
@@ -47,7 +47,8 @@ public class WrapperLifecycleSF extends StoreFactoryBase {
                 getStoreAppender().printTagArray(aWriter, "WrapperLifecycle",
                         indent, listeners);
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("storeFactory.noDescriptor", aElement.getClass(), "WrapperLifecycle"));
         }
     }

@@ -16,23 +16,18 @@
  */
 package org.apache.catalina.core;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletRegistration;
 import jakarta.servlet.ServletSecurityElement;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.tomcat.util.buf.UDecoder;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class ApplicationServletRegistration implements ServletRegistration.Dynamic {
 
@@ -46,7 +41,7 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
     private ServletSecurityElement constraint;
 
     public ApplicationServletRegistration(Wrapper wrapper,
-            Context context) {
+                                          Context context) {
         this.wrapper = wrapper;
         this.context = context;
 
@@ -64,7 +59,7 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
 
     @Override
     public Map<String, String> getInitParameters() {
-        ParameterMap<String,String> result = new ParameterMap<>();
+        ParameterMap<String, String> result = new ParameterMap<>();
 
         String[] parameterNames = wrapper.findInitParameters();
 
@@ -106,7 +101,7 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
             if (entry.getKey() == null || entry.getValue() == null) {
                 throw new IllegalArgumentException(sm.getString(
                         "applicationFilterRegistration.nullInitParams",
-                                entry.getKey(), entry.getValue()));
+                        entry.getKey(), entry.getValue()));
             }
             if (getInitParameter(entry.getKey()) != null) {
                 conflicts.add(entry.getKey());
@@ -140,11 +135,6 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
     }
 
     @Override
-    public void setRunAsRole(String roleName) {
-        wrapper.setRunAs(roleName);
-    }
-
-    @Override
     public Set<String> setServletSecurity(ServletSecurityElement constraint) {
         if (constraint == null) {
             throw new IllegalArgumentException(sm.getString(
@@ -162,7 +152,6 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
         return context.addServletSecurity(this, constraint);
     }
 
-
     @Override
     public Set<String> addMapping(String... urlPatterns) {
         if (urlPatterns == null) {
@@ -179,7 +168,8 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
                     // Some Wrappers (from global and host web.xml) may be
                     // overridden rather than generating a conflict
                     context.removeServletMapping(urlPattern);
-                } else {
+                }
+                else {
                     conflicts.add(urlPattern);
                 }
             }
@@ -220,6 +210,11 @@ public class ApplicationServletRegistration implements ServletRegistration.Dynam
     @Override
     public String getRunAsRole() {
         return wrapper.getRunAs();
+    }
+
+    @Override
+    public void setRunAsRole(String roleName) {
+        wrapper.setRunAs(roleName);
     }
 
 }

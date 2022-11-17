@@ -17,14 +17,13 @@
 package org.apache.catalina.users;
 
 
-import java.util.Hashtable;
-
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import javax.sql.DataSource;
+import java.util.Hashtable;
 
 
 /**
@@ -55,19 +54,19 @@ public class DataSourceUserDatabaseFactory implements ObjectFactory {
      * specified <code>Reference</code>.  If you instance can be created,
      * return <code>null</code> instead.</p>
      *
-     * @param obj The possibly null object containing location or
-     *  reference information that can be used in creating an object
-     * @param name The name of this object relative to <code>nameCtx</code>
-     * @param nameCtx The context relative to which the <code>name</code>
-     *  parameter is specified, or <code>null</code> if <code>name</code>
-     *  is relative to the default initial context
+     * @param obj         The possibly null object containing location or
+     *                    reference information that can be used in creating an object
+     * @param name        The name of this object relative to <code>nameCtx</code>
+     * @param nameCtx     The context relative to which the <code>name</code>
+     *                    parameter is specified, or <code>null</code> if <code>name</code>
+     *                    is relative to the default initial context
      * @param environment The possibly null environment that is used in
-     *  creating this object
+     *                    creating this object
      */
     @Override
     public Object getObjectInstance(Object obj, Name name, Context nameCtx,
-                                    Hashtable<?,?> environment)
-        throws Exception {
+                                    Hashtable<?, ?> environment)
+            throws Exception {
 
         // We only know how to deal with <code>javax.naming.Reference</code>s
         // that specify a class name of "org.apache.catalina.UserDatabase"

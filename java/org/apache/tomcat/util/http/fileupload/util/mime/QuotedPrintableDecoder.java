@@ -40,9 +40,8 @@ final class QuotedPrintableDecoder {
     /**
      * Decode the encoded byte data writing it to the given output stream.
      *
-     * @param data   The array of byte data to decode.
-     * @param out    The output stream used to return the decoded data.
-     *
+     * @param data The array of byte data to decode.
+     * @param out  The output stream used to return the decoded data.
      * @return the number of bytes produced.
      * @throws IOException if an IO error occurs
      */
@@ -58,7 +57,8 @@ final class QuotedPrintableDecoder {
             // space characters were translated to '_' on encode, so we need to translate them back.
             if (ch == '_') {
                 out.write(' ');
-            } else if (ch == '=') {
+            }
+            else if (ch == '=') {
                 // we found an encoded character.  Reduce the 3 char sequence to one.
                 // but first, make sure we have two characters to work with.
                 if (off + 1 >= endOffset) {
@@ -75,7 +75,8 @@ final class QuotedPrintableDecoder {
                     }
                     // this was a soft linebreak inserted by the encoding.  We just toss this away
                     // on decode.
-                } else {
+                }
+                else {
                     // this is a hex pair we need to convert back to a single byte.
                     final int c1 = hexToBinary(b1);
                     final int c2 = hexToBinary(b2);
@@ -83,7 +84,8 @@ final class QuotedPrintableDecoder {
                     // 3 bytes in, one byte out
                     bytesWritten++;
                 }
-            } else {
+            }
+            else {
                 // simple character, just write it out.
                 out.write(ch);
                 bytesWritten++;

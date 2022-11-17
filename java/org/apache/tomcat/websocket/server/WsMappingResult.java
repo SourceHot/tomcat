@@ -16,18 +16,18 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.util.Map;
-
 import jakarta.websocket.server.ServerEndpointConfig;
+
+import java.util.Map;
 
 class WsMappingResult {
 
     private final ServerEndpointConfig config;
-    private final Map<String,String> pathParams;
+    private final Map<String, String> pathParams;
 
 
     WsMappingResult(ServerEndpointConfig config,
-            Map<String,String> pathParams) {
+                    Map<String, String> pathParams) {
         this.config = config;
         this.pathParams = pathParams;
     }
@@ -38,7 +38,7 @@ class WsMappingResult {
     }
 
 
-    Map<String,String> getPathParams() {
+    Map<String, String> getPathParams() {
         return pathParams;
     }
 }

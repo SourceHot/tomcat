@@ -19,6 +19,7 @@ package org.apache.catalina.ssi;
 
 import java.io.PrintWriter;
 import java.text.ParseException;
+
 /**
  * SSI command that handles all conditional directives.
  *
@@ -31,7 +32,7 @@ public class SSIConditional implements SSICommand {
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer)
+                        String[] paramNames, String[] paramValues, PrintWriter writer)
             throws SSIStopProcessingException {
         // Assume anything using conditionals was modified by it
         long lastModified = System.currentTimeMillis();
@@ -49,12 +50,14 @@ public class SSIConditional implements SSICommand {
             if (evaluateArguments(paramNames, paramValues, ssiMediator)) {
                 // No more branches can be taken for this if block
                 state.branchTaken = true;
-            } else {
+            }
+            else {
                 // Do not process this branch
                 state.processConditionalCommandsOnly = true;
                 state.branchTaken = false;
             }
-        } else if ("elif".equalsIgnoreCase(commandName)) {
+        }
+        else if ("elif".equalsIgnoreCase(commandName)) {
             // No need to even execute if we are nested in
             // a false branch
             if (state.nestingCount > 0) {
@@ -71,12 +74,14 @@ public class SSIConditional implements SSICommand {
                 // Turn back on output and mark the branch
                 state.processConditionalCommandsOnly = false;
                 state.branchTaken = true;
-            } else {
+            }
+            else {
                 // Do not process this branch
                 state.processConditionalCommandsOnly = true;
                 state.branchTaken = false;
             }
-        } else if ("else".equalsIgnoreCase(commandName)) {
+        }
+        else if ("else".equalsIgnoreCase(commandName)) {
             // No need to even execute if we are nested in
             // a false branch
             if (state.nestingCount > 0) {
@@ -88,7 +93,8 @@ public class SSIConditional implements SSICommand {
             // And in any case, it's safe to say a branch
             // has been taken.
             state.branchTaken = true;
-        } else if ("endif".equalsIgnoreCase(commandName)) {
+        }
+        else if ("endif".equalsIgnoreCase(commandName)) {
             // If we are nested inside a false branch then pop out
             // one level on the nesting count
             if (state.nestingCount > 0) {
@@ -101,7 +107,8 @@ public class SSIConditional implements SSICommand {
             // since clearly we took a branch to have gotten here
             // in the first place.
             state.branchTaken = true;
-        } else {
+        }
+        else {
             throw new SSIStopProcessingException();
             //throw new SsiCommandException( "Not a conditional command:" +
             // cmdName );
@@ -115,7 +122,7 @@ public class SSIConditional implements SSICommand {
      * necessary evaluation steps.
      */
     private boolean evaluateArguments(String[] names, String[] values,
-            SSIMediator ssiMediator) throws SSIStopProcessingException {
+                                      SSIMediator ssiMediator) throws SSIStopProcessingException {
         String expr = getExpression(names, values);
         if (expr == null) {
             throw new SSIStopProcessingException();

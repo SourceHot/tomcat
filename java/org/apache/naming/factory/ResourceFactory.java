@@ -16,12 +16,12 @@
  */
 package org.apache.naming.factory;
 
+import org.apache.naming.ResourceRef;
+import org.apache.naming.StringManager;
+
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-
-import org.apache.naming.ResourceRef;
-import org.apache.naming.StringManager;
 
 /**
  * Object factory for Resources.
@@ -44,8 +44,8 @@ public class ResourceFactory extends FactoryBase {
 
         if (ref.getClassName().equals("javax.sql.DataSource")) {
             String javaxSqlDataSourceFactoryClassName =
-                System.getProperty("javax.sql.DataSource.Factory",
-                        Constants.DBCP_DATASOURCE_FACTORY);
+                    System.getProperty("javax.sql.DataSource.Factory",
+                            Constants.DBCP_DATASOURCE_FACTORY);
             try {
                 factory = (ObjectFactory) Class.forName(
                         javaxSqlDataSourceFactoryClassName).getConstructor().newInstance();
@@ -54,14 +54,15 @@ public class ResourceFactory extends FactoryBase {
                 ex.initCause(e);
                 throw ex;
             }
-        } else if (ref.getClassName().equals("jakarta.mail.Session")) {
+        }
+        else if (ref.getClassName().equals("jakarta.mail.Session")) {
             String javaxMailSessionFactoryClassName =
-                System.getProperty("jakarta.mail.Session.Factory",
-                        "org.apache.naming.factory.MailSessionFactory");
+                    System.getProperty("jakarta.mail.Session.Factory",
+                            "org.apache.naming.factory.MailSessionFactory");
             try {
                 factory = (ObjectFactory) Class.forName(
                         javaxMailSessionFactoryClassName).getConstructor().newInstance();
-            } catch(Throwable t) {
+            } catch (Throwable t) {
                 if (t instanceof NamingException) {
                     throw (NamingException) t;
                 }

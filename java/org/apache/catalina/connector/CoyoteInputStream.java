@@ -16,17 +16,16 @@
  */
 package org.apache.catalina.connector;
 
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
+import org.apache.catalina.security.SecurityUtil;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
-
-import org.apache.catalina.security.SecurityUtil;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * This class handles reading bytes.
@@ -76,11 +75,13 @@ public class CoyoteInputStream extends ServletInputStream {
                 Exception e = pae.getException();
                 if (e instanceof IOException) {
                     throw (IOException) e;
-                } else {
+                }
+                else {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             }
-        } else {
+        }
+        else {
             return ib.readByte();
         }
     }
@@ -96,11 +97,13 @@ public class CoyoteInputStream extends ServletInputStream {
                 Exception e = pae.getException();
                 if (e instanceof IOException) {
                     throw (IOException) e;
-                } else {
+                }
+                else {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             }
-        } else {
+        }
+        else {
             return ib.available();
         }
     }
@@ -124,11 +127,13 @@ public class CoyoteInputStream extends ServletInputStream {
                 Exception e = pae.getException();
                 if (e instanceof IOException) {
                     throw (IOException) e;
-                } else {
+                }
+                else {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             }
-        } else {
+        }
+        else {
             return ib.read(b, off, len);
         }
     }
@@ -142,7 +147,7 @@ public class CoyoteInputStream extends ServletInputStream {
      *
      * @param b the ByteBuffer into which bytes are to be written.
      * @return an integer specifying the actual number of bytes read, or -1 if
-     *         the end of the stream is reached
+     * the end of the stream is reached
      * @throws IOException if an input or output exception has occurred
      */
     public int read(final ByteBuffer b) throws IOException {
@@ -156,11 +161,13 @@ public class CoyoteInputStream extends ServletInputStream {
                 Exception e = pae.getException();
                 if (e instanceof IOException) {
                     throw (IOException) e;
-                } else {
+                }
+                else {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             }
-        } else {
+        }
+        else {
             return ib.read(b);
         }
     }
@@ -181,11 +188,13 @@ public class CoyoteInputStream extends ServletInputStream {
                 Exception e = pae.getException();
                 if (e instanceof IOException) {
                     throw (IOException) e;
-                } else {
+                }
+                else {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             }
-        } else {
+        }
+        else {
             ib.close();
         }
     }

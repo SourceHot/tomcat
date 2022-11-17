@@ -16,6 +16,11 @@
  */
 package org.apache.catalina.filters;
 
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,15 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 /**
  * Provides basic CSRF protection for REST APIs. The filter assumes that the
@@ -77,17 +73,11 @@ import jakarta.servlet.http.HttpSession;
  * </pre>
  */
 public class RestCsrfPreventionFilter extends CsrfPreventionFilterBase {
-    private enum MethodType {
-        NON_MODIFYING_METHOD, MODIFYING_METHOD
-    }
-
     private static final Pattern NON_MODIFYING_METHODS_PATTERN = Pattern.compile("GET|HEAD|OPTIONS");
     private static final Predicate<String> nonModifyingMethods = m -> Objects.nonNull(m) &&
             NON_MODIFYING_METHODS_PATTERN.matcher(m).matches();
-
-    private Set<String> pathsAcceptingParams = new HashSet<>();
-
-    private String pathsDelimiter = ",";
+    private final Set<String> pathsAcceptingParams = new HashSet<>();
+    private final String pathsDelimiter = ",";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -112,13 +102,11 @@ public class RestCsrfPreventionFilter extends CsrfPreventionFilterBase {
             }
 
             RestCsrfPreventionStrategy strategy;
-            switch (mType) {
-            case NON_MODIFYING_METHOD:
+            if (mType == MethodType.NON_MODIFYING_METHOD) {
                 strategy = new FetchRequest();
-                break;
-            default:
+            }
+            else {
                 strategy = new StateChangingRequest();
-                break;
             }
 
             if (!strategy.apply((HttpServletRequest) request, (HttpServletResponse) response)) {
@@ -128,16 +116,52 @@ public class RestCsrfPreventionFilter extends CsrfPreventionFilterBase {
         chain.doFilter(request, response);
     }
 
-    private static interface RestCsrfPreventionStrategy {
-        static final NonceSupplier<HttpServletRequest, String> nonceFromRequestHeader = HttpServletRequest::getHeader;
-        static final NonceSupplier<HttpServletRequest, String[]> nonceFromRequestParams = ServletRequest::getParameterValues;
-        static final NonceSupplier<HttpSession, String> nonceFromSession = (s, k) -> Objects
+    public Set<String> getPathsAcceptingParams() {
+        return pathsAcceptingParams;
+    }
+
+    /**
+     * A comma separated list of URLs that can accept nonces via request
+     * parameter 'X-CSRF-Token'. For use cases when a nonce information cannot
+     * be provided via header, one can provide it via request parameters. If
+     * there is a X-CSRF-Token header, it will be taken with preference over any
+     * parameter with the same name in the request. Request parameters cannot be
+     * used to fetch new nonce, only header.
+     *
+     * @param pathsList Comma separated list of URLs to be configured as paths
+     *                  accepting request parameters with nonce information.
+     */
+    public void setPathsAcceptingParams(String pathsList) {
+        if (Objects.nonNull(pathsList)) {
+            Arrays.asList(pathsList.split(pathsDelimiter)).forEach(
+                    e -> pathsAcceptingParams.add(e.trim()));
+        }
+    }
+
+    private enum MethodType {
+        NON_MODIFYING_METHOD, MODIFYING_METHOD
+    }
+
+    private interface RestCsrfPreventionStrategy {
+        NonceSupplier<HttpServletRequest, String> nonceFromRequestHeader = HttpServletRequest::getHeader;
+        NonceSupplier<HttpServletRequest, String[]> nonceFromRequestParams = ServletRequest::getParameterValues;
+        NonceSupplier<HttpSession, String> nonceFromSession = (s, k) -> Objects
                 .isNull(s) ? null : (String) s.getAttribute(k);
 
-        static final NonceConsumer<HttpServletResponse> nonceToResponse = HttpServletResponse::setHeader;
-        static final NonceConsumer<HttpSession> nonceToSession = HttpSession::setAttribute;
+        NonceConsumer<HttpServletResponse> nonceToResponse = HttpServletResponse::setHeader;
+        NonceConsumer<HttpSession> nonceToSession = HttpSession::setAttribute;
 
         boolean apply(HttpServletRequest request, HttpServletResponse response) throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface NonceSupplier<T, R> {
+        R getNonce(T supplier, String key);
+    }
+
+    @FunctionalInterface
+    private interface NonceConsumer<T> {
+        void setNonce(T consumer, String key, String value);
     }
 
     private class StateChangingRequest implements RestCsrfPreventionStrategy {
@@ -225,38 +249,5 @@ public class RestCsrfPreventionFilter extends CsrfPreventionFilterBase {
             return true;
         }
 
-    }
-
-    @FunctionalInterface
-    private static interface NonceSupplier<T, R> {
-        R getNonce(T supplier, String key);
-    }
-
-    @FunctionalInterface
-    private static interface NonceConsumer<T> {
-        void setNonce(T consumer, String key, String value);
-    }
-
-    /**
-     * A comma separated list of URLs that can accept nonces via request
-     * parameter 'X-CSRF-Token'. For use cases when a nonce information cannot
-     * be provided via header, one can provide it via request parameters. If
-     * there is a X-CSRF-Token header, it will be taken with preference over any
-     * parameter with the same name in the request. Request parameters cannot be
-     * used to fetch new nonce, only header.
-     *
-     * @param pathsList
-     *            Comma separated list of URLs to be configured as paths
-     *            accepting request parameters with nonce information.
-     */
-    public void setPathsAcceptingParams(String pathsList) {
-        if (Objects.nonNull(pathsList)) {
-            Arrays.asList(pathsList.split(pathsDelimiter)).forEach(
-                    e -> pathsAcceptingParams.add(e.trim()));
-        }
-    }
-
-    public Set<String> getPathsAcceptingParams() {
-        return pathsAcceptingParams;
     }
 }

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface Executor extends java.util.concurrent.Executor, Lifecycle {
 
-    public String getName();
+    String getName();
 
     /**
      * Executes the given command at some time in the future.  The command
@@ -36,11 +36,9 @@ public interface Executor extends java.util.concurrent.Executor, Lifecycle {
      * @param command the runnable task
      * @param timeout the length of time to wait for the task to complete
      * @param unit    the units in which timeout is expressed
-     *
      * @throws java.util.concurrent.RejectedExecutionException if this task
-     * cannot be accepted for execution - the queue is full
-     * @throws NullPointerException if command or unit is null
-     *
+     *                                                         cannot be accepted for execution - the queue is full
+     * @throws NullPointerException                            if command or unit is null
      * @deprecated Unused. Will be removed in Tomcat 10.1.x onwards.
      */
     @Deprecated

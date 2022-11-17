@@ -69,7 +69,8 @@ public class IPv6Utils {
                  *  e.g. ::127.0.0.1
                  */
                 ipv6AddressLength = lastColonPos + 1;
-            } else {
+            }
+            else {
                 /*
                  *  IPv6 part ends with only one colon,
                  *  last colon is not part of IPv6 format.
@@ -77,14 +78,15 @@ public class IPv6Utils {
                  */
                 ipv6AddressLength = lastColonPos;
             }
-        } else if (ipv6Address.contains("%")) {
+        }
+        else if (ipv6Address.contains("%")) {
             // Zone ID
             // e.g. fe80:0:0:0:f0f0:c0c0:1919:1234%4
             ipv6AddressLength = ipv6Address.lastIndexOf('%');
         }
 
         StringBuilder result = new StringBuilder();
-        char [][] groups = new char[MAX_NUMBER_OF_GROUPS][MAX_GROUP_LENGTH];
+        char[][] groups = new char[MAX_NUMBER_OF_GROUPS][MAX_GROUP_LENGTH];
         int groupCounter = 0;
         int charInGroupCounter = 0;
 
@@ -130,7 +132,8 @@ public class IPv6Utils {
 
             if (colonsPos == ipv6AddressLength - 2) {
                 expanded.setCharAt(colonsPos + change + 1, '0');
-            } else {
+            }
+            else {
                 expanded.deleteCharAt(colonsPos + change + 1);
                 change = change - 1;
             }
@@ -192,10 +195,11 @@ public class IPv6Utils {
                 }
                 if (groupCounter < (numberOfGroups - 1)
                         && (groupCounter != maxZeroGroupIndex - 1
-                                || maxZeroGroupLength <= 1)) {
+                        || maxZeroGroupLength <= 1)) {
                     result.append(':');
                 }
-            } else if (groupCounter == maxZeroGroupIndex) {
+            }
+            else if (groupCounter == maxZeroGroupIndex) {
                 result.append("::");
             }
         }
@@ -240,13 +244,11 @@ public class IPv6Utils {
             if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
                     || (c >= 'A' && c <= 'F') || c == ':')) {
                 return false;
-            } else if (c == ':') {
+            }
+            else if (c == ':') {
                 colonsCounter++;
             }
         }
-        if (colonsCounter < 2) {
-            return false;
-        }
-        return true;
+        return colonsCounter >= 2;
     }
 }

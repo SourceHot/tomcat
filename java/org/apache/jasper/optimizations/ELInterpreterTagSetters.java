@@ -16,18 +16,17 @@
  */
 package org.apache.jasper.optimizations;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jakarta.el.ELResolver;
-
 import org.apache.jasper.JspCompilationContext;
 import org.apache.jasper.compiler.ELInterpreter;
 import org.apache.jasper.compiler.JspUtil;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A non-specification compliant {@link ELInterpreter} that optimizes a subset
@@ -70,8 +69,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
 
     @Override
     public String interpreterCall(JspCompilationContext context,
-            boolean isTagFile, String expression,
-            Class<?> expectedType, String fnmapvar) {
+                                  boolean isTagFile, String expression,
+                                  Class<?> expectedType, String fnmapvar) {
 
         String result = null;
 
@@ -81,28 +80,33 @@ public class ELInterpreterTagSetters implements ELInterpreter {
             if (m.matches()) {
                 result = m.group(2);
             }
-        } else if (Boolean.class == expectedType) {
+        }
+        else if (Boolean.class == expectedType) {
             Matcher m = PATTERN_BOOLEAN.matcher(expression);
             if (m.matches()) {
                 if ("true".equals(m.group(2))) {
                     result = "Boolean.TRUE";
-                } else {
+                }
+                else {
                     result = "Boolean.FALSE";
                 }
             }
-        // Character
-        } else if (Character.TYPE == expectedType) {
+            // Character
+        }
+        else if (Character.TYPE == expectedType) {
             Matcher m = PATTERN_STRING_CONSTANT.matcher(expression);
             if (m.matches()) {
-                return "\'" + m.group(2).charAt(0) + "\'";
+                return "'" + m.group(2).charAt(0) + "'";
             }
-        } else if (Character.class == expectedType) {
+        }
+        else if (Character.class == expectedType) {
             Matcher m = PATTERN_STRING_CONSTANT.matcher(expression);
             if (m.matches()) {
-                return "Character.valueOf(\'" + m.group(2).charAt(0) + "\')";
+                return "Character.valueOf('" + m.group(2).charAt(0) + "')";
             }
-        // Numeric - BigDecimal
-        } else if (BigDecimal.class == expectedType) {
+            // Numeric - BigDecimal
+        }
+        else if (BigDecimal.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -114,8 +118,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - long/Long
-        } else if (Long.TYPE == expectedType || Long.class == expectedType) {
+            // Numeric - long/Long
+        }
+        else if (Long.TYPE == expectedType || Long.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -124,7 +129,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     if (expectedType.isPrimitive()) {
                         // Long requires explicit declaration as a long literal
                         result = m.group(2) + "L";
-                    } else {
+                    }
+                    else {
                         result = "Long.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -132,8 +138,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - int/Integer
-        } else if (Integer.TYPE == expectedType || Integer.class == expectedType) {
+            // Numeric - int/Integer
+        }
+        else if (Integer.TYPE == expectedType || Integer.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -141,7 +148,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     Integer unused = Integer.valueOf(m.group(2));
                     if (expectedType.isPrimitive()) {
                         result = m.group(2);
-                    } else {
+                    }
+                    else {
                         result = "Integer.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -149,8 +157,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - short/Short
-        } else if (Short.TYPE == expectedType || Short.class == expectedType) {
+            // Numeric - short/Short
+        }
+        else if (Short.TYPE == expectedType || Short.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -159,7 +168,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     if (expectedType.isPrimitive()) {
                         // short requires a downcast
                         result = "(short) " + m.group(2);
-                    } else {
+                    }
+                    else {
                         result = "Short.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -167,8 +177,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - byte/Byte
-        } else if (Byte.TYPE == expectedType || Byte.class == expectedType) {
+            // Numeric - byte/Byte
+        }
+        else if (Byte.TYPE == expectedType || Byte.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -177,7 +188,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     if (expectedType.isPrimitive()) {
                         // byte requires a downcast
                         result = "(byte) " + m.group(2);
-                    } else {
+                    }
+                    else {
                         result = "Byte.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -185,8 +197,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - double/Double
-        } else if (Double.TYPE == expectedType || Double.class == expectedType) {
+            // Numeric - double/Double
+        }
+        else if (Double.TYPE == expectedType || Double.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -194,7 +207,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     Double unused = Double.valueOf(m.group(2));
                     if (expectedType.isPrimitive()) {
                         result = m.group(2);
-                    } else {
+                    }
+                    else {
                         result = "Double.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -202,8 +216,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - float/Float
-        } else if (Float.TYPE == expectedType || Float.class == expectedType) {
+            // Numeric - float/Float
+        }
+        else if (Float.TYPE == expectedType || Float.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -212,7 +227,8 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     if (expectedType.isPrimitive()) {
                         // Float requires explicit declaration as a float literal
                         result = m.group(2) + "f";
-                    } else {
+                    }
+                    else {
                         result = "Float.valueOf(\"" + m.group(2) + "\")";
                     }
                 } catch (NumberFormatException e) {
@@ -220,8 +236,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Numeric - BigInteger
-        } else if (BigInteger.class == expectedType) {
+            // Numeric - BigInteger
+        }
+        else if (BigInteger.class == expectedType) {
             Matcher m = PATTERN_NUMERIC.matcher(expression);
             if (m.matches()) {
                 try {
@@ -233,12 +250,13 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // Enum
-        } else if (expectedType.isEnum()){
+            // Enum
+        }
+        else if (expectedType.isEnum()) {
             Matcher m = PATTERN_STRING_CONSTANT.matcher(expression);
             if (m.matches()) {
                 try {
-                    @SuppressWarnings({ "unchecked", "rawtypes" })
+                    @SuppressWarnings({"unchecked", "rawtypes"})
                     Enum<?> enumValue = Enum.valueOf((Class<? extends Enum>) expectedType, m.group(2));
                     result = expectedType.getName() + "." + enumValue.name();
                 } catch (IllegalArgumentException iae) {
@@ -246,8 +264,9 @@ public class ELInterpreterTagSetters implements ELInterpreter {
                     // Continue and resolve the value at runtime
                 }
             }
-        // String
-        } else if (String.class == expectedType) {
+            // String
+        }
+        else if (String.class == expectedType) {
             Matcher m = PATTERN_STRING_CONSTANT.matcher(expression);
             if (m.matches()) {
                 result = "\"" + m.group(2) + "\"";

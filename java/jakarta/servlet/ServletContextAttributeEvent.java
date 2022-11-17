@@ -21,7 +21,6 @@ package jakarta.servlet;
  * the servlet context of a web application.
  *
  * @see ServletContextAttributeListener
- *
  * @since Servlet 2.3
  */
 public class ServletContextAttributeEvent extends ServletContextEvent {
@@ -46,7 +45,7 @@ public class ServletContextAttributeEvent extends ServletContextEvent {
      * @param value  The value of the servlet context attribute
      */
     public ServletContextAttributeEvent(ServletContext source, String name,
-            Object value) {
+                                        Object value) {
         super(source);
         this.name = name;
         this.value = value;
@@ -66,9 +65,9 @@ public class ServletContextAttributeEvent extends ServletContextEvent {
      * replaced.
      *
      * @return If the attribute was added, this is the value of the attribute.
-     *         If the attribute was removed, this is the value of the removed
-     *         attribute. If the attribute was replaced, this is the old value
-     *         of the attribute.
+     * If the attribute was removed, this is the value of the removed
+     * attribute. If the attribute was replaced, this is the old value
+     * of the attribute.
      */
     public Object getValue() {
         return this.value;

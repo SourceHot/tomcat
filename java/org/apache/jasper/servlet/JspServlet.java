@@ -16,14 +16,6 @@
  */
 package org.apache.jasper.servlet;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.MalformedURLException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
@@ -31,7 +23,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.EmbeddedServletOptions;
 import org.apache.jasper.Options;
@@ -44,9 +35,17 @@ import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.PeriodicEventListener;
 import org.apache.tomcat.util.security.Escape;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
 /**
  * The JSP engine (a.k.a Jasper).
- *
+ * <p>
  * The servlet container is responsible for providing a
  * URLClassLoader for the web application context Jasper
  * is being used in. Jasper will try get the Tomcat
@@ -99,9 +98,9 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
             try {
                 ClassLoader loader = Thread.currentThread().getContextClassLoader();
                 Class<?> engineOptionsClass = loader.loadClass(engineOptionsName);
-                Class<?>[] ctorSig = { ServletConfig.class, ServletContext.class };
+                Class<?>[] ctorSig = {ServletConfig.class, ServletContext.class};
                 Constructor<?> ctor = engineOptionsClass.getConstructor(ctorSig);
-                Object[] args = { config, context };
+                Object[] args = {config, context};
                 options = (Options) ctor.newInstance(args);
             } catch (Throwable e) {
                 e = ExceptionUtils.unwrapInvocationTargetException(e);
@@ -111,7 +110,8 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
                 // Use the default Options implementation
                 options = new EmbeddedServletOptions(config, context);
             }
-        } else {
+        }
+        else {
             // Use the default Options implementation
             options = new EmbeddedServletOptions(config, context);
         }
@@ -126,12 +126,13 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
                 throw new ServletException(Localizer.getMessage("jsp.error.no.jsp", jspFile), e);
             }
             try {
-                if (SecurityUtil.isPackageProtectionEnabled()){
-                   AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> {
-                       serviceJspFile(null, null, jspFile, true);
-                       return null;
-                   });
-                } else {
+                if (SecurityUtil.isPackageProtectionEnabled()) {
+                    AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> {
+                        serviceJspFile(null, null, jspFile, true);
+                        return null;
+                    });
+                }
+                else {
                     serviceJspFile(null, null, jspFile, true);
                 }
             } catch (IOException e) {
@@ -139,7 +140,7 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
             } catch (PrivilegedActionException e) {
                 Throwable t = e.getCause();
                 if (t instanceof ServletException) {
-                    throw (ServletException)t;
+                    throw (ServletException) t;
                 }
                 throw new ServletException(Localizer.getMessage("jsp.error.precompilation", jspFile), e);
             }
@@ -167,17 +168,6 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
         return this.rctxt.getJspCount();
     }
 
-
-    /**
-     * Resets the JSP reload counter.
-     *
-     * @param count Value to which to reset the JSP reload counter
-     */
-    public void setJspReloadCount(int count) {
-        this.rctxt.setJspReloadCount(count);
-    }
-
-
     /**
      * Gets the number of JSPs that have been reloaded.
      *
@@ -190,6 +180,14 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
         return this.rctxt.getJspReloadCount();
     }
 
+    /**
+     * Resets the JSP reload counter.
+     *
+     * @param count Value to which to reset the JSP reload counter
+     */
+    public void setJspReloadCount(int count) {
+        this.rctxt.setJspReloadCount(count);
+    }
 
     /**
      * Gets the number of JSPs that are in the JSP limiter queue
@@ -226,9 +224,8 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
      * <code>request.setCharacterEncoding()</code> first.</p>
      *
      * @param request The servlet request we are processing
-     *
-     * @exception ServletException if an invalid parameter value for the
-     *  <code>jsp_precompile</code> parameter name is specified
+     * @throws ServletException if an invalid parameter value for the
+     *                          <code>jsp_precompile</code> parameter name is specified
      */
     boolean preCompile(HttpServletRequest request) throws ServletException {
 
@@ -242,7 +239,7 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
             return false;
         }
         queryString =
-            queryString.substring(start + precompileParameter.length());
+                queryString.substring(start + precompileParameter.length());
         if (queryString.length() == 0) {
             return true;             // ?jsp_precompile
         }
@@ -260,14 +257,16 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
         String value = queryString.substring(1, limit);
         if (value.equals("true")) {
             return true;             // ?jsp_precompile=true
-        } else if (value.equals("false")) {
+        }
+        else if (value.equals("false")) {
             // Spec says if jsp_precompile=false, the request should not
             // be delivered to the JSP page; the easiest way to implement
             // this is to set the flag to true, and precompile the page anyway.
             // This still conforms to the spec, since it says the
             // precompilation request can be ignored.
             return true;             // ?jsp_precompile=false
-        } else {
+        }
+        else {
             throw new ServletException(Localizer.getMessage("jsp.error.precompilation.parameter",
                     precompileParameter, value));
         }
@@ -276,7 +275,7 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
 
 
     @Override
-    public void service (HttpServletRequest request, HttpServletResponse response)
+    public void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         // jspFile may be configured as an init-param for this servlet instance
@@ -300,7 +299,8 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
                 if (pathInfo != null) {
                     jspUri += pathInfo;
                 }
-            } else {
+            }
+            else {
                 /*
                  * Requested JSP has not been the target of a
                  * RequestDispatcher.include(). Reconstruct its path from the
@@ -356,11 +356,11 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
     private void serviceJspFile(HttpServletRequest request,
                                 HttpServletResponse response, String jspUri,
                                 boolean precompile)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
 
         JspServletWrapper wrapper = rctxt.getWrapper(jspUri);
         if (wrapper == null) {
-            synchronized(this) {
+            synchronized (this) {
                 wrapper = rctxt.getWrapper(jspUri);
                 if (wrapper == null) {
                     // Check if the requested JSP page exists, to avoid
@@ -370,8 +370,8 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
                         return;
                     }
                     wrapper = new JspServletWrapper(config, options, jspUri,
-                                                    rctxt);
-                    rctxt.addWrapper(jspUri,wrapper);
+                            rctxt);
+                    rctxt.addWrapper(jspUri, wrapper);
                 }
             }
         }
@@ -386,20 +386,21 @@ public class JspServlet extends HttpServlet implements PeriodicEventListener {
 
 
     private void handleMissingResource(HttpServletRequest request,
-            HttpServletResponse response, String jspUri)
+                                       HttpServletResponse response, String jspUri)
             throws ServletException, IOException {
 
         String includeRequestUri =
-            (String)request.getAttribute(RequestDispatcher.INCLUDE_REQUEST_URI);
+                (String) request.getAttribute(RequestDispatcher.INCLUDE_REQUEST_URI);
 
-        String msg = Localizer.getMessage("jsp.error.file.not.found",jspUri);
+        String msg = Localizer.getMessage("jsp.error.file.not.found", jspUri);
         if (includeRequestUri != null) {
             // This file was included. Throw an exception as
             // a response.sendError() will be ignored
             // Strictly, filtering this is an application
             // responsibility but just in case...
             throw new ServletException(Escape.htmlElementContent(msg));
-        } else {
+        }
+        else {
             try {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, msg);
             } catch (IllegalStateException ise) {

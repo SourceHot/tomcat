@@ -17,26 +17,14 @@
 package org.apache.catalina.mbeans;
 
 
-import java.util.Iterator;
-
-import javax.naming.Binding;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.OperationNotSupportedException;
-
-import org.apache.catalina.Group;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Role;
-import org.apache.catalina.Server;
-import org.apache.catalina.User;
-import org.apache.catalina.UserDatabase;
+import org.apache.catalina.*;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.naming.Context;
+import javax.naming.*;
+import java.util.Iterator;
 
 
 /**
@@ -45,8 +33,8 @@ import org.apache.tomcat.util.res.StringManager;
  * management.
  * <p>
  * This listener must only be nested within {@link Server} elements.
- *
- *
+ * <p>
+ * <p>
  * 它实例化与受管理的全局 JNDI 资源关联的 MBean 集。 <p> 此侦听器只能嵌套在 {@link Server} 元素中。
  *
  * @author Craig R. McClanahan
@@ -54,12 +42,11 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class GlobalResourcesLifecycleListener implements LifecycleListener {
 
-    private static final Log log = LogFactory.getLog(GlobalResourcesLifecycleListener.class);
     protected static final StringManager sm = StringManager.getManager(GlobalResourcesLifecycleListener.class);
+    private static final Log log = LogFactory.getLog(GlobalResourcesLifecycleListener.class);
 
 
     // ----------------------------------------------------- Instance Variables
-
     /**
      * The owning Catalina component that we are attached to.
      */
@@ -83,7 +70,8 @@ public class GlobalResourcesLifecycleListener implements LifecycleListener {
             }
             component = event.getLifecycle();
             createMBeans();
-        } else if (Lifecycle.STOP_EVENT.equals(event.getType())) {
+        }
+        else if (Lifecycle.STOP_EVENT.equals(event.getType())) {
             destroyMBeans();
             component = null;
         }
@@ -118,16 +106,15 @@ public class GlobalResourcesLifecycleListener implements LifecycleListener {
      * Create the MBeans for the interesting global JNDI resources in
      * the specified naming context.
      *
-     * @param prefix Prefix for complete object name paths
+     * @param prefix  Prefix for complete object name paths
      * @param context Context to be scanned
-     *
-     * @exception NamingException if a JNDI exception occurs
+     * @throws NamingException if a JNDI exception occurs
      */
     protected void createMBeans(String prefix, Context context) throws NamingException {
 
         if (log.isDebugEnabled()) {
             log.debug("Creating MBeans for Global JNDI Resources in Context '" +
-                prefix + "'");
+                    prefix + "'");
         }
 
         try {
@@ -141,7 +128,8 @@ public class GlobalResourcesLifecycleListener implements LifecycleListener {
                 }
                 if (value instanceof Context) {
                     createMBeans(name + "/", (Context) value);
-                } else if (value instanceof UserDatabase) {
+                }
+                else if (value instanceof UserDatabase) {
                     try {
                         createMBeans(name, (UserDatabase) value);
                     } catch (Exception e) {
@@ -160,10 +148,9 @@ public class GlobalResourcesLifecycleListener implements LifecycleListener {
     /**
      * Create the MBeans for the specified UserDatabase and its contents.
      *
-     * @param name Complete resource name of this UserDatabase
+     * @param name     Complete resource name of this UserDatabase
      * @param database The UserDatabase to be processed
-     *
-     * @exception Exception if an exception occurs while creating MBeans
+     * @throws Exception if an exception occurs while creating MBeans
      */
     protected void createMBeans(String name, UserDatabase database) throws Exception {
 
@@ -174,7 +161,7 @@ public class GlobalResourcesLifecycleListener implements LifecycleListener {
         }
         try {
             MBeanUtils.createMBean(database);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(sm.getString("globalResources.createError.userDatabase", name), e);
         }
 

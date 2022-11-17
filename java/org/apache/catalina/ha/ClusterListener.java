@@ -16,12 +16,12 @@
  */
 package org.apache.catalina.ha;
 
-import java.io.Serializable;
-
 import org.apache.catalina.tribes.ChannelListener;
 import org.apache.catalina.tribes.Member;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.Serializable;
 
 
 /**
@@ -57,10 +57,11 @@ public abstract class ClusterListener implements ChannelListener {
     public void setCluster(CatalinaCluster cluster) {
         if (log.isDebugEnabled()) {
             if (cluster != null) {
-                log.debug("add ClusterListener " + this.toString() +
+                log.debug("add ClusterListener " + this +
                         " to cluster" + cluster);
-            } else {
-                log.debug("remove ClusterListener " + this.toString() +
+            }
+            else {
+                log.debug("remove ClusterListener " + this +
                         " from cluster");
             }
         }
@@ -71,39 +72,34 @@ public abstract class ClusterListener implements ChannelListener {
 
     @Override
     public final void messageReceived(Serializable msg, Member member) {
-        if ( msg instanceof ClusterMessage ) {
-            messageReceived((ClusterMessage)msg);
+        if (msg instanceof ClusterMessage) {
+            messageReceived((ClusterMessage) msg);
         }
-    }
-    @Override
-    public final boolean accept(Serializable msg, Member member) {
-        if ( msg instanceof ClusterMessage ) {
-            return true;
-        }
-        return false;
     }
 
+    @Override
+    public final boolean accept(Serializable msg, Member member) {
+        return msg instanceof ClusterMessage;
+    }
 
 
     /**
      * Callback from the cluster, when a message is received, The cluster will
      * broadcast it invoking the messageReceived on the receiver.
      *
-     * @param msg
-     *            ClusterMessage - the message received from the cluster
+     * @param msg ClusterMessage - the message received from the cluster
      */
-    public abstract void messageReceived(ClusterMessage msg) ;
+    public abstract void messageReceived(ClusterMessage msg);
 
 
     /**
      * Accept only SessionIDMessages
      *
-     * @param msg
-     *            ClusterMessage
+     * @param msg ClusterMessage
      * @return boolean - returns true to indicate that messageReceived should be
-     *         invoked. If false is returned, the messageReceived method will
-     *         not be invoked.
+     * invoked. If false is returned, the messageReceived method will
+     * not be invoked.
      */
-    public abstract boolean accept(ClusterMessage msg) ;
+    public abstract boolean accept(ClusterMessage msg);
 
 }

@@ -16,13 +16,6 @@
  */
 package jakarta.servlet.jsp.el;
 
-import java.beans.FeatureDescriptor;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-
 import jakarta.el.ELClass;
 import jakarta.el.ELContext;
 import jakarta.el.ELResolver;
@@ -30,8 +23,10 @@ import jakarta.el.ImportHandler;
 import jakarta.servlet.jsp.JspContext;
 import jakarta.servlet.jsp.PageContext;
 
+import java.beans.FeatureDescriptor;
+import java.util.*;
+
 /**
- *
  * @since JSP 2.1
  */
 public class ScopedAttributeELResolver extends ELResolver {
@@ -94,7 +89,7 @@ public class ScopedAttributeELResolver extends ELResolver {
                                 try {
                                     result = clazz.getField(key).get(null);
                                 } catch (IllegalArgumentException | IllegalAccessException |
-                                        NoSuchFieldException | SecurityException e) {
+                                         NoSuchFieldException | SecurityException e) {
                                     // Most (all?) of these should have been
                                     // prevented by the checks when the import
                                     // was defined.
@@ -133,7 +128,8 @@ public class ScopedAttributeELResolver extends ELResolver {
                 int scope = page.getAttributesScope(key);
                 if (scope != 0) {
                     page.setAttribute(key, value, scope);
-                } else {
+                }
+                else {
                     page.setAttribute(key, value);
                 }
             }

@@ -18,7 +18,6 @@
 package org.apache.el.parser;
 
 import jakarta.el.ELException;
-
 import org.apache.el.lang.EvaluationContext;
 
 
@@ -26,11 +25,11 @@ import org.apache.el.lang.EvaluationContext;
  * @author Jacob Hookom [jacob@hookom.net]
  */
 public final class AstString extends SimpleNode {
+    private volatile String string;
+
     public AstString(int id) {
         super(id);
     }
-
-    private volatile String string;
 
     public String getString() {
         if (this.string == null) {

@@ -16,26 +16,9 @@
  */
 package org.apache.jasper.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.descriptor.JspConfigDescriptor;
 import jakarta.servlet.descriptor.TaglibDescriptor;
-
 import org.apache.jasper.compiler.JarScannerFactory;
 import org.apache.jasper.compiler.Localizer;
 import org.apache.juli.logging.Log;
@@ -49,14 +32,24 @@ import org.apache.tomcat.util.descriptor.tld.TldParser;
 import org.apache.tomcat.util.descriptor.tld.TldResourcePath;
 import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
+
 /**
  * Scans for and loads Tag Library Descriptors contained in a web application.
  */
 public class TldScanner {
-    private final Log log = LogFactory.getLog(TldScanner.class); // must not be static
     private static final String MSG = "org.apache.jasper.servlet.TldScanner";
     private static final String TLD_EXT = ".tld";
     private static final String WEB_INF = "/WEB-INF/";
+    private final Log log = LogFactory.getLog(TldScanner.class); // must not be static
     private final ServletContext context;
     private final TldParser tldParser;
     private final Map<String, TldResourcePath> uriTldResourcePathMap = new HashMap<>();
@@ -119,7 +112,7 @@ public class TldScanner {
      *
      * @return the map of TldResourcePath to parsed XML files
      */
-    public Map<TldResourcePath,TaglibXml> getTldResourcePathTaglibXmlMap() {
+    public Map<TldResourcePath, TaglibXml> getTldResourcePathTaglibXmlMap() {
         return tldResourcePathTaglibXmlMap;
     }
 
@@ -151,7 +144,8 @@ public class TldScanner {
 
     /**
      * Scan for TLDs defined in &lt;jsp-config&gt;.
-     * @throws IOException Error reading resources
+     *
+     * @throws IOException  Error reading resources
      * @throws SAXException XML parsing error
      */
     protected void scanJspConfig() throws IOException, SAXException {
@@ -191,7 +185,8 @@ public class TldScanner {
                     // if the path points to a jar file, the TLD is presumed to be
                     // inside at META-INF/taglib.tld
                     tldResourcePath = new TldResourcePath(url, resourcePath, "META-INF/taglib.tld");
-                } else {
+                }
+                else {
                     tldResourcePath = new TldResourcePath(url, resourcePath);
                 }
                 // parse TLD but store using the URI supplied in the descriptor
@@ -201,7 +196,8 @@ public class TldScanner {
                 if (tld.getListeners() != null) {
                     listeners.addAll(tld.getListeners());
                 }
-            } else {
+            }
+            else {
                 log.warn(Localizer.getMessage(MSG + ".webxmlFailPathDoesNotExist",
                         resourcePath,
                         taglibURI));
@@ -226,17 +222,21 @@ public class TldScanner {
             for (String path : dirList) {
                 if (path.startsWith("/WEB-INF/classes/")) {
                     // Skip: JSP.7.3.1
-                } else if (path.startsWith("/WEB-INF/lib/")) {
+                }
+                else if (path.startsWith("/WEB-INF/lib/")) {
                     // Skip: JSP.7.3.1
-                } else if (path.endsWith("/")) {
+                }
+                else if (path.endsWith("/")) {
                     scanResourcePaths(path);
-                } else if (path.startsWith("/WEB-INF/tags/")) {
+                }
+                else if (path.startsWith("/WEB-INF/tags/")) {
                     // JSP 7.3.1: in /WEB-INF/tags only consider implicit.tld
                     if (path.endsWith("/implicit.tld")) {
                         found = true;
                         parseTld(path);
                     }
-                } else if (path.endsWith(TLD_EXT)) {
+                }
+                else if (path.endsWith(TLD_EXT)) {
                     found = true;
                     parseTld(path);
                 }
@@ -246,7 +246,8 @@ public class TldScanner {
             if (log.isDebugEnabled()) {
                 log.debug(Localizer.getMessage("jsp.tldCache.tldInResourcePath", startPath));
             }
-        } else {
+        }
+        else {
             if (log.isDebugEnabled()) {
                 log.debug(Localizer.getMessage("jsp.tldCache.noTldInResourcePath", startPath));
             }
@@ -302,8 +303,8 @@ public class TldScanner {
             URL jarFileUrl = jar.getJarFileURL();
             jar.nextEntry();
             for (String entryName = jar.getEntryName();
-                entryName != null;
-                jar.nextEntry(), entryName = jar.getEntryName()) {
+                 entryName != null;
+                 jar.nextEntry(), entryName = jar.getEntryName()) {
                 if (!(entryName.startsWith("META-INF/") &&
                         entryName.endsWith(TLD_EXT))) {
                     continue;
@@ -321,7 +322,8 @@ public class TldScanner {
                 if (log.isDebugEnabled()) {
                     log.debug(Localizer.getMessage("jsp.tldCache.tldInJar", jarFileUrl.toString()));
                 }
-            } else {
+            }
+            else {
                 foundJarWithoutTld = true;
                 if (log.isDebugEnabled()) {
                     log.debug(Localizer.getMessage(
@@ -354,7 +356,8 @@ public class TldScanner {
                     String resourcePath;
                     if (webappPath == null) {
                         resourcePath = null;
-                    } else {
+                    }
+                    else {
                         String subPath = file.subpath(
                                 filePath.getNameCount(), file.getNameCount()).toString();
                         if ('/' != File.separatorChar) {
@@ -378,7 +381,8 @@ public class TldScanner {
                     log.debug(Localizer.getMessage("jsp.tldCache.tldInDir",
                             file.getAbsolutePath()));
                 }
-            } else {
+            }
+            else {
                 if (log.isDebugEnabled()) {
                     log.debug(Localizer.getMessage("jsp.tldCache.noTldInDir",
                             file.getAbsolutePath()));

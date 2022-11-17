@@ -16,6 +16,18 @@
  */
 package org.apache.catalina.connector;
 
+import jakarta.servlet.ReadListener;
+import org.apache.catalina.security.SecurityUtil;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.Request;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.buf.B2CConverter;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.collections.SynchronizedStack;
+import org.apache.tomcat.util.net.ApplicationBufferHandler;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.Buffer;
@@ -28,19 +40,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.servlet.ReadListener;
-
-import org.apache.catalina.security.SecurityUtil;
-import org.apache.coyote.ActionCode;
-import org.apache.coyote.Request;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.buf.B2CConverter;
-import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.collections.SynchronizedStack;
-import org.apache.tomcat.util.net.ApplicationBufferHandler;
-import org.apache.tomcat.util.res.StringManager;
-
 /**
  * The buffer used by Tomcat request. This is a derivative of the Tomcat 3.3
  * OutputBuffer, adapted to handle input instead of output. This allows
@@ -50,83 +49,61 @@ import org.apache.tomcat.util.res.StringManager;
  * @author Remy Maucherat
  */
 public class InputBuffer extends Reader
-    implements ByteChunk.ByteInputChannel, ApplicationBufferHandler {
+        implements ByteChunk.ByteInputChannel, ApplicationBufferHandler {
 
+    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
     /**
      * The string manager for this package.
      */
     protected static final StringManager sm = StringManager.getManager(InputBuffer.class);
-
     private static final Log log = LogFactory.getLog(InputBuffer.class);
-
-    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
-
+    /**
+     * Encoder cache.
+     */
+    private static final Map<Charset, SynchronizedStack<B2CConverter>> encoders = new ConcurrentHashMap<>();
     // The buffer can be used for byte[] and char[] reading
     // ( this is needed to support ServletInputStream and BufferedReader )
     public final int INITIAL_STATE = 0;
     public final int CHAR_STATE = 1;
     public final int BYTE_STATE = 2;
 
-
-    /**
-     * Encoder cache.
-     */
-    private static final Map<Charset, SynchronizedStack<B2CConverter>> encoders = new ConcurrentHashMap<>();
-
     // ----------------------------------------------------- Instance Variables
-
-    /**
-     * The byte buffer.
-     */
-    private ByteBuffer bb;
-
-
-    /**
-     * The char buffer.
-     */
-    private CharBuffer cb;
-
-
-    /**
-     * State of the output buffer.
-     */
-    private int state = 0;
-
-
-    /**
-     * Flag which indicates if the input buffer is closed.
-     */
-    private boolean closed = false;
-
-
-    /**
-     * Current byte to char converter.
-     */
-    protected B2CConverter conv;
-
-
-    /**
-     * Associated Coyote request.
-     */
-    private Request coyoteRequest;
-
-
-    /**
-     * Buffer position.
-     */
-    private int markPos = -1;
-
-
-    /**
-     * Char buffer limit.
-     */
-    private int readLimit;
-
-
     /**
      * Buffer size.
      */
     private final int size;
+    /**
+     * Current byte to char converter.
+     */
+    protected B2CConverter conv;
+    /**
+     * The byte buffer.
+     */
+    private ByteBuffer bb;
+    /**
+     * The char buffer.
+     */
+    private CharBuffer cb;
+    /**
+     * State of the output buffer.
+     */
+    private int state = 0;
+    /**
+     * Flag which indicates if the input buffer is closed.
+     */
+    private boolean closed = false;
+    /**
+     * Associated Coyote request.
+     */
+    private Request coyoteRequest;
+    /**
+     * Buffer position.
+     */
+    private int markPos = -1;
+    /**
+     * Char buffer limit.
+     */
+    private int readLimit;
 
 
     // ----------------------------------------------------------- Constructors
@@ -161,6 +138,28 @@ public class InputBuffer extends Reader
 
     // ------------------------------------------------------------- Properties
 
+    private static B2CConverter createConverter(Charset charset) throws IOException {
+        if (SecurityUtil.isPackageProtectionEnabled()) {
+            try {
+                return AccessController.doPrivileged(new PrivilegedCreateConverter(charset));
+            } catch (PrivilegedActionException ex) {
+                Exception e = ex.getException();
+                if (e instanceof IOException) {
+                    throw (IOException) e;
+                }
+                else {
+                    throw new IOException(e);
+                }
+            }
+        }
+        else {
+            return new B2CConverter(charset);
+        }
+
+    }
+
+
+    // --------------------------------------------------------- Public Methods
 
     /**
      * Associated Coyote request.
@@ -170,9 +169,6 @@ public class InputBuffer extends Reader
     public void setRequest(Request coyoteRequest) {
         this.coyoteRequest = coyoteRequest;
     }
-
-
-    // --------------------------------------------------------- Public Methods
 
     /**
      * Recycle the output buffer.
@@ -185,7 +181,8 @@ public class InputBuffer extends Reader
         if (cb.capacity() > size) {
             cb = CharBuffer.allocate(size);
             clear(cb);
-        } else {
+        }
+        else {
             clear(cb);
         }
         readLimit = size;
@@ -200,7 +197,6 @@ public class InputBuffer extends Reader
         }
     }
 
-
     /**
      * Close the input buffer.
      *
@@ -210,7 +206,6 @@ public class InputBuffer extends Reader
     public void close() throws IOException {
         closed = true;
     }
-
 
     public int available() {
         int available = availableInThisBuffer();
@@ -222,37 +217,36 @@ public class InputBuffer extends Reader
         return available;
     }
 
-
     private int availableInThisBuffer() {
         int available = 0;
         if (state == BYTE_STATE) {
             available = bb.remaining();
-        } else if (state == CHAR_STATE) {
+        }
+        else if (state == CHAR_STATE) {
             available = cb.remaining();
         }
         return available;
     }
 
-
     public void setReadListener(ReadListener listener) {
         coyoteRequest.setReadListener(listener);
     }
-
 
     public boolean isFinished() {
         int available = 0;
         if (state == BYTE_STATE) {
             available = bb.remaining();
-        } else if (state == CHAR_STATE) {
+        }
+        else if (state == CHAR_STATE) {
             available = cb.remaining();
         }
         if (available > 0) {
             return false;
-        } else {
+        }
+        else {
             return coyoteRequest.isFinished();
         }
     }
-
 
     public boolean isReady() {
         if (coyoteRequest.getReadListener() == null) {
@@ -287,12 +281,11 @@ public class InputBuffer extends Reader
     }
 
 
+    // ------------------------------------------------- Bytes Handling Methods
+
     boolean isBlocking() {
         return coyoteRequest.getReadListener() == null;
     }
-
-
-    // ------------------------------------------------- Bytes Handling Methods
 
     /**
      * Reads new bytes in the byte chunk.
@@ -322,7 +315,6 @@ public class InputBuffer extends Reader
         }
     }
 
-
     public int readByte() throws IOException {
         throwIfClosed();
 
@@ -331,7 +323,6 @@ public class InputBuffer extends Reader
         }
         return bb.get() & 0xFF;
     }
-
 
     public int read(byte[] b, int off, int len) throws IOException {
         throwIfClosed();
@@ -345,6 +336,8 @@ public class InputBuffer extends Reader
     }
 
 
+    // ------------------------------------------------- Chars Handling Methods
+
     /**
      * Transfers bytes from the buffer to the specified ByteBuffer. After the
      * operation the position of the ByteBuffer will be returned to the one
@@ -353,7 +346,7 @@ public class InputBuffer extends Reader
      *
      * @param to the ByteBuffer into which bytes are to be written.
      * @return an integer specifying the actual number of bytes read, or -1 if
-     *         the end of the stream is reached
+     * the end of the stream is reached
      * @throws IOException if an input or output exception has occurred
      */
     public int read(ByteBuffer to) throws IOException {
@@ -371,9 +364,6 @@ public class InputBuffer extends Reader
         return n;
     }
 
-
-    // ------------------------------------------------- Chars Handling Methods
-
     public int realReadChars() throws IOException {
         checkConverter();
 
@@ -388,7 +378,8 @@ public class InputBuffer extends Reader
 
         if (markPos == -1) {
             clear(cb);
-        } else {
+        }
+        else {
             // Make sure there's enough space in the worst case
             makeSpace(bb.remaining());
             if ((cb.capacity() - cb.limit()) == 0 && bb.remaining() != 0) {
@@ -403,11 +394,11 @@ public class InputBuffer extends Reader
 
         if (cb.remaining() == 0 && eof) {
             return -1;
-        } else {
+        }
+        else {
             return cb.remaining();
         }
     }
-
 
     @Override
     public int read() throws IOException {
@@ -419,13 +410,11 @@ public class InputBuffer extends Reader
         return cb.get();
     }
 
-
     @Override
     public int read(char[] cbuf) throws IOException {
         throwIfClosed();
         return read(cbuf, 0, cbuf.length);
     }
-
 
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
@@ -438,7 +427,6 @@ public class InputBuffer extends Reader
         cb.get(cbuf, off, n);
         return n;
     }
-
 
     @Override
     public long skip(long n) throws IOException {
@@ -453,7 +441,8 @@ public class InputBuffer extends Reader
             if (cb.remaining() >= n) {
                 cb.position(cb.position() + (int) n);
                 nRead = n;
-            } else {
+            }
+            else {
                 nRead += cb.remaining();
                 cb.position(cb.limit());
                 int nb = realReadChars();
@@ -465,7 +454,6 @@ public class InputBuffer extends Reader
         return nRead;
     }
 
-
     @Override
     public boolean ready() throws IOException {
         throwIfClosed();
@@ -475,12 +463,10 @@ public class InputBuffer extends Reader
         return (available() > 0);
     }
 
-
     @Override
     public boolean markSupported() {
         return true;
     }
-
 
     @Override
     public void mark(int readAheadLimit) throws IOException {
@@ -489,7 +475,8 @@ public class InputBuffer extends Reader
 
         if (cb.remaining() <= 0) {
             clear(cb);
-        } else {
+        }
+        else {
             if ((cb.capacity() > (2 * size)) && (cb.remaining()) < (cb.position())) {
                 cb.compact();
                 cb.flip();
@@ -498,7 +485,6 @@ public class InputBuffer extends Reader
         readLimit = cb.position() + readAheadLimit + size;
         markPos = cb.position();
     }
-
 
     @Override
     public void reset() throws IOException {
@@ -512,14 +498,15 @@ public class InputBuffer extends Reader
                 IOException ioe = new IOException();
                 coyoteRequest.setErrorException(ioe);
                 throw ioe;
-            } else {
+            }
+            else {
                 cb.position(markPos);
             }
-        } else {
+        }
+        else {
             clear(bb);
         }
     }
-
 
     private void throwIfClosed() throws IOException {
         if (closed) {
@@ -556,37 +543,15 @@ public class InputBuffer extends Reader
         }
     }
 
-
-    private static B2CConverter createConverter(Charset charset) throws IOException {
-        if (SecurityUtil.isPackageProtectionEnabled()) {
-            try {
-                return AccessController.doPrivileged(new PrivilegedCreateConverter(charset));
-            } catch (PrivilegedActionException ex) {
-                Exception e = ex.getException();
-                if (e instanceof IOException) {
-                    throw (IOException) e;
-                } else {
-                    throw new IOException(e);
-                }
-            }
-        } else {
-            return new B2CConverter(charset);
-        }
-
-    }
-
-
-    @Override
-    public void setByteBuffer(ByteBuffer buffer) {
-        bb = buffer;
-    }
-
-
     @Override
     public ByteBuffer getByteBuffer() {
         return bb;
     }
 
+    @Override
+    public void setByteBuffer(ByteBuffer buffer) {
+        bb = buffer;
+    }
 
     @Override
     public void expand(int size) {
@@ -597,9 +562,7 @@ public class InputBuffer extends Reader
     private boolean checkByteBufferEof() throws IOException {
         if (bb.remaining() == 0) {
             int n = realReadBytes();
-            if (n < 0) {
-                return true;
-            }
+            return n < 0;
         }
         return false;
     }
@@ -607,9 +570,7 @@ public class InputBuffer extends Reader
     private boolean checkCharBufferEof() throws IOException {
         if (cb.remaining() == 0) {
             int n = realReadChars();
-            if (n < 0) {
-                return true;
-            }
+            return n < 0;
         }
         return false;
     }
@@ -620,17 +581,17 @@ public class InputBuffer extends Reader
 
     private void makeSpace(int count) {
         int desiredSize = cb.limit() + count;
-        if(desiredSize > readLimit) {
+        if (desiredSize > readLimit) {
             desiredSize = readLimit;
         }
 
-        if(desiredSize <= cb.capacity()) {
+        if (desiredSize <= cb.capacity()) {
             return;
         }
 
         int newSize = 2 * cb.capacity();
-        if(desiredSize >= newSize) {
-            newSize= 2 * cb.capacity() + count;
+        if (desiredSize >= newSize) {
+            newSize = 2 * cb.capacity() + count;
         }
 
         if (newSize > readLimit) {

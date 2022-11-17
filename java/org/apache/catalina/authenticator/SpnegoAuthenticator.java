@@ -16,21 +16,7 @@
  */
 package org.apache.catalina.authenticator;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.Principal;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.LinkedHashMap;
-import java.util.regex.Pattern;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Realm;
 import org.apache.catalina.connector.Request;
@@ -40,11 +26,19 @@ import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.apache.tomcat.util.compat.JreVendor;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.Oid;
+import org.ietf.jgss.*;
+
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import java.io.File;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 /**
  * A SPNEGO authenticator that uses the SPNEGO/Kerberos support built in to Java
@@ -55,48 +49,54 @@ import org.ietf.jgss.Oid;
  */
 public class SpnegoAuthenticator extends AuthenticatorBase {
 
-    private final Log log = LogFactory.getLog(SpnegoAuthenticator.class); // must not be static
     private static final String AUTH_HEADER_VALUE_NEGOTIATE = "Negotiate";
-
+    private final Log log = LogFactory.getLog(SpnegoAuthenticator.class); // must not be static
     private String loginConfigName = Constants.DEFAULT_LOGIN_MODULE_NAME;
+    private boolean storeDelegatedCredential = true;
+    private Pattern noKeepAliveUserAgents = null;
+    private boolean applyJava8u40Fix = true;
+
     public String getLoginConfigName() {
         return loginConfigName;
     }
+
     public void setLoginConfigName(String loginConfigName) {
         this.loginConfigName = loginConfigName;
     }
 
-    private boolean storeDelegatedCredential = true;
     public boolean isStoreDelegatedCredential() {
         return storeDelegatedCredential;
     }
+
     public void setStoreDelegatedCredential(
             boolean storeDelegatedCredential) {
         this.storeDelegatedCredential = storeDelegatedCredential;
     }
 
-    private Pattern noKeepAliveUserAgents = null;
     public String getNoKeepAliveUserAgents() {
         Pattern p = noKeepAliveUserAgents;
         if (p == null) {
             return null;
-        } else {
+        }
+        else {
             return p.pattern();
         }
     }
+
     public void setNoKeepAliveUserAgents(String noKeepAliveUserAgents) {
         if (noKeepAliveUserAgents == null ||
                 noKeepAliveUserAgents.length() == 0) {
             this.noKeepAliveUserAgents = null;
-        } else {
+        }
+        else {
             this.noKeepAliveUserAgents = Pattern.compile(noKeepAliveUserAgents);
         }
     }
 
-    private boolean applyJava8u40Fix = true;
     public boolean getApplyJava8u40Fix() {
         return applyJava8u40Fix;
     }
+
     public void setApplyJava8u40Fix(boolean applyJava8u40Fix) {
         this.applyJava8u40Fix = applyJava8u40Fix;
     }
@@ -143,8 +143,8 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
         }
 
         MessageBytes authorization =
-            request.getCoyoteRequest().getMimeHeaders()
-            .getValue("authorization");
+                request.getCoyoteRequest().getMimeHeaders()
+                        .getValue("authorization");
 
         if (authorization == null) {
             if (log.isDebugEnabled()) {
@@ -213,7 +213,8 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
             final int credentialLifetime;
             if (JreVendor.IS_IBM_JVM) {
                 credentialLifetime = GSSCredential.INDEFINITE_LIFETIME;
-            } else {
+            }
+            else {
                 credentialLifetime = GSSCredential.DEFAULT_LIFETIME;
             }
             final PrivilegedExceptionAction<GSSCredential> action =
@@ -252,7 +253,8 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
                 if (log.isDebugEnabled()) {
                     log.debug(sm.getString("spnegoAuthenticator.serviceLoginFail"), e);
                 }
-            } else {
+            }
+            else {
                 log.error(sm.getString("spnegoAuthenticator.serviceLoginFail"), e);
             }
             response.setHeader(AUTH_HEADER_NAME, AUTH_HEADER_VALUE_NEGOTIATE);
@@ -336,7 +338,7 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
         private final boolean storeDelegatedCredential;
 
         public AuthenticateAction(Realm realm, GSSContext gssContext,
-                boolean storeDelegatedCredential) {
+                                  boolean storeDelegatedCredential) {
             this.realm = realm;
             this.gssContext = gssContext;
             this.storeDelegatedCredential = storeDelegatedCredential;
@@ -364,20 +366,16 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
      */
     public static class SpnegoTokenFixer {
 
-        public static void fix(byte[] token) {
-            SpnegoTokenFixer fixer = new SpnegoTokenFixer(token);
-            fixer.fix();
-        }
-
-
         private final byte[] token;
         private int pos = 0;
-
-
         private SpnegoTokenFixer(byte[] token) {
             this.token = token;
         }
 
+        public static void fix(byte[] token) {
+            SpnegoTokenFixer fixer = new SpnegoTokenFixer(token);
+            fixer.fix();
+        }
 
         // Fixes the token in-place
         private void fix() {
@@ -501,7 +499,8 @@ public class SpnegoAuthenticator extends AuthenticatorBase {
                 int b = token[pos++] & 0xFF;
                 if (b > 127) {
                     b -= 128;
-                } else {
+                }
+                else {
                     write = true;
                 }
                 c = c << 7;

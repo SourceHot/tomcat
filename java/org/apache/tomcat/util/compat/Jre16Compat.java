@@ -16,6 +16,10 @@
  */
 package org.apache.tomcat.util.compat;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ProtocolFamily;
@@ -23,10 +27,6 @@ import java.net.SocketAddress;
 import java.net.StandardProtocolFamily;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 class Jre16Compat extends Jre9Compat {
 
@@ -71,7 +71,7 @@ class Jre16Compat extends Jre9Compat {
         try {
             return (SocketAddress) unixDomainSocketAddressOfMethod.invoke(null, path);
         } catch (IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException e) {
+                 | InvocationTargetException e) {
             throw new UnsupportedOperationException(e);
         }
     }

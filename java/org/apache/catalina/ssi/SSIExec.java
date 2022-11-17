@@ -17,13 +17,14 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.catalina.util.IOTools;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
-import org.apache.catalina.util.IOTools;
-import org.apache.tomcat.util.res.StringManager;
 /**
  * Implements the Server-side #exec command
  *
@@ -34,17 +35,16 @@ import org.apache.tomcat.util.res.StringManager;
  * @author David Becker
  */
 public class SSIExec implements SSICommand {
+    protected static final int BUFFER_SIZE = 1024;
     private static final StringManager sm = StringManager.getManager(SSIExec.class);
     protected final SSIInclude ssiInclude = new SSIInclude();
-    protected static final int BUFFER_SIZE = 1024;
-
 
     /**
      * @see SSICommand
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer) {
+                        String[] paramNames, String[] paramValues, PrintWriter writer) {
         long lastModified = 0;
         String configErrMsg = ssiMediator.getConfigErrMsg();
         String paramName = paramNames[0];
@@ -54,7 +54,8 @@ public class SSIExec implements SSICommand {
             lastModified = ssiInclude.process(ssiMediator, "include",
                     new String[]{"virtual"}, new String[]{substitutedValue},
                     writer);
-        } else if (paramName.equalsIgnoreCase("cmd")) {
+        }
+        else if (paramName.equalsIgnoreCase("cmd")) {
             boolean foundProgram = false;
             try {
                 Runtime rt = Runtime.getRuntime();

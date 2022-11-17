@@ -16,12 +16,12 @@
  */
 package org.apache.coyote.http2;
 
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.ByteBuffer;
+import java.util.Iterator;
 
 /**
  * Base class for all streams other than stream 0, the connection. Primarily
@@ -29,11 +29,9 @@ import org.apache.tomcat.util.res.StringManager;
  */
 abstract class AbstractNonZeroStream extends AbstractStream {
 
+    protected static final ByteBuffer ZERO_LENGTH_BYTEBUFFER = ByteBuffer.allocate(0);
     private static final Log log = LogFactory.getLog(AbstractNonZeroStream.class);
     private static final StringManager sm = StringManager.getManager(AbstractNonZeroStream.class);
-
-    protected static final ByteBuffer ZERO_LENGTH_BYTEBUFFER = ByteBuffer.allocate(0);
-
     protected final StreamStateMachine state;
 
     private volatile int weight = Constants.DEFAULT_WEIGHT;
@@ -150,8 +148,8 @@ abstract class AbstractNonZeroStream extends AbstractStream {
      * that has been received from the client.
      *
      * @return {@code null} if the DATA frame payload can be swallowed, or a
-     *         ByteBuffer with at least enough space remaining for the current
-     *         flow control window for stream data from the client.
+     * ByteBuffer with at least enough space remaining for the current
+     * flow control window for stream data from the client.
      */
     abstract ByteBuffer getInputByteBuffer();
 

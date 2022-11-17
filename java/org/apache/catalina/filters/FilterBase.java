@@ -16,15 +16,14 @@
  */
 package org.apache.catalina.filters;
 
-import java.util.Enumeration;
-
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
-
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.IntrospectionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.Enumeration;
 
 /**
  * Base class for filters that provides generic initialisation and a simple
@@ -44,7 +43,6 @@ public abstract class FilterBase implements Filter {
      *
      * @param filterConfig The configuration information associated with the
      *                     filter instance being initialised
-     *
      * @throws ServletException if {@link #isConfigProblemFatal()} returns
      *                          {@code true} and a configured parameter does not
      *                          have a matching setter
@@ -60,7 +58,8 @@ public abstract class FilterBase implements Filter {
                         paramName, this.getClass().getName());
                 if (isConfigProblemFatal()) {
                     throw new ServletException(msg);
-                } else {
+                }
+                else {
                     getLogger().warn(msg);
                 }
             }
@@ -73,7 +72,7 @@ public abstract class FilterBase implements Filter {
      * turn will prevent the web application from starting.
      *
      * @return <code>true</code> if a problem should trigger the failure of this
-     *         filter, else <code>false</code>
+     * filter, else <code>false</code>
      */
     protected boolean isConfigProblemFatal() {
         return false;

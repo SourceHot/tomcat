@@ -16,18 +16,16 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.managed;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Objects;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
+import org.apache.tomcat.dbcp.dbcp2.ConnectionFactory;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.TransactionSynchronizationRegistry;
-
-import org.apache.tomcat.dbcp.dbcp2.ConnectionFactory;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Objects;
 
 /**
  * An implementation of XAConnectionFactory which manages non-XA connections in XA transactions. A non-XA connection
@@ -37,6 +35,66 @@ import org.apache.tomcat.dbcp.dbcp2.ConnectionFactory;
  * @since 2.0
  */
 public class LocalXAConnectionFactory implements XAConnectionFactory {
+
+    private final TransactionRegistry transactionRegistry;
+    private final ConnectionFactory connectionFactory;
+
+    /**
+     * Creates an LocalXAConnectionFactory which uses the specified connection factory to create database connections.
+     * The connections are enlisted into transactions using the specified transaction manager.
+     *
+     * @param transactionManager the transaction manager in which connections will be enlisted
+     * @param connectionFactory  the connection factory from which connections will be retrieved
+     */
+    public LocalXAConnectionFactory(final TransactionManager transactionManager,
+                                    final ConnectionFactory connectionFactory) {
+        this(transactionManager, null, connectionFactory);
+    }
+
+    /**
+     * Creates an LocalXAConnectionFactory which uses the specified connection factory to create database connections.
+     * The connections are enlisted into transactions using the specified transaction manager.
+     *
+     * @param transactionManager                 the transaction manager in which connections will be enlisted
+     * @param transactionSynchronizationRegistry the optional TSR to register synchronizations with
+     * @param connectionFactory                  the connection factory from which connections will be retrieved
+     * @since 2.8.0
+     */
+    public LocalXAConnectionFactory(final TransactionManager transactionManager,
+                                    final TransactionSynchronizationRegistry transactionSynchronizationRegistry,
+                                    final ConnectionFactory connectionFactory) {
+        Objects.requireNonNull(transactionManager, "transactionManager is null");
+        Objects.requireNonNull(connectionFactory, "connectionFactory is null");
+        this.transactionRegistry = new TransactionRegistry(transactionManager, transactionSynchronizationRegistry);
+        this.connectionFactory = connectionFactory;
+    }
+
+    @Override
+    public Connection createConnection() throws SQLException {
+        // create a new connection
+        final Connection connection = connectionFactory.createConnection();
+
+        // create a XAResource to manage the connection during XA transactions
+        final XAResource xaResource = new LocalXAResource(connection);
+
+        // register the xa resource for the connection
+        transactionRegistry.registerConnection(connection, xaResource);
+
+        return connection;
+    }
+
+    /**
+     * @return The connection factory.
+     * @since 2.6.0
+     */
+    public ConnectionFactory getConnectionFactory() {
+        return connectionFactory;
+    }
+
+    @Override
+    public TransactionRegistry getTransactionRegistry() {
+        return transactionRegistry;
+    }
 
     /**
      * LocalXAResource is a fake XAResource for non-XA connections. When a transaction is started the connection
@@ -71,12 +129,9 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * Commits the transaction and restores the original auto commit setting.
          *
-         * @param xid
-         *            the id of the transaction branch for this connection
-         * @param flag
-         *            ignored
-         * @throws XAException
-         *             if connection.commit() throws an SQLException
+         * @param xid  the id of the transaction branch for this connection
+         * @param flag ignored
+         * @throws XAException if connection.commit() throws an SQLException
          */
         @Override
         public synchronized void commit(final Xid xid, final boolean flag) throws XAException {
@@ -113,12 +168,9 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * This method does nothing.
          *
-         * @param xid
-         *            the id of the transaction branch for this connection
-         * @param flag
-         *            ignored
-         * @throws XAException
-         *             if the connection is already enlisted in another transaction
+         * @param xid  the id of the transaction branch for this connection
+         * @param flag ignored
+         * @throws XAException if the connection is already enlisted in another transaction
          */
         @Override
         public synchronized void end(final Xid xid, final int flag) throws XAException {
@@ -135,8 +187,7 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * Clears the currently associated transaction if it is the specified xid.
          *
-         * @param xid
-         *            the id of the transaction to forget
+         * @param xid the id of the transaction to forget
          */
         @Override
         public synchronized void forget(final Xid xid) {
@@ -167,8 +218,7 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * Returns true if the specified XAResource == this XAResource.
          *
-         * @param xaResource
-         *            the XAResource to test
+         * @param xaResource the XAResource to test
          * @return true if the specified XAResource == this XAResource; false otherwise
          */
         @Override
@@ -182,8 +232,7 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
          * wrapped with a proxy that prevents an application from changing the read-only flag while enrolled in a
          * transaction.
          *
-         * @param xid
-         *            the id of the transaction branch for this connection
+         * @param xid the id of the transaction branch for this connection
          * @return XAResource.XA_RDONLY if the connection.isReadOnly(); XAResource.XA_OK otherwise
          */
         @Override
@@ -211,8 +260,7 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
          * Always returns a zero length Xid array. The LocalXAConnectionFactory can not support recovery, so no xids
          * will ever be found.
          *
-         * @param flag
-         *            ignored since recovery is not supported
+         * @param flag ignored since recovery is not supported
          * @return always a zero length Xid array.
          */
         @Override
@@ -223,10 +271,8 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * Rolls back the transaction and restores the original auto commit setting.
          *
-         * @param xid
-         *            the id of the transaction branch for this connection
-         * @throws XAException
-         *             if connection.rollback() throws an SQLException
+         * @param xid the id of the transaction branch for this connection
+         * @throws XAException if connection.rollback() throws an SQLException
          */
         @Override
         public synchronized void rollback(final Xid xid) throws XAException {
@@ -252,8 +298,7 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
         /**
          * Always returns false since we have no way to set a transaction timeout on a JDBC connection.
          *
-         * @param transactionTimeout
-         *            ignored since we have no way to set a transaction timeout on a JDBC connection
+         * @param transactionTimeout ignored since we have no way to set a transaction timeout on a JDBC connection
          * @return always false
          */
         @Override
@@ -266,13 +311,10 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
          * commit flag, and then disables auto commit. The original auto commit setting is restored when the transaction
          * completes.
          *
-         * @param xid
-         *            the id of the transaction branch for this connection
-         * @param flag
-         *            either XAResource.TMNOFLAGS or XAResource.TMRESUME
-         * @throws XAException
-         *             if the connection is already enlisted in another transaction, or if auto-commit could not be
-         *             disabled
+         * @param xid  the id of the transaction branch for this connection
+         * @param flag either XAResource.TMNOFLAGS or XAResource.TMRESUME
+         * @throws XAException if the connection is already enlisted in another transaction, or if auto-commit could not be
+         *                     disabled
          */
         @Override
         public synchronized void start(final Xid xid, final int flag) throws XAException {
@@ -301,80 +343,17 @@ public class LocalXAConnectionFactory implements XAConnectionFactory {
                 }
 
                 this.currentXid = xid;
-            } else if (flag == XAResource.TMRESUME) {
+            }
+            else if (flag == XAResource.TMRESUME) {
                 if (!xid.equals(this.currentXid)) {
                     throw new XAException("Attempting to resume in different transaction: expected " + this.currentXid
                             + ", but was " + xid);
                 }
-            } else {
+            }
+            else {
                 throw new XAException("Unknown start flag " + flag);
             }
         }
-    }
-    private final TransactionRegistry transactionRegistry;
-
-    private final ConnectionFactory connectionFactory;
-
-    /**
-     * Creates an LocalXAConnectionFactory which uses the specified connection factory to create database connections.
-     * The connections are enlisted into transactions using the specified transaction manager.
-     *
-     * @param transactionManager
-     *            the transaction manager in which connections will be enlisted
-     * @param connectionFactory
-     *            the connection factory from which connections will be retrieved
-     */
-    public LocalXAConnectionFactory(final TransactionManager transactionManager,
-            final ConnectionFactory connectionFactory) {
-        this(transactionManager, null, connectionFactory);
-    }
-
-    /**
-     * Creates an LocalXAConnectionFactory which uses the specified connection factory to create database connections.
-     * The connections are enlisted into transactions using the specified transaction manager.
-     *
-     * @param transactionManager
-     *            the transaction manager in which connections will be enlisted
-     * @param transactionSynchronizationRegistry
-     *            the optional TSR to register synchronizations with
-     * @param connectionFactory
-     *            the connection factory from which connections will be retrieved
-     * @since 2.8.0
-     */
-    public LocalXAConnectionFactory(final TransactionManager transactionManager,
-            final TransactionSynchronizationRegistry transactionSynchronizationRegistry,
-            final ConnectionFactory connectionFactory) {
-        Objects.requireNonNull(transactionManager, "transactionManager is null");
-        Objects.requireNonNull(connectionFactory, "connectionFactory is null");
-        this.transactionRegistry = new TransactionRegistry(transactionManager, transactionSynchronizationRegistry);
-        this.connectionFactory = connectionFactory;
-    }
-
-    @Override
-    public Connection createConnection() throws SQLException {
-        // create a new connection
-        final Connection connection = connectionFactory.createConnection();
-
-        // create a XAResource to manage the connection during XA transactions
-        final XAResource xaResource = new LocalXAResource(connection);
-
-        // register the xa resource for the connection
-        transactionRegistry.registerConnection(connection, xaResource);
-
-        return connection;
-    }
-
-    /**
-     * @return The connection factory.
-     * @since 2.6.0
-     */
-    public ConnectionFactory getConnectionFactory() {
-        return connectionFactory;
-    }
-
-    @Override
-    public TransactionRegistry getTransactionRegistry() {
-        return transactionRegistry;
     }
 
 }

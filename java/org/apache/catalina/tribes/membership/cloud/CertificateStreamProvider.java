@@ -16,6 +16,11 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.net.jsse.PEMFile;
+
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,16 +29,6 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.net.jsse.PEMFile;
 
 public class CertificateStreamProvider extends AbstractStreamProvider {
 
@@ -50,21 +45,16 @@ public class CertificateStreamProvider extends AbstractStreamProvider {
         factory = context.getSocketFactory();
     }
 
-    @Override
-    protected SSLSocketFactory getSocketFactory() {
-        return factory;
-    }
-
     private static KeyManager[] configureClientCert(String clientCertFile, String clientKeyFile, char[] clientKeyPassword, String clientKeyAlgo) throws Exception {
         try (InputStream certInputStream = new FileInputStream(clientCertFile)) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
-            X509Certificate cert = (X509Certificate)certFactory.generateCertificate(certInputStream);
+            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(certInputStream);
 
             PEMFile pemFile = new PEMFile(clientKeyFile, new String(clientKeyPassword), clientKeyAlgo);
             PrivateKey privKey = pemFile.getPrivateKey();
 
             KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null,  null);
+            keyStore.load(null, null);
 
             String alias = cert.getSubjectX500Principal().getName();
             keyStore.setKeyEntry(alias, privKey, clientKeyPassword, new Certificate[]{cert});
@@ -77,6 +67,11 @@ public class CertificateStreamProvider extends AbstractStreamProvider {
             log.error(sm.getString("certificateStream.clientCertError", clientCertFile, clientKeyFile));
             throw e;
         }
+    }
+
+    @Override
+    protected SSLSocketFactory getSocketFactory() {
+        return factory;
     }
 
 }

@@ -16,12 +16,7 @@
  */
 package org.apache.el;
 
-import jakarta.el.ELContext;
-import jakarta.el.ELResolver;
-import jakarta.el.ExpressionFactory;
-import jakarta.el.MethodExpression;
-import jakarta.el.ValueExpression;
-
+import jakarta.el.*;
 import org.apache.el.lang.ELSupport;
 import org.apache.el.lang.ExpressionBuilder;
 import org.apache.el.stream.StreamELResolverImpl;
@@ -29,11 +24,10 @@ import org.apache.el.util.MessageFactory;
 
 
 /**
- * @see jakarta.el.ExpressionFactory
- *
  * @author Jacob Hookom [jacob@hookom.net]
+ * @see jakarta.el.ExpressionFactory
  */
-@aQute.bnd.annotation.spi.ServiceProvider(value=ExpressionFactory.class)
+@aQute.bnd.annotation.spi.ServiceProvider(value = ExpressionFactory.class)
 public class ExpressionFactoryImpl extends ExpressionFactory {
 
     @Override
@@ -43,8 +37,8 @@ public class ExpressionFactoryImpl extends ExpressionFactory {
 
     @Override
     public MethodExpression createMethodExpression(ELContext context,
-            String expression, Class<?> expectedReturnType,
-            Class<?>[] expectedParamTypes) {
+                                                   String expression, Class<?> expectedReturnType,
+                                                   Class<?>[] expectedParamTypes) {
         ExpressionBuilder builder = new ExpressionBuilder(expression, context);
         return builder.createMethodExpression(expectedReturnType,
                 expectedParamTypes);
@@ -52,7 +46,7 @@ public class ExpressionFactoryImpl extends ExpressionFactory {
 
     @Override
     public ValueExpression createValueExpression(ELContext context,
-            String expression, Class<?> expectedType) {
+                                                 String expression, Class<?> expectedType) {
         if (expectedType == null) {
             throw new NullPointerException(MessageFactory
                     .get("error.value.expectedType"));
@@ -63,7 +57,7 @@ public class ExpressionFactoryImpl extends ExpressionFactory {
 
     @Override
     public ValueExpression createValueExpression(Object instance,
-            Class<?> expectedType) {
+                                                 Class<?> expectedType) {
         if (expectedType == null) {
             throw new NullPointerException(MessageFactory
                     .get("error.value.expectedType"));

@@ -16,11 +16,11 @@
  */
 package jakarta.servlet.jsp.tagext;
 
+import jakarta.servlet.jsp.JspWriter;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-
-import jakarta.servlet.jsp.JspWriter;
 
 /**
  * An encapsulation of the evaluation of the body of an action so it is
@@ -46,11 +46,12 @@ import jakarta.servlet.jsp.JspWriter;
  */
 public abstract class BodyContent extends JspWriter {
 
+    private final JspWriter enclosingWriter;
+
     /**
      * Protected constructor. Unbounded buffer, no autoflushing.
      *
-     * @param e
-     *            the enclosing JspWriter
+     * @param e the enclosing JspWriter
      */
     protected BodyContent(JspWriter e) {
         super(UNBOUNDED_BUFFER, false);
@@ -63,8 +64,7 @@ public abstract class BodyContent extends JspWriter {
      * It is not valid to flush a BodyContent because there is no backing stream
      * behind it.
      *
-     * @throws IOException
-     *             always thrown
+     * @throws IOException always thrown
      */
     @Override
     public void flush() throws IOException {
@@ -101,14 +101,14 @@ public abstract class BodyContent extends JspWriter {
      * Write the contents of this BodyContent into a Writer. Subclasses may
      * optimize common invocation patterns.
      *
-     * @param out
-     *            The writer into which to place the contents of this body
+     * @param out The writer into which to place the contents of this body
      *            evaluation
-     * @throws IOException
-     *             if an I/O error occurred while writing the contents of this
-     *             BodyContent to the given Writer
+     * @throws IOException if an I/O error occurred while writing the contents of this
+     *                     BodyContent to the given Writer
      */
     public abstract void writeOut(Writer out) throws IOException;
+
+    // private fields
 
     /**
      * Get the enclosing JspWriter.
@@ -118,8 +118,4 @@ public abstract class BodyContent extends JspWriter {
     public JspWriter getEnclosingWriter() {
         return enclosingWriter;
     }
-
-    // private fields
-
-    private final JspWriter enclosingWriter;
 }

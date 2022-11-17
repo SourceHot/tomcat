@@ -17,7 +17,6 @@
 package org.apache.tomcat.websocket.pojo;
 
 import jakarta.websocket.DeploymentException;
-
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.Util;
 
@@ -37,7 +36,7 @@ public class PojoPathParam {
     private final String name;
 
 
-    public PojoPathParam(Class<?> type, String name)  throws DeploymentException {
+    public PojoPathParam(Class<?> type, String name) throws DeploymentException {
         if (name != null) {
             // Annotated as @PathParam so validate type
             validateType(type);
@@ -45,17 +44,6 @@ public class PojoPathParam {
         this.type = type;
         this.name = name;
     }
-
-
-    public Class<?> getType() {
-        return type;
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
 
     private static void validateType(Class<?> type) throws DeploymentException {
         if (String.class == type) {
@@ -65,5 +53,13 @@ public class PojoPathParam {
             return;
         }
         throw new DeploymentException(sm.getString("pojoPathParam.wrongType", type.getName()));
+    }
+
+    public Class<?> getType() {
+        return type;
+    }
+
+    public String getName() {
+        return name;
     }
 }

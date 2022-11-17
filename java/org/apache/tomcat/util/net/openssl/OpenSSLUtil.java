@@ -16,14 +16,6 @@
  */
 package org.apache.tomcat.util.net.openssl;
 
-import java.io.IOException;
-import java.security.KeyStoreException;
-import java.util.List;
-import java.util.Set;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.net.SSLContext;
@@ -31,6 +23,13 @@ import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.apache.tomcat.util.net.SSLUtilBase;
 import org.apache.tomcat.util.net.jsse.JSSEKeyManager;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.util.List;
+import java.util.Set;
 
 public class OpenSSLUtil extends SSLUtilBase {
 
@@ -41,38 +40,6 @@ public class OpenSSLUtil extends SSLUtilBase {
     public OpenSSLUtil(SSLHostConfigCertificate certificate) {
         super(certificate);
     }
-
-
-    @Override
-    protected Log getLog() {
-        return log;
-    }
-
-
-    @Override
-    protected Set<String> getImplementedProtocols() {
-        return OpenSSLEngine.IMPLEMENTED_PROTOCOLS_SET;
-    }
-
-
-    @Override
-    protected Set<String> getImplementedCiphers() {
-        return OpenSSLEngine.AVAILABLE_CIPHER_SUITES;
-    }
-
-
-    @Override
-    protected boolean isTls13RenegAuthAvailable() {
-        // OpenSSL does support authentication after the initial handshake
-        return true;
-    }
-
-
-    @Override
-    public SSLContext createSSLContextInternal(List<String> negotiableProtocols) throws Exception {
-        return new OpenSSLContext(certificate, negotiableProtocols);
-    }
-
 
     public static X509KeyManager chooseKeyManager(KeyManager[] managers) throws Exception {
         if (managers == null) {
@@ -91,6 +58,31 @@ public class OpenSSLUtil extends SSLUtilBase {
         throw new IllegalStateException(sm.getString("openssl.keyManagerMissing"));
     }
 
+    @Override
+    protected Log getLog() {
+        return log;
+    }
+
+    @Override
+    protected Set<String> getImplementedProtocols() {
+        return OpenSSLEngine.IMPLEMENTED_PROTOCOLS_SET;
+    }
+
+    @Override
+    protected Set<String> getImplementedCiphers() {
+        return OpenSSLEngine.AVAILABLE_CIPHER_SUITES;
+    }
+
+    @Override
+    protected boolean isTls13RenegAuthAvailable() {
+        // OpenSSL does support authentication after the initial handshake
+        return true;
+    }
+
+    @Override
+    public SSLContext createSSLContextInternal(List<String> negotiableProtocols) throws Exception {
+        return new OpenSSLContext(certificate, negotiableProtocols);
+    }
 
     @Override
     public KeyManager[] getKeyManagers() throws Exception {
@@ -101,7 +93,8 @@ public class OpenSSLUtil extends SSLUtilBase {
             String msg = sm.getString("openssl.nonJsseChain", certificate.getCertificateChainFile());
             if (log.isDebugEnabled()) {
                 log.info(msg, e);
-            } else {
+            }
+            else {
                 log.info(msg);
             }
             return null;
@@ -114,7 +107,8 @@ public class OpenSSLUtil extends SSLUtilBase {
                         certificate.getCertificateFile(), certificate.getCertificateKeyFile());
                 if (log.isDebugEnabled()) {
                     log.info(msg, e);
-                } else {
+                }
+                else {
                     log.info(msg);
                 }
                 // Assume JSSE processing of the certificate failed, try again with OpenSSL

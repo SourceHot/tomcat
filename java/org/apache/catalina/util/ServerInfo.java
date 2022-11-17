@@ -17,10 +17,10 @@
 package org.apache.catalina.util;
 
 
+import org.apache.tomcat.util.ExceptionUtils;
+
 import java.io.InputStream;
 import java.util.Properties;
-
-import org.apache.tomcat.util.ExceptionUtils;
 
 
 /**
@@ -106,20 +106,20 @@ public class ServerInfo {
         return serverNumber;
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         System.out.println("Server version: " + getServerInfo());
         System.out.println("Server built:   " + getServerBuilt());
         System.out.println("Server number:  " + getServerNumber());
         System.out.println("OS Name:        " +
-                           System.getProperty("os.name"));
+                System.getProperty("os.name"));
         System.out.println("OS Version:     " +
-                           System.getProperty("os.version"));
+                System.getProperty("os.version"));
         System.out.println("Architecture:   " +
-                           System.getProperty("os.arch"));
+                System.getProperty("os.arch"));
         System.out.println("JVM Version:    " +
-                           System.getProperty("java.runtime.version"));
+                System.getProperty("java.runtime.version"));
         System.out.println("JVM Vendor:     " +
-                           System.getProperty("java.vm.vendor"));
+                System.getProperty("java.vm.vendor"));
     }
 
 }

@@ -17,7 +17,6 @@
 package org.apache.coyote.http11.upgrade;
 
 import jakarta.servlet.http.HttpUpgradeHandler;
-
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler.SocketState;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.SocketEvent;

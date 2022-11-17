@@ -55,7 +55,7 @@ public class AttributeInfo extends FeatureInfo {
      * @return the name of the property getter method, if non-standard.
      */
     public String getGetMethod() {
-        if(getMethod == null) {
+        if (getMethod == null) {
             getMethod = getMethodName(getName(), true, isIs());
         }
         return this.getMethod;
@@ -67,8 +67,9 @@ public class AttributeInfo extends FeatureInfo {
 
     /**
      * Is this a boolean attribute with an "is" getter?
+     *
      * @return <code>true</code> if this is a boolean attribute
-     *  with an "is" getter
+     * with an "is" getter
      */
     public boolean isIs() {
         return this.is;
@@ -81,6 +82,7 @@ public class AttributeInfo extends FeatureInfo {
 
     /**
      * Is this attribute readable by management applications?
+     *
      * @return <code>true</code> if readable
      */
     public boolean isReadable() {
@@ -96,7 +98,7 @@ public class AttributeInfo extends FeatureInfo {
      * @return the name of the property setter method, if non-standard.
      */
     public String getSetMethod() {
-        if( setMethod == null ) {
+        if (setMethod == null) {
             setMethod = getMethodName(getName(), false, false);
         }
         return this.setMethod;
@@ -108,6 +110,7 @@ public class AttributeInfo extends FeatureInfo {
 
     /**
      * Is this attribute writable by management applications?
+     *
      * @return <code>true</code> if writable
      */
     public boolean isWriteable() {
@@ -124,15 +127,16 @@ public class AttributeInfo extends FeatureInfo {
     /**
      * Create and return a <code>ModelMBeanAttributeInfo</code> object that
      * corresponds to the attribute described by this instance.
+     *
      * @return the attribute info
      */
     MBeanAttributeInfo createAttributeInfo() {
         // Return our cached information (if any)
         if (info == null) {
             info = new MBeanAttributeInfo(getName(), getType(), getDescription(),
-                            isReadable(), isWriteable(), false);
+                    isReadable(), isWriteable(), false);
         }
-        return (MBeanAttributeInfo)info;
+        return (MBeanAttributeInfo) info;
     }
 
     // -------------------------------------------------------- Private Methods
@@ -142,9 +146,9 @@ public class AttributeInfo extends FeatureInfo {
      * Create and return the name of a default property getter or setter
      * method, according to the specified values.
      *
-     * @param name Name of the property itself
+     * @param name   Name of the property itself
      * @param getter Do we want a get method (versus a set method)?
-     * @param is If returning a getter, do we want the "is" form?
+     * @param is     If returning a getter, do we want the "is" form?
      * @return the method name
      */
     private String getMethodName(String name, boolean getter, boolean is) {
@@ -152,10 +156,12 @@ public class AttributeInfo extends FeatureInfo {
         if (getter) {
             if (is) {
                 sb.append("is");
-            } else {
+            }
+            else {
                 sb.append("get");
             }
-        } else {
+        }
+        else {
             sb.append("set");
         }
         sb.append(Character.toUpperCase(name.charAt(0)));

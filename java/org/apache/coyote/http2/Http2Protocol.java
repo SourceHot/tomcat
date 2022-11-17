@@ -16,20 +16,7 @@
  */
 package org.apache.coyote.http2;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
-
-import javax.management.ObjectName;
-
-import org.apache.coyote.AbstractProtocol;
-import org.apache.coyote.Adapter;
-import org.apache.coyote.ContinueResponseTiming;
-import org.apache.coyote.Processor;
-import org.apache.coyote.Request;
-import org.apache.coyote.RequestGroupInfo;
-import org.apache.coyote.Response;
-import org.apache.coyote.UpgradeProtocol;
-import org.apache.coyote.UpgradeToken;
+import org.apache.coyote.*;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http11.upgrade.InternalHttpUpgradeHandler;
 import org.apache.coyote.http11.upgrade.UpgradeProcessorInternal;
@@ -39,10 +26,11 @@ import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
 
-public class Http2Protocol implements UpgradeProtocol {
+import javax.management.ObjectName;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 
-    private static final Log log = LogFactory.getLog(Http2Protocol.class);
-    private static final StringManager sm = StringManager.getManager(Http2Protocol.class);
+public class Http2Protocol implements UpgradeProtocol {
 
     static final long DEFAULT_READ_TIMEOUT = 5000;
     static final long DEFAULT_WRITE_TIMEOUT = 5000;
@@ -54,7 +42,6 @@ public class Http2Protocol implements UpgradeProtocol {
     // Maximum amount of streams which can be concurrently executed over
     // a single connection
     static final int DEFAULT_MAX_CONCURRENT_STREAM_EXECUTION = 20;
-
     static final int DEFAULT_OVERHEAD_COUNT_FACTOR = 10;
     // Not currently configurable. This makes the practical limit for
     // overheadCountFactor to be ~20. The exact limit will vary with traffic
@@ -63,7 +50,8 @@ public class Http2Protocol implements UpgradeProtocol {
     static final int DEFAULT_OVERHEAD_CONTINUATION_THRESHOLD = 1024;
     static final int DEFAULT_OVERHEAD_DATA_THRESHOLD = 1024;
     static final int DEFAULT_OVERHEAD_WINDOW_UPDATE_THRESHOLD = 1024;
-
+    private static final Log log = LogFactory.getLog(Http2Protocol.class);
+    private static final StringManager sm = StringManager.getManager(Http2Protocol.class);
     private static final String HTTP_UPGRADE_NAME = "h2c";
     private static final String ALPN_NAME = "h2";
     private static final byte[] ALPN_IDENTIFIER = ALPN_NAME.getBytes(StandardCharsets.UTF_8);
@@ -95,13 +83,14 @@ public class Http2Protocol implements UpgradeProtocol {
     // Reference to HTTP/1.1 protocol that this instance is configured under
     private AbstractHttp11Protocol<?> http11Protocol = null;
 
-    private RequestGroupInfo global = new RequestGroupInfo();
+    private final RequestGroupInfo global = new RequestGroupInfo();
 
     @Override
     public String getHttpUpgradeName(boolean isSSLEnabled) {
         if (isSSLEnabled) {
             return null;
-        } else {
+        }
+        else {
             return HTTP_UPGRADE_NAME;
         }
     }
@@ -128,7 +117,7 @@ public class Http2Protocol implements UpgradeProtocol {
 
     @Override
     public InternalHttpUpgradeHandler getInternalUpgradeHandler(SocketWrapperBase<?> socketWrapper,
-            Adapter adapter, Request coyoteRequest) {
+                                                                Adapter adapter, Request coyoteRequest) {
         return socketWrapper.hasAsyncIO()
                 ? new Http2AsyncUpgradeHandler(this, adapter, coyoteRequest)
                 : new Http2UpgradeHandler(this, adapter, coyoteRequest);
@@ -251,31 +240,25 @@ public class Http2Protocol implements UpgradeProtocol {
         return http11Protocol.isTrailerHeaderAllowed(headerName);
     }
 
+    public int getMaxHeaderCount() {
+        return maxHeaderCount;
+    }
 
     public void setMaxHeaderCount(int maxHeaderCount) {
         this.maxHeaderCount = maxHeaderCount;
     }
 
-
-    public int getMaxHeaderCount() {
-        return maxHeaderCount;
-    }
-
-
     public int getMaxHeaderSize() {
         return http11Protocol.getMaxHttpRequestHeaderSize();
     }
-
-
-    public void setMaxTrailerCount(int maxTrailerCount) {
-        this.maxTrailerCount = maxTrailerCount;
-    }
-
 
     public int getMaxTrailerCount() {
         return maxTrailerCount;
     }
 
+    public void setMaxTrailerCount(int maxTrailerCount) {
+        this.maxTrailerCount = maxTrailerCount;
+    }
 
     public int getMaxTrailerSize() {
         return http11Protocol.getMaxTrailerSize();
@@ -321,16 +304,13 @@ public class Http2Protocol implements UpgradeProtocol {
         this.overheadWindowUpdateThreshold = overheadWindowUpdateThreshold;
     }
 
-
-    public void setInitiatePingDisabled(boolean initiatePingDisabled) {
-        this.initiatePingDisabled = initiatePingDisabled;
-    }
-
-
     public boolean getInitiatePingDisabled() {
         return initiatePingDisabled;
     }
 
+    public void setInitiatePingDisabled(boolean initiatePingDisabled) {
+        this.initiatePingDisabled = initiatePingDisabled;
+    }
 
     public boolean useCompression(Request request, Response response) {
         return http11Protocol.useCompression(request, response);
@@ -366,7 +346,8 @@ public class Http2Protocol implements UpgradeProtocol {
     public String getUpgradeProtocolName() {
         if (http11Protocol.isSSLEnabled()) {
             return ALPN_NAME;
-        } else {
+        }
+        else {
             return HTTP_UPGRADE_NAME;
         }
     }

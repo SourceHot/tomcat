@@ -16,15 +16,7 @@
  */
 package org.apache.catalina.ha.context;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import jakarta.servlet.ServletContext;
-
 import org.apache.catalina.Globals;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Loader;
@@ -38,37 +30,40 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @version 1.0
  */
 public class ReplicatedContext extends StandardContext implements MapOwner {
-    private int mapSendOptions = Channel.SEND_OPTIONS_DEFAULT;
-    private static final Log log = LogFactory.getLog(ReplicatedContext.class);
     protected static final long DEFAULT_REPL_TIMEOUT = 15000;//15 seconds
+    private static final Log log = LogFactory.getLog(ReplicatedContext.class);
     private static final StringManager sm = StringManager.getManager(ReplicatedContext.class);
+    private int mapSendOptions = Channel.SEND_OPTIONS_DEFAULT;
 
     /**
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
         super.startInternal();
         try {
-            CatalinaCluster catclust = (CatalinaCluster)this.getCluster();
-            if ( catclust != null ) {
-                ReplicatedMap<String,Object> map = new ReplicatedMap<>(
-                        this, catclust.getChannel(),DEFAULT_REPL_TIMEOUT,
-                        getName(),getClassLoaders());
+            CatalinaCluster catclust = (CatalinaCluster) this.getCluster();
+            if (catclust != null) {
+                ReplicatedMap<String, Object> map = new ReplicatedMap<>(
+                        this, catclust.getChannel(), DEFAULT_REPL_TIMEOUT,
+                        getName(), getClassLoaders());
                 map.setChannelSendOptions(mapSendOptions);
-                ((ReplApplContext)this.context).setAttributeMap(map);
+                ((ReplApplContext) this.context).setAttributeMap(map);
             }
-        }  catch ( Exception x ) {
-            log.error(sm.getString("replicatedContext.startUnable", getName()),x);
-            throw new LifecycleException(sm.getString("replicatedContext.startFailed", getName()),x);
+        } catch (Exception x) {
+            log.error(sm.getString("replicatedContext.startUnable", getName()), x);
+            throw new LifecycleException(sm.getString("replicatedContext.startFailed", getName()), x);
         }
     }
 
@@ -76,8 +71,8 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
      * Stop this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void stopInternal() throws LifecycleException {
@@ -93,13 +88,12 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
 
     }
 
+    public int getMapSendOptions() {
+        return mapSendOptions;
+    }
 
     public void setMapSendOptions(int mapSendOptions) {
         this.mapSendOptions = mapSendOptions;
-    }
-
-    public int getMapSendOptions() {
-        return mapSendOptions;
     }
 
     public ClassLoader[] getClassLoaders() {
@@ -109,13 +103,14 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
         if (loader != null) {
             classLoader = loader.getClassLoader();
         }
-        if ( classLoader == null ) {
+        if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
         }
-        if ( classLoader == Thread.currentThread().getContextClassLoader() ) {
-            return new ClassLoader[] {classLoader};
-        } else {
-            return new ClassLoader[] {classLoader,Thread.currentThread().getContextClassLoader()};
+        if (classLoader == Thread.currentThread().getContextClassLoader()) {
+            return new ClassLoader[]{classLoader};
+        }
+        else {
+            return new ClassLoader[]{classLoader, Thread.currentThread().getContextClassLoader()};
         }
     }
 
@@ -124,14 +119,18 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
         if (context == null) {
             context = new ReplApplContext(this);
             if (getAltDDName() != null) {
-                context.setAttribute(Globals.ALT_DD_ATTR,getAltDDName());
+                context.setAttribute(Globals.ALT_DD_ATTR, getAltDDName());
             }
         }
 
-        return ((ReplApplContext)context).getFacade();
+        return ((ReplApplContext) context).getFacade();
 
     }
 
+    @Override
+    public void objectMadePrimary(Object key, Object value) {
+        //noop
+    }
 
     protected static class ReplApplContext extends ApplicationContext {
         protected final Map<String, Object> tomcatAttributes = new ConcurrentHashMap<>();
@@ -141,18 +140,19 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
         }
 
         protected ReplicatedContext getParent() {
-            return (ReplicatedContext)getContext();
+            return (ReplicatedContext) getContext();
         }
 
         @Override
         protected ServletContext getFacade() {
-             return super.getFacade();
+            return super.getFacade();
         }
 
-        public Map<String,Object> getAttributeMap() {
+        public Map<String, Object> getAttributeMap() {
             return this.attributes;
         }
-        public void setAttributeMap(Map<String,Object> map) {
+
+        public void setAttributeMap(Map<String, Object> map) {
             this.attributes = map;
         }
 
@@ -172,10 +172,11 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
                 removeAttribute(name);
                 return;
             }
-            if ( (!getParent().getState().isAvailable()) || "org.apache.jasper.runtime.JspApplicationContextImpl".equals(name) ){
-                tomcatAttributes.put(name,value);
-            } else {
-                super.setAttribute(name,value);
+            if ((!getParent().getState().isAvailable()) || "org.apache.jasper.runtime.JspApplicationContextImpl".equals(name)) {
+                tomcatAttributes.put(name, value);
+            }
+            else {
+                super.setAttribute(name, value);
             }
         }
 
@@ -184,7 +185,8 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
             Object obj = tomcatAttributes.get(name);
             if (obj == null) {
                 return super.getAttribute(name);
-            } else {
+            }
+            else {
                 return obj;
             }
         }
@@ -194,17 +196,19 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
         public Enumeration<String> getAttributeNames() {
             Set<String> names = new HashSet<>(attributes.keySet());
 
-            return new MultiEnumeration<>(new Enumeration[] {
+            return new MultiEnumeration<>(new Enumeration[]{
                     super.getAttributeNames(),
-                    Collections.enumeration(names) });
+                    Collections.enumeration(names)});
         }
     }
 
     protected static class MultiEnumeration<T> implements Enumeration<T> {
         private final Enumeration<T>[] enumerations;
+
         public MultiEnumeration(Enumeration<T>[] enumerations) {
             this.enumerations = enumerations;
         }
+
         @Override
         public boolean hasMoreElements() {
             for (Enumeration<T> enumeration : enumerations) {
@@ -214,6 +218,7 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
             }
             return false;
         }
+
         @Override
         public T nextElement() {
             for (Enumeration<T> enumeration : enumerations) {
@@ -224,10 +229,5 @@ public class ReplicatedContext extends StandardContext implements MapOwner {
             return null;
 
         }
-    }
-
-    @Override
-    public void objectMadePrimary(Object key, Object value) {
-        //noop
     }
 }

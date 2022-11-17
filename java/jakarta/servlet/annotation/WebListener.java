@@ -16,17 +16,13 @@
  */
 package jakarta.servlet.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * The annotation used to declare a listener for various types of event, in a
  * given web application context.<br>
  * <br>
- *
+ * <p>
  * The class annotated MUST implement one, (or more), of the following
  * interfaces: {@link jakarta.servlet.http.HttpSessionAttributeListener},
  * {@link jakarta.servlet.http.HttpSessionListener},
@@ -36,7 +32,7 @@ import java.lang.annotation.Target;
  * {@link jakarta.servlet.ServletRequestListener} or
  * {@link jakarta.servlet.http.HttpSessionIdListener}
  * <br>
- *
+ * <p>
  * E.g. <code>@WebListener</code><br>
  * <code>public TestListener implements ServletContextListener {</code><br>
  *

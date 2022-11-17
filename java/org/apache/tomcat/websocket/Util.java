@@ -16,45 +16,28 @@
  */
 package org.apache.tomcat.websocket;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import javax.naming.NamingException;
-
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
-import jakarta.websocket.Decoder;
+import jakarta.websocket.*;
 import jakarta.websocket.Decoder.Binary;
 import jakarta.websocket.Decoder.BinaryStream;
 import jakarta.websocket.Decoder.Text;
 import jakarta.websocket.Decoder.TextStream;
-import jakarta.websocket.DeploymentException;
-import jakarta.websocket.Encoder;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.Extension;
-import jakarta.websocket.MessageHandler;
-import jakarta.websocket.PongMessage;
-import jakarta.websocket.Session;
-
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.pojo.PojoMessageHandlerPartialBinary;
 import org.apache.tomcat.websocket.pojo.PojoMessageHandlerWholeBinary;
 import org.apache.tomcat.websocket.pojo.PojoMessageHandlerWholeText;
+
+import javax.naming.NamingException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.reflect.*;
+import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Utility class for internal use only within the
@@ -186,7 +169,7 @@ public class Util {
 
 
     private static <T> TypeResult getGenericType(Class<T> type,
-            Class<? extends T> clazz) {
+                                                 Class<? extends T> clazz) {
 
         // Look to see if this class implements the interface of interest
 
@@ -235,7 +218,8 @@ public class Util {
             result.incrementDimension(superClassTypeResult.getDimension());
             if (result.getClazz() != null && result.getDimension() > 0) {
                 superClassTypeResult = result;
-            } else {
+            }
+            else {
                 return result;
             }
         }
@@ -271,14 +255,17 @@ public class Util {
     private static TypeResult getTypeParameter(Class<?> clazz, Type argType) {
         if (argType instanceof Class<?>) {
             return new TypeResult((Class<?>) argType, -1, 0);
-        } else if (argType instanceof ParameterizedType) {
-            return new TypeResult((Class<?>)((ParameterizedType) argType).getRawType(), -1, 0);
-        } else if (argType instanceof GenericArrayType) {
+        }
+        else if (argType instanceof ParameterizedType) {
+            return new TypeResult((Class<?>) ((ParameterizedType) argType).getRawType(), -1, 0);
+        }
+        else if (argType instanceof GenericArrayType) {
             Type arrayElementType = ((GenericArrayType) argType).getGenericComponentType();
             TypeResult result = getTypeParameter(clazz, arrayElementType);
             result.incrementDimension(1);
             return result;
-        } else {
+        }
+        else {
             TypeVariable<?>[] tvs = clazz.getTypeParameters();
             for (int i = 0; i < tvs.length; i++) {
                 if (tvs[i].equals(argType)) {
@@ -293,40 +280,47 @@ public class Util {
     public static boolean isPrimitive(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             return true;
-        } else if(clazz.equals(Boolean.class) ||
+        }
+        else return clazz.equals(Boolean.class) ||
                 clazz.equals(Byte.class) ||
                 clazz.equals(Character.class) ||
                 clazz.equals(Double.class) ||
                 clazz.equals(Float.class) ||
                 clazz.equals(Integer.class) ||
                 clazz.equals(Long.class) ||
-                clazz.equals(Short.class)) {
-            return true;
-        }
-        return false;
+                clazz.equals(Short.class);
     }
 
 
     public static Object coerceToType(Class<?> type, String value) {
         if (type.equals(String.class)) {
             return value;
-        } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+        }
+        else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
             return Boolean.valueOf(value);
-        } else if (type.equals(byte.class) || type.equals(Byte.class)) {
+        }
+        else if (type.equals(byte.class) || type.equals(Byte.class)) {
             return Byte.valueOf(value);
-        } else if (type.equals(char.class) || type.equals(Character.class)) {
+        }
+        else if (type.equals(char.class) || type.equals(Character.class)) {
             return Character.valueOf(value.charAt(0));
-        } else if (type.equals(double.class) || type.equals(Double.class)) {
+        }
+        else if (type.equals(double.class) || type.equals(Double.class)) {
             return Double.valueOf(value);
-        } else if (type.equals(float.class) || type.equals(Float.class)) {
+        }
+        else if (type.equals(float.class) || type.equals(Float.class)) {
             return Float.valueOf(value);
-        } else if (type.equals(int.class) || type.equals(Integer.class)) {
+        }
+        else if (type.equals(int.class) || type.equals(Integer.class)) {
             return Integer.valueOf(value);
-        } else if (type.equals(long.class) || type.equals(Long.class)) {
+        }
+        else if (type.equals(long.class) || type.equals(Long.class)) {
             return Long.valueOf(value);
-        } else if (type.equals(short.class) || type.equals(Short.class)) {
+        }
+        else if (type.equals(short.class) || type.equals(Short.class)) {
             return Short.valueOf(value);
-        } else {
+        }
+        else {
             throw new IllegalArgumentException(sm.getString(
                     "util.invalidType", value, type.getName()));
         }
@@ -337,13 +331,10 @@ public class Util {
      * Build the list of decoder entries from a set of decoder implementations.
      *
      * @param decoderClazzes Decoder implementation classes
-     *
      * @return List of mappings from target type to associated decoder
-     *
      * @throws DeploymentException If a provided decoder class is not valid
-     *
      * @deprecated Will be removed in Tomcat 10.1.x.
-     *             Use {@link Util#getDecoders(List, InstanceManager)}
+     * Use {@link Util#getDecoders(List, InstanceManager)}
      */
     @Deprecated
     public static List<DecoderEntry> getDecoders(List<Class<? extends Decoder>> decoderClazzes)
@@ -355,16 +346,14 @@ public class Util {
     /**
      * Build the list of decoder entries from a set of decoder implementations.
      *
-     * @param decoderClazzes    Decoder implementation classes
-     * @param instanceManager   Instance manager to use to create Decoder
-     *                              instances
-     *
+     * @param decoderClazzes  Decoder implementation classes
+     * @param instanceManager Instance manager to use to create Decoder
+     *                        instances
      * @return List of mappings from target type to associated decoder
-     *
      * @throws DeploymentException If a provided decoder class is not valid
      */
     public static List<DecoderEntry> getDecoders(List<Class<? extends Decoder>> decoderClazzes,
-            InstanceManager instanceManager) throws DeploymentException{
+                                                 InstanceManager instanceManager) throws DeploymentException {
 
         List<DecoderEntry> result = new ArrayList<>();
         if (decoderClazzes != null) {
@@ -375,13 +364,14 @@ public class Util {
                 try {
                     if (instanceManager == null) {
                         instance = decoderClazz.getConstructor().newInstance();
-                    } else {
+                    }
+                    else {
                         instance = (Decoder) instanceManager.newInstance(decoderClazz);
                         // Don't need this instance, so destroy it
                         instanceManager.destroyInstance(instance);
                     }
                 } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException |
-                        NamingException e) {
+                         NamingException e) {
                     throw new DeploymentException(
                             sm.getString("pojoMethodMapping.invalidDecoder", decoderClazz.getName()), e);
                 }
@@ -395,8 +385,8 @@ public class Util {
 
 
     static Set<MessageHandlerResult> getMessageHandlers(Class<?> target,
-            MessageHandler listener, EndpointConfig endpointConfig,
-            Session session) {
+                                                        MessageHandler listener, EndpointConfig endpointConfig,
+                                                        Session session) {
 
         // Will never be more than 2 types
         Set<MessageHandlerResult> results = new HashSet<>(2);
@@ -408,32 +398,36 @@ public class Util {
                     new MessageHandlerResult(listener,
                             MessageHandlerResultType.TEXT);
             results.add(result);
-        } else if (ByteBuffer.class.isAssignableFrom(target)) {
+        }
+        else if (ByteBuffer.class.isAssignableFrom(target)) {
             MessageHandlerResult result =
                     new MessageHandlerResult(listener,
                             MessageHandlerResultType.BINARY);
             results.add(result);
-        } else if (PongMessage.class.isAssignableFrom(target)) {
+        }
+        else if (PongMessage.class.isAssignableFrom(target)) {
             MessageHandlerResult result =
                     new MessageHandlerResult(listener,
                             MessageHandlerResultType.PONG);
             results.add(result);
-        // Handler needs wrapping and optional decoder to convert it to one of
-        // the types expected by the frame handling code
-        } else if (byte[].class.isAssignableFrom(target)) {
+            // Handler needs wrapping and optional decoder to convert it to one of
+            // the types expected by the frame handling code
+        }
+        else if (byte[].class.isAssignableFrom(target)) {
             boolean whole = MessageHandler.Whole.class.isAssignableFrom(listener.getClass());
             MessageHandlerResult result = new MessageHandlerResult(
                     whole ? new PojoMessageHandlerWholeBinary(listener,
-                                    getOnMessageMethod(listener), session, endpointConfig,
-                                    matchDecoders(target, endpointConfig, true,
-                                            ((WsSession) session).getInstanceManager()),
-                                    new Object[1], 0, true, -1, false, -1) :
+                            getOnMessageMethod(listener), session, endpointConfig,
+                            matchDecoders(target, endpointConfig, true,
+                                    ((WsSession) session).getInstanceManager()),
+                            new Object[1], 0, true, -1, false, -1) :
                             new PojoMessageHandlerPartialBinary(listener,
                                     getOnMessagePartialMethod(listener), session,
                                     new Object[2], 0, true, 1, -1, -1),
                     MessageHandlerResultType.BINARY);
             results.add(result);
-        } else if (InputStream.class.isAssignableFrom(target)) {
+        }
+        else if (InputStream.class.isAssignableFrom(target)) {
             MessageHandlerResult result = new MessageHandlerResult(
                     new PojoMessageHandlerWholeBinary(listener,
                             getOnMessageMethod(listener), session, endpointConfig,
@@ -441,7 +435,8 @@ public class Util {
                             new Object[1], 0, true, -1, true, -1),
                     MessageHandlerResultType.BINARY);
             results.add(result);
-        } else if (Reader.class.isAssignableFrom(target)) {
+        }
+        else if (Reader.class.isAssignableFrom(target)) {
             MessageHandlerResult result = new MessageHandlerResult(
                     new PojoMessageHandlerWholeText(listener,
                             getOnMessageMethod(listener), session, endpointConfig,
@@ -449,7 +444,8 @@ public class Util {
                             new Object[1], 0, true, -1, -1),
                     MessageHandlerResultType.TEXT);
             results.add(result);
-        } else {
+        }
+        else {
             // Handler needs wrapping and requires decoder to convert it to one
             // of the types expected by the frame handling code
             DecoderMatch decoderMatch = matchDecoders(target, endpointConfig,
@@ -461,7 +457,7 @@ public class Util {
                                 endpointConfig,
                                 decoderMatch.getBinaryDecoders(), new Object[1],
                                 0, false, -1, false, -1),
-                                MessageHandlerResultType.BINARY);
+                        MessageHandlerResultType.BINARY);
                 results.add(result);
             }
             if (decoderMatch.getTextDecoders().size() > 0) {
@@ -470,7 +466,7 @@ public class Util {
                                 endpointConfig,
                                 decoderMatch.getTextDecoders(), new Object[1],
                                 0, false, -1, -1),
-                                MessageHandlerResultType.TEXT);
+                        MessageHandlerResultType.TEXT);
                 results.add(result);
             }
         }
@@ -484,20 +480,21 @@ public class Util {
     }
 
     private static List<Class<? extends Decoder>> matchDecoders(Class<?> target,
-            EndpointConfig endpointConfig, boolean binary, InstanceManager instanceManager) {
+                                                                EndpointConfig endpointConfig, boolean binary, InstanceManager instanceManager) {
         DecoderMatch decoderMatch = matchDecoders(target, endpointConfig, instanceManager);
         if (binary) {
             if (decoderMatch.getBinaryDecoders().size() > 0) {
                 return decoderMatch.getBinaryDecoders();
             }
-        } else if (decoderMatch.getTextDecoders().size() > 0) {
+        }
+        else if (decoderMatch.getTextDecoders().size() > 0) {
             return decoderMatch.getTextDecoders();
         }
         return null;
     }
 
     private static DecoderMatch matchDecoders(Class<?> target,
-            EndpointConfig endpointConfig, InstanceManager instanceManager) {
+                                              EndpointConfig endpointConfig, InstanceManager instanceManager) {
         DecoderMatch decoderMatch;
         try {
             List<Class<? extends Decoder>> decoders =
@@ -511,7 +508,7 @@ public class Util {
     }
 
     public static void parseExtensionHeader(List<Extension> extensions,
-            String header) {
+                                            String header) {
         // The relevant ABNF for the Sec-WebSocket-Extensions is as follows:
         //      extension-list = 1#extension
         //      extension = extension-token *( ";" extension-param )
@@ -528,11 +525,11 @@ public class Util {
 
         // Step one, split the header into individual extensions using ',' as a
         // separator
-        String unparsedExtensions[] = header.split(",");
+        String[] unparsedExtensions = header.split(",");
         for (String unparsedExtension : unparsedExtensions) {
             // Step two, split the extension into the registered name and
             // parameter/value pairs using ';' as a separator
-            String unparsedParameters[] = unparsedExtension.split(";");
+            String[] unparsedParameters = unparsedExtension.split(";");
             WsExtension extension = new WsExtension(unparsedParameters[0].trim());
 
             for (int i = 1; i < unparsedParameters.length; i++) {
@@ -542,7 +539,8 @@ public class Util {
                 if (equalsPos == -1) {
                     name = unparsedParameters[i].trim();
                     value = null;
-                } else {
+                }
+                else {
                     name = unparsedParameters[i].substring(0, equalsPos).trim();
                     value = unparsedParameters[i].substring(equalsPos + 1).trim();
                     int len = value.length();
@@ -560,7 +558,7 @@ public class Util {
                 }
                 if (value != null &&
                         (value.indexOf(',') > -1 || value.indexOf(';') > -1 ||
-                        value.indexOf('\"') > -1 || value.indexOf('=') > -1)) {
+                                value.indexOf('\"') > -1 || value.indexOf('=') > -1)) {
                     throw new IllegalArgumentException(sm.getString("", value));
                 }
                 extension.addParameter(new WsExtensionParameter(name, value));
@@ -626,25 +624,29 @@ public class Util {
                         // willDecode() method means this decoder may or may not
                         // decode a message so need to carry on checking for
                         // other matches
-                    } else if (BinaryStream.class.isAssignableFrom(
+                    }
+                    else if (BinaryStream.class.isAssignableFrom(
                             decoderEntry.getDecoderClazz())) {
                         binaryDecoders.add(decoderEntry.getDecoderClazz());
                         // Stream decoders have to process the message so no
                         // more decoders can be matched
                         break;
-                    } else if (Text.class.isAssignableFrom(
+                    }
+                    else if (Text.class.isAssignableFrom(
                             decoderEntry.getDecoderClazz())) {
                         textDecoders.add(decoderEntry.getDecoderClazz());
                         // willDecode() method means this decoder may or may not
                         // decode a message so need to carry on checking for
                         // other matches
-                    } else if (TextStream.class.isAssignableFrom(
+                    }
+                    else if (TextStream.class.isAssignableFrom(
                             decoderEntry.getDecoderClazz())) {
                         textDecoders.add(decoderEntry.getDecoderClazz());
                         // Stream decoders have to process the message so no
                         // more decoders can be matched
                         break;
-                    } else {
+                    }
+                    else {
                         throw new IllegalArgumentException(
                                 sm.getString("util.unknownDecoderType"));
                     }
@@ -680,7 +682,7 @@ public class Util {
         private int dimension;
 
         public TypeResult(Class<?> clazz, int index, int dimension) {
-            this.clazz= clazz;
+            this.clazz = clazz;
             this.index = index;
             this.dimension = dimension;
         }

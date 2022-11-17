@@ -34,12 +34,51 @@ public class ContextService extends ResourceBase {
     private static final long serialVersionUID = 1L;
 
     // ------------------------------------------------------------- Properties
-
-
+    /**
+     * A list of Handlers to use for this service-ref.
+     * <p>
+     * The instantiation of the handler have to be done.
+     */
+    private final Map<String, ContextHandler> handlers = new HashMap<>();
     /**
      * The WebService reference name.
      */
     private String displayname = null;
+    /**
+     * A large icon for this WebService.
+     */
+    private String largeIcon = null;
+    /**
+     * A small icon for this WebService.
+     */
+    private String smallIcon = null;
+    /**
+     * The fully qualified class name of the JAX-WS Service interface that the
+     * client depends on.
+     */
+    private String serviceInterface = null;
+    /**
+     * Contains the location (relative to the root of
+     * the module) of the web service WSDL description.
+     */
+    private String wsdlfile = null;
+    /**
+     * A file specifying the correlation of the WSDL definition
+     * to the interfaces (Service Endpoint Interface, Service Interface).
+     */
+    private String jaxrpcmappingfile = null;
+    /**
+     * Declares the specific WSDL service element that is being referred to.
+     * It is not specified if no wsdl-file is declared or if WSDL contains only
+     * 1 service element.
+     * <p>
+     * A service-qname is composed by a namespaceURI and a localpart.
+     * It must be defined if more than 1 service is declared in the WSDL.
+     * <p>
+     * serviceqname[0] : namespaceURI
+     * serviceqname[1] : localpart
+     */
+    private String[] serviceqname = new String[2];
 
     public String getDisplayname() {
         return this.displayname;
@@ -49,11 +88,6 @@ public class ContextService extends ResourceBase {
         this.displayname = displayname;
     }
 
-    /**
-     * A large icon for this WebService.
-     */
-    private String largeIcon = null;
-
     public String getLargeIcon() {
         return this.largeIcon;
     }
@@ -61,11 +95,6 @@ public class ContextService extends ResourceBase {
     public void setLargeIcon(String largeIcon) {
         this.largeIcon = largeIcon;
     }
-
-    /**
-     * A small icon for this WebService.
-     */
-    private String smallIcon = null;
 
     public String getSmallIcon() {
         return this.smallIcon;
@@ -75,12 +104,6 @@ public class ContextService extends ResourceBase {
         this.smallIcon = smallIcon;
     }
 
-    /**
-     * The fully qualified class name of the JAX-WS Service interface that the
-     * client depends on.
-     */
-    private String serviceInterface = null;
-
     public String getInterface() {
         return serviceInterface;
     }
@@ -88,12 +111,6 @@ public class ContextService extends ResourceBase {
     public void setInterface(String serviceInterface) {
         this.serviceInterface = serviceInterface;
     }
-
-    /**
-     * Contains the location (relative to the root of
-     * the module) of the web service WSDL description.
-     */
-    private String wsdlfile = null;
 
     public String getWsdlfile() {
         return this.wsdlfile;
@@ -103,12 +120,6 @@ public class ContextService extends ResourceBase {
         this.wsdlfile = wsdlfile;
     }
 
-    /**
-     * A file specifying the correlation of the WSDL definition
-     * to the interfaces (Service Endpoint Interface, Service Interface).
-     */
-    private String jaxrpcmappingfile = null;
-
     public String getJaxrpcmappingfile() {
         return this.jaxrpcmappingfile;
     }
@@ -117,21 +128,12 @@ public class ContextService extends ResourceBase {
         this.jaxrpcmappingfile = jaxrpcmappingfile;
     }
 
-    /**
-     * Declares the specific WSDL service element that is being referred to.
-     * It is not specified if no wsdl-file is declared or if WSDL contains only
-     * 1 service element.
-     *
-     * A service-qname is composed by a namespaceURI and a localpart.
-     * It must be defined if more than 1 service is declared in the WSDL.
-     *
-     * serviceqname[0] : namespaceURI
-     * serviceqname[1] : localpart
-     */
-    private String[] serviceqname = new String[2];
-
     public String[] getServiceqname() {
         return this.serviceqname;
+    }
+
+    public void setServiceqname(String[] serviceqname) {
+        this.serviceqname = serviceqname;
     }
 
     public String getServiceqname(int i) {
@@ -142,30 +144,27 @@ public class ContextService extends ResourceBase {
         return this.serviceqname[0];
     }
 
-    public String getServiceqnameLocalpart() {
-        return this.serviceqname[1];
-    }
-
-    public void setServiceqname(String[] serviceqname) {
-        this.serviceqname = serviceqname;
-    }
-
-    public void setServiceqname(String serviceqname, int i) {
-        this.serviceqname[i] = serviceqname;
-    }
-
     public void setServiceqnameNamespaceURI(String namespaceuri) {
         this.serviceqname[0] = namespaceuri;
+    }
+
+    public String getServiceqnameLocalpart() {
+        return this.serviceqname[1];
     }
 
     public void setServiceqnameLocalpart(String localpart) {
         this.serviceqname[1] = localpart;
     }
 
+    public void setServiceqname(String serviceqname, int i) {
+        this.serviceqname[i] = serviceqname;
+    }
+
     /**
      * Declares a client dependency on the container to resolving a Service Endpoint Interface
      * to a WSDL port. It optionally associates the Service Endpoint Interface with a
      * particular port-component.
+     *
      * @return the endpoint names
      */
     public Iterator<String> getServiceendpoints() {
@@ -182,13 +181,6 @@ public class ContextService extends ResourceBase {
         }
         this.setProperty(serviceendpoint, portlink);
     }
-
-    /**
-     * A list of Handlers to use for this service-ref.
-     *
-     * The instantiation of the handler have to be done.
-     */
-    private final Map<String, ContextHandler> handlers = new HashMap<>();
 
     public Iterator<String> getHandlers() {
         return handlers.keySet().iterator();
@@ -304,35 +296,40 @@ public class ContextService extends ResourceBase {
             if (other.displayname != null) {
                 return false;
             }
-        } else if (!displayname.equals(other.displayname)) {
+        }
+        else if (!displayname.equals(other.displayname)) {
             return false;
         }
         if (handlers == null) {
             if (other.handlers != null) {
                 return false;
             }
-        } else if (!handlers.equals(other.handlers)) {
+        }
+        else if (!handlers.equals(other.handlers)) {
             return false;
         }
         if (jaxrpcmappingfile == null) {
             if (other.jaxrpcmappingfile != null) {
                 return false;
             }
-        } else if (!jaxrpcmappingfile.equals(other.jaxrpcmappingfile)) {
+        }
+        else if (!jaxrpcmappingfile.equals(other.jaxrpcmappingfile)) {
             return false;
         }
         if (largeIcon == null) {
             if (other.largeIcon != null) {
                 return false;
             }
-        } else if (!largeIcon.equals(other.largeIcon)) {
+        }
+        else if (!largeIcon.equals(other.largeIcon)) {
             return false;
         }
         if (serviceInterface == null) {
             if (other.serviceInterface != null) {
                 return false;
             }
-        } else if (!serviceInterface.equals(other.serviceInterface)) {
+        }
+        else if (!serviceInterface.equals(other.serviceInterface)) {
             return false;
         }
         if (!Arrays.equals(serviceqname, other.serviceqname)) {
@@ -342,16 +339,13 @@ public class ContextService extends ResourceBase {
             if (other.smallIcon != null) {
                 return false;
             }
-        } else if (!smallIcon.equals(other.smallIcon)) {
+        }
+        else if (!smallIcon.equals(other.smallIcon)) {
             return false;
         }
         if (wsdlfile == null) {
-            if (other.wsdlfile != null) {
-                return false;
-            }
-        } else if (!wsdlfile.equals(other.wsdlfile)) {
-            return false;
+            return other.wsdlfile == null;
         }
-        return true;
+        else return wsdlfile.equals(other.wsdlfile);
     }
 }

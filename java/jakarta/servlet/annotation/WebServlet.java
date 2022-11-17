@@ -16,42 +16,37 @@
  */
 package jakarta.servlet.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * This annotation is used to declare the configuration of a
  * {@link jakarta.servlet.Servlet}. <br>
- *
+ * <p>
  * If the name attribute is not defined, the fully qualified name of the class
  * is used.<br>
  * <br>
- *
+ * <p>
  * At least one URL pattern MUST be declared in either the {@code value} or
  * {@code urlPattern} attribute of the annotation, but not both.<br>
  * <br>
- *
+ * <p>
  * The {@code value} attribute is recommended for use when the URL pattern is
  * the only attribute being set, otherwise the {@code urlPattern} attribute
  * should be used.<br>
  * <br>
- *
+ * <p>
  * The class on which this annotation is declared MUST extend
  * {@link jakarta.servlet.http.HttpServlet}. <br>
  * <br>
- *
+ * <p>
  * E.g. <code>@WebServlet("/path")}<br>
  * public class TestServlet extends HttpServlet ... {</code><br>
- *
+ * <p>
  * E.g.
  * <code>@WebServlet(name="TestServlet", urlPatterns={"/path", "/alt"}) <br>
  * public class TestServlet extends HttpServlet ... {</code><br>
  *
  * @since Servlet 3.0 (Section 8.1.1)
- *
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

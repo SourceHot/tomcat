@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.util.net;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class Acceptor<U> implements Runnable {
 
@@ -32,7 +32,9 @@ public class Acceptor<U> implements Runnable {
     private static final int INITIAL_ERROR_DELAY = 50;
     private static final int MAX_ERROR_DELAY = 1600;
 
-    private final AbstractEndpoint<?,U> endpoint;
+    private final AbstractEndpoint<?, U> endpoint;
+    private final CountDownLatch stopLatch = new CountDownLatch(1);
+    protected volatile AcceptorState state = AcceptorState.NEW;
     private String threadName;
     /*
      * Tracked separately rather than using endpoint.isRunning() as calls to
@@ -40,11 +42,9 @@ public class Acceptor<U> implements Runnable {
      * acceptor to continue running when it should terminate.
      */
     private volatile boolean stopCalled = false;
-    private final CountDownLatch stopLatch = new CountDownLatch(1);
-    protected volatile AcceptorState state = AcceptorState.NEW;
 
 
-    public Acceptor(AbstractEndpoint<?,U> endpoint) {
+    public Acceptor(AbstractEndpoint<?, U> endpoint) {
         this.endpoint = endpoint;
     }
 
@@ -53,16 +53,13 @@ public class Acceptor<U> implements Runnable {
         return state;
     }
 
-
-    final void setThreadName(final String threadName) {
-        this.threadName = threadName;
-    }
-
-
     final String getThreadName() {
         return threadName;
     }
 
+    final void setThreadName(final String threadName) {
+        this.threadName = threadName;
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -98,7 +95,8 @@ public class Acceptor<U> implements Runnable {
                         try {
                             if ((System.nanoTime() - pauseStart) > 10_000_000) {
                                 Thread.sleep(10);
-                            } else {
+                            }
+                            else {
                                 Thread.sleep(1);
                             }
                         } catch (InterruptedException e) {
@@ -135,7 +133,8 @@ public class Acceptor<U> implements Runnable {
                             errorDelay = handleExceptionWithDelay(errorDelay);
                             // re-throw
                             throw ioe;
-                        } else {
+                        }
+                        else {
                             break;
                         }
                     }
@@ -149,7 +148,8 @@ public class Acceptor<U> implements Runnable {
                         if (!endpoint.setSocketOptions(socket)) {
                             endpoint.closeSocket(socket);
                         }
-                    } else {
+                    }
+                    else {
                         endpoint.destroySocket(socket);
                     }
                 } catch (Throwable t) {
@@ -164,11 +164,13 @@ public class Acceptor<U> implements Runnable {
                             // so it can be filtered out on that platform
                             // See bug 50273
                             log.warn(msg, t);
-                        } else {
+                        }
+                        else {
                             log.error(msg, t);
                         }
-                    } else {
-                            log.error(msg, t);
+                    }
+                    else {
+                        log.error(msg, t);
                     }
                 }
             }
@@ -185,7 +187,7 @@ public class Acceptor<U> implements Runnable {
      * warning will be logged.
      *
      * @deprecated This method will be removed in Tomcat 10.1.x onwards.
-     *             Use {@link #stop(int)} instead.
+     * Use {@link #stop(int)} instead.
      */
     @Deprecated
     public void stop() {
@@ -206,7 +208,7 @@ public class Acceptor<U> implements Runnable {
         if (waitSeconds > 0) {
             try {
                 if (!stopLatch.await(waitSeconds, TimeUnit.SECONDS)) {
-                   log.warn(sm.getString("acceptor.stop.fail", getThreadName()));
+                    log.warn(sm.getString("acceptor.stop.fail", getThreadName()));
                 }
             } catch (InterruptedException e) {
                 log.warn(sm.getString("acceptor.stop.interrupted", getThreadName()), e);
@@ -222,7 +224,7 @@ public class Acceptor<U> implements Runnable {
      * files is reached.
      *
      * @param currentErrorDelay The current delay being applied on failure
-     * @return  The delay to apply on the next failure
+     * @return The delay to apply on the next failure
      */
     protected int handleExceptionWithDelay(int currentErrorDelay) {
         // Don't delay on first exception
@@ -238,9 +240,11 @@ public class Acceptor<U> implements Runnable {
         // on every subsequent exception until the delay reaches 1.6 seconds.
         if (currentErrorDelay == 0) {
             return INITIAL_ERROR_DELAY;
-        } else if (currentErrorDelay < MAX_ERROR_DELAY) {
+        }
+        else if (currentErrorDelay < MAX_ERROR_DELAY) {
             return currentErrorDelay * 2;
-        } else {
+        }
+        else {
             return MAX_ERROR_DELAY;
         }
     }

@@ -37,9 +37,8 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class JniLifecycleListener implements LifecycleListener {
 
-    private static final Log log = LogFactory.getLog(JniLifecycleListener.class);
     protected static final StringManager sm = StringManager.getManager(JniLifecycleListener.class);
-
+    private static final Log log = LogFactory.getLog(JniLifecycleListener.class);
     private String libraryName = "";
     private String libraryPath = "";
 
@@ -51,13 +50,19 @@ public class JniLifecycleListener implements LifecycleListener {
             if (!libraryName.isEmpty()) {
                 System.loadLibrary(libraryName);
                 log.info(sm.getString("jniLifecycleListener.load.name", libraryName));
-            } else if (!libraryPath.isEmpty()) {
+            }
+            else if (!libraryPath.isEmpty()) {
                 System.load(libraryPath);
                 log.info(sm.getString("jniLifecycleListener.load.path", libraryPath));
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString("jniLifecycleListener.missingPathOrName"));
             }
         }
+    }
+
+    public String getLibraryName() {
+        return libraryName;
     }
 
     public void setLibraryName(String libraryName) {
@@ -69,8 +74,8 @@ public class JniLifecycleListener implements LifecycleListener {
         this.libraryName = libraryName;
     }
 
-    public String getLibraryName() {
-        return libraryName;
+    public String getLibraryPath() {
+        return libraryPath;
     }
 
     public void setLibraryPath(String libraryPath) {
@@ -80,10 +85,6 @@ public class JniLifecycleListener implements LifecycleListener {
         }
 
         this.libraryPath = libraryPath;
-    }
-
-    public String getLibraryPath() {
-        return libraryPath;
     }
 
 }

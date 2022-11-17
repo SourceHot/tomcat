@@ -18,10 +18,10 @@ package org.apache.tomcat.websocket;
 
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Endpoint;
-
 import org.apache.tomcat.InstanceManager;
 
 public interface ClientEndpointHolder {
     String getClassName();
+
     Endpoint getInstance(InstanceManager instanceManager) throws DeploymentException;
 }

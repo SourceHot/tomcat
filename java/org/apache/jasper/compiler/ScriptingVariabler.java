@@ -16,15 +16,14 @@
  */
 package org.apache.jasper.compiler;
 
+import jakarta.servlet.jsp.tagext.TagVariableInfo;
+import jakarta.servlet.jsp.tagext.VariableInfo;
+import org.apache.jasper.JasperException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import jakarta.servlet.jsp.tagext.TagVariableInfo;
-import jakarta.servlet.jsp.tagext.VariableInfo;
-
-import org.apache.jasper.JasperException;
 
 /**
  * Class responsible for determining the scripting variables that every
@@ -35,6 +34,12 @@ import org.apache.jasper.JasperException;
 class ScriptingVariabler {
 
     private static final Integer MAX_SCOPE = Integer.valueOf(Integer.MAX_VALUE);
+
+    public static void set(Node.Nodes page, ErrorDispatcher err)
+            throws JasperException {
+        page.visit(new CustomTagCounter());
+        page.visit(new ScriptingVariableVisitor(err));
+    }
 
     /*
      * Assigns an identifier (of type integer) to every custom tag, in order
@@ -96,10 +101,12 @@ class ScriptingVariabler {
                     || scope == VariableInfo.AT_END) {
                 if (parent == null) {
                     ownRange = MAX_SCOPE;
-                } else {
+                }
+                else {
                     ownRange = parent.getNumCount();
                 }
-            } else {
+            }
+            else {
                 // NESTED
                 ownRange = n.getNumCount();
             }
@@ -119,7 +126,8 @@ class ScriptingVariabler {
                         vec.add(varInfo);
                     }
                 }
-            } else {
+            }
+            else {
                 for (TagVariableInfo tagVarInfo : tagVarInfos) {
                     if (tagVarInfo.getScope() != scope
                             || !tagVarInfo.getDeclare()) {
@@ -147,11 +155,5 @@ class ScriptingVariabler {
 
             n.setScriptingVars(vec, scope);
         }
-    }
-
-    public static void set(Node.Nodes page, ErrorDispatcher err)
-            throws JasperException {
-        page.visit(new CustomTagCounter());
-        page.visit(new ScriptingVariableVisitor(err));
     }
 }

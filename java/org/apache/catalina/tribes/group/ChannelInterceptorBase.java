@@ -16,26 +16,21 @@
  */
 package org.apache.catalina.tribes.group;
 
-import javax.management.ObjectName;
-
-import org.apache.catalina.tribes.Channel;
-import org.apache.catalina.tribes.ChannelException;
-import org.apache.catalina.tribes.ChannelInterceptor;
-import org.apache.catalina.tribes.ChannelMessage;
-import org.apache.catalina.tribes.Member;
+import org.apache.catalina.tribes.*;
 import org.apache.catalina.tribes.jmx.JmxRegistry;
+
+import javax.management.ObjectName;
 
 /**
  * Abstract class for the interceptor base class.
  */
 public abstract class ChannelInterceptorBase implements ChannelInterceptor {
 
+    //default value, always process
+    protected int optionFlag = 0;
     private ChannelInterceptor next;
     private ChannelInterceptor previous;
     private Channel channel;
-    //default value, always process
-    protected int optionFlag = 0;
-
     /**
      * the ObjectName of this ChannelInterceptor.
      */
@@ -46,15 +41,10 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
     }
 
     public boolean okToProcess(int messageFlags) {
-        if (this.optionFlag == 0 ) {
+        if (this.optionFlag == 0) {
             return true;
         }
-        return ((optionFlag&messageFlags) == optionFlag);
-    }
-
-    @Override
-    public final void setNext(ChannelInterceptor next) {
-        this.next = next;
+        return ((optionFlag & messageFlags) == optionFlag);
     }
 
     @Override
@@ -63,13 +53,8 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
     }
 
     @Override
-    public final void setPrevious(ChannelInterceptor previous) {
-        this.previous = previous;
-    }
-
-    @Override
-    public void setOptionFlag(int optionFlag) {
-        this.optionFlag = optionFlag;
+    public final void setNext(ChannelInterceptor next) {
+        this.next = next;
     }
 
     @Override
@@ -78,13 +63,23 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
     }
 
     @Override
+    public final void setPrevious(ChannelInterceptor previous) {
+        this.previous = previous;
+    }
+
+    @Override
     public int getOptionFlag() {
         return optionFlag;
     }
 
     @Override
+    public void setOptionFlag(int optionFlag) {
+        this.optionFlag = optionFlag;
+    }
+
+    @Override
     public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) throws
-        ChannelException {
+            ChannelException {
         if (getNext() != null) {
             getNext().sendMessage(destination, msg, payload);
         }
@@ -125,36 +120,39 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
      */
     @Override
     public boolean hasMembers() {
-        if ( getNext()!=null ) {
+        if (getNext() != null) {
             return getNext().hasMembers();
-        } else {
+        }
+        else {
             return false;
         }
     }
 
     /**
      * Get all current cluster members
+     *
      * @return all members or empty array
      */
     @Override
     public Member[] getMembers() {
-        if ( getNext()!=null ) {
+        if (getNext() != null) {
             return getNext().getMembers();
-        } else {
+        }
+        else {
             return null;
         }
     }
 
     /**
-     *
      * @param mbr Member
      * @return Member
      */
     @Override
     public Member getMember(Member mbr) {
-        if ( getNext()!=null) {
+        if (getNext() != null) {
             return getNext().getMember(mbr);
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -166,9 +164,10 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
      */
     @Override
     public Member getLocalMember(boolean incAlive) {
-        if ( getNext()!=null ) {
+        if (getNext() != null) {
             return getNext().getLocalMember(incAlive);
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -176,17 +175,18 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
     /**
      * Starts up the channel. This can be called multiple times for individual services to start
      * The svc parameter can be the logical or value of any constants
+     *
      * @param svc int value of <BR>
-     * DEFAULT - will start all services <BR>
-     * MBR_RX_SEQ - starts the membership receiver <BR>
-     * MBR_TX_SEQ - starts the membership broadcaster <BR>
-     * SND_TX_SEQ - starts the replication transmitter<BR>
-     * SND_RX_SEQ - starts the replication receiver<BR>
+     *            DEFAULT - will start all services <BR>
+     *            MBR_RX_SEQ - starts the membership receiver <BR>
+     *            MBR_TX_SEQ - starts the membership broadcaster <BR>
+     *            SND_TX_SEQ - starts the replication transmitter<BR>
+     *            SND_RX_SEQ - starts the replication receiver<BR>
      * @throws ChannelException if a startup error occurs or the service is already started.
      */
     @Override
     public void start(int svc) throws ChannelException {
-        if ( getNext()!=null ) {
+        if (getNext() != null) {
             getNext().start(svc);
         }
         // register jmx
@@ -200,12 +200,13 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
     /**
      * Shuts down the channel. This can be called multiple times for individual services to shutdown
      * The svc parameter can be the logical or value of any constants
+     *
      * @param svc int value of <BR>
-     * DEFAULT - will shutdown all services <BR>
-     * MBR_RX_SEQ - stops the membership receiver <BR>
-     * MBR_TX_SEQ - stops the membership broadcaster <BR>
-     * SND_TX_SEQ - stops the replication transmitter<BR>
-     * SND_RX_SEQ - stops the replication receiver<BR>
+     *            DEFAULT - will shutdown all services <BR>
+     *            MBR_RX_SEQ - stops the membership receiver <BR>
+     *            MBR_TX_SEQ - stops the membership broadcaster <BR>
+     *            SND_TX_SEQ - stops the replication transmitter<BR>
+     *            SND_RX_SEQ - stops the replication receiver<BR>
      * @throws ChannelException if a startup error occurs or the service is already started.
      */
     @Override
@@ -227,6 +228,7 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
 
     /**
      * Return the channel that is related to this interceptor
+     *
      * @return Channel
      */
     @Override
@@ -236,6 +238,7 @@ public abstract class ChannelInterceptorBase implements ChannelInterceptor {
 
     /**
      * Set the channel that is related to this interceptor
+     *
      * @param channel The channel
      */
     @Override

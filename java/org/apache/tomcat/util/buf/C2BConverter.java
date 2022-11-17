@@ -30,13 +30,12 @@ import java.nio.charset.CodingErrorAction;
 public final class C2BConverter {
 
     private final CharsetEncoder encoder;
-    private ByteBuffer bb = null;
-    private CharBuffer cb = null;
-
     /**
      * Leftover buffer used for multi-characters characters.
      */
     private final CharBuffer leftovers;
+    private ByteBuffer bb = null;
+    private CharBuffer cb = null;
 
     public C2BConverter(Charset charset) {
         encoder = charset.newEncoder();
@@ -69,7 +68,8 @@ public final class C2BConverter {
         if ((bb == null) || (bb.array() != bc.getBuffer())) {
             // Create a new byte buffer if anything changed
             bb = ByteBuffer.wrap(bc.getBuffer(), bc.getEnd(), bc.getBuffer().length - bc.getEnd());
-        } else {
+        }
+        else {
             // Initialize the byte buffer
             bb.limit(bc.getBuffer().length);
             bb.position(bc.getEnd());
@@ -77,7 +77,8 @@ public final class C2BConverter {
         if ((cb == null) || (cb.array() != cc.getBuffer())) {
             // Create a new char buffer if anything changed
             cb = CharBuffer.wrap(cc.getBuffer(), cc.getStart(), cc.getLength());
-        } else {
+        }
+        else {
             // Initialize the char buffer
             cb.limit(cc.getEnd());
             cb.position(cc.getStart());
@@ -105,11 +106,13 @@ public final class C2BConverter {
         result = encoder.encode(cb, bb, false);
         if (result.isError() || result.isMalformed()) {
             result.throwException();
-        } else if (result.isOverflow()) {
+        }
+        else if (result.isOverflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.setEnd(bb.position());
             cc.setOffset(cb.position());
-        } else if (result.isUnderflow()) {
+        }
+        else if (result.isUnderflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.setEnd(bb.position());
             cc.setOffset(cb.position());
@@ -133,7 +136,8 @@ public final class C2BConverter {
         if ((bb == null) || (bb.array() != bc.array())) {
             // Create a new byte buffer if anything changed
             bb = ByteBuffer.wrap(bc.array(), bc.limit(), bc.capacity() - bc.limit());
-        } else {
+        }
+        else {
             // Initialize the byte buffer
             bb.limit(bc.capacity());
             bb.position(bc.limit());
@@ -141,7 +145,8 @@ public final class C2BConverter {
         if ((cb == null) || (cb.array() != cc.array())) {
             // Create a new char buffer if anything changed
             cb = CharBuffer.wrap(cc.array(), cc.arrayOffset() + cc.position(), cc.remaining());
-        } else {
+        }
+        else {
             // Initialize the char buffer
             cb.limit(cc.limit());
             cb.position(cc.position());
@@ -169,11 +174,13 @@ public final class C2BConverter {
         result = encoder.encode(cb, bb, false);
         if (result.isError() || result.isMalformed()) {
             result.throwException();
-        } else if (result.isOverflow()) {
+        }
+        else if (result.isOverflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.limit(bb.position());
             cc.position(cb.position());
-        } else if (result.isUnderflow()) {
+        }
+        else if (result.isUnderflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.limit(bb.position());
             cc.position(cb.position());

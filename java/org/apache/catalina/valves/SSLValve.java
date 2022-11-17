@@ -16,21 +16,20 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-
 import jakarta.servlet.ServletException;
-
 import org.apache.catalina.Globals;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.UDecoder;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchProviderException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 /**
  * When using mod_proxy_http, the client SSL information is not included in the
@@ -42,7 +41,7 @@ import org.apache.tomcat.util.buf.UDecoder;
  *
  * <b>Note: Ensure that the headers are always set by httpd for all requests to
  * prevent a client spoofing SSL information by sending fake headers. </b><p>
- *
+ * <p>
  * In httpd.conf add the following:
  * <pre>
  * &lt;IfModule ssl_module&gt;
@@ -52,7 +51,7 @@ import org.apache.tomcat.util.buf.UDecoder;
  *   RequestHeader set SSL_CIPHER_USEKEYSIZE "%{SSL_CIPHER_USEKEYSIZE}s"
  * &lt;/IfModule&gt;
  * </pre>
- *
+ * <p>
  * In server.xml, configure this valve under the Engine element in server.xml:
  * <pre>
  * &lt;Engine ...&gt;
@@ -153,7 +152,8 @@ public class SSLValve extends ValveBase {
         String headerEscapedValue = mygetHeader(request, sslClientEscapedCertHeader);
         if (headerEscapedValue != null) {
             headerValue = UDecoder.URLDecode(headerEscapedValue, null);
-        } else {
+        }
+        else {
             headerValue = mygetHeader(request, sslClientCertHeader);
         }
         if (headerValue != null) {
@@ -164,14 +164,15 @@ public class SSLValve extends ValveBase {
                 String strcerts = header.concat(body);
                 ByteArrayInputStream bais = new ByteArrayInputStream(
                         strcerts.getBytes(StandardCharsets.ISO_8859_1));
-                X509Certificate jsseCerts[] = null;
+                X509Certificate[] jsseCerts = null;
                 String providerName = (String) request.getConnector().getProperty(
                         "clientCertProvider");
                 try {
                     CertificateFactory cf;
                     if (providerName == null) {
                         cf = CertificateFactory.getInstance("X.509");
-                    } else {
+                    }
+                    else {
                         cf = CertificateFactory.getInstance("X.509", providerName);
                     }
                     X509Certificate cert = (X509Certificate) cf.generateCertificate(bais);

@@ -16,37 +16,24 @@
  */
 package org.apache.tomcat.dbcp.dbcp2;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.StringTokenizer;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.dbcp.pool2.impl.BaseObjectPoolConfig;
+import org.apache.tomcat.dbcp.pool2.impl.GenericObjectPoolConfig;
 
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.dbcp.pool2.impl.BaseObjectPoolConfig;
-import org.apache.tomcat.dbcp.pool2.impl.GenericObjectPoolConfig;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.time.Duration;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * JNDI object factory that creates an instance of <code>BasicDataSource</code> that has been configured based on the
@@ -149,13 +136,18 @@ public class BasicDataSourceFactory implements ObjectFactory {
             PROP_MAX_OPEN_PREPARED_STATEMENTS, PROP_CONNECTION_PROPERTIES, PROP_MAX_CONN_LIFETIME_MILLIS,
             PROP_LOG_EXPIRED_CONNECTIONS, PROP_ROLLBACK_ON_RETURN, PROP_ENABLE_AUTO_COMMIT_ON_RETURN,
             PROP_DEFAULT_QUERY_TIMEOUT, PROP_FAST_FAIL_VALIDATION, PROP_DISCONNECTION_SQL_CODES, PROP_JMX_NAME,
-            PROP_CONNECTION_FACTORY_CLASS_NAME };
+            PROP_CONNECTION_FACTORY_CLASS_NAME};
 
     /**
      * Obsolete properties from DBCP 1.x. with warning strings suggesting new properties. LinkedHashMap will guarantee
      * that properties will be listed to output in order of insertion into map.
      */
     private static final Map<String, String> NUPROP_WARNTEXT = new LinkedHashMap<>();
+    /**
+     * Silent Properties. These properties will not be listed as ignored - we know that they may appear in JDBC Resource
+     * references, and we will not list them as ignored.
+     */
+    private static final List<String> SILENT_PROPERTIES = new ArrayList<>();
 
     static {
         NUPROP_WARNTEXT.put(NUPROP_MAX_ACTIVE,
@@ -170,12 +162,6 @@ public class BasicDataSourceFactory implements ObjectFactory {
                         + PROP_MAX_WAIT_MILLIS + " default value is " + BaseObjectPoolConfig.DEFAULT_MAX_WAIT
                         + ".");
     }
-
-    /**
-     * Silent Properties. These properties will not be listed as ignored - we know that they may appear in JDBC Resource
-     * references, and we will not list them as ignored.
-     */
-    private static final List<String> SILENT_PROPERTIES = new ArrayList<>();
 
     static {
         SILENT_PROPERTIES.add(SILENT_PROP_FACTORY);
@@ -212,11 +198,9 @@ public class BasicDataSourceFactory implements ObjectFactory {
     /**
      * Creates and configures a {@link BasicDataSource} instance based on the given properties.
      *
-     * @param properties
-     *            The data source configuration properties.
+     * @param properties The data source configuration properties.
      * @return A new a {@link BasicDataSource} instance based on the given properties.
-     * @throws Exception
-     *             Thrown when an error occurs creating the data source.
+     * @throws Exception Thrown when an error occurs creating the data source.
      */
     public static BasicDataSource createDataSource(final Properties properties) throws Exception {
         final BasicDataSource dataSource = new BasicDataSource();
@@ -228,15 +212,20 @@ public class BasicDataSourceFactory implements ObjectFactory {
             int level = PoolableConnectionFactory.UNKNOWN_TRANSACTION_ISOLATION;
             if ("NONE".equals(value)) {
                 level = Connection.TRANSACTION_NONE;
-            } else if ("READ_COMMITTED".equals(value)) {
+            }
+            else if ("READ_COMMITTED".equals(value)) {
                 level = Connection.TRANSACTION_READ_COMMITTED;
-            } else if ("READ_UNCOMMITTED".equals(value)) {
+            }
+            else if ("READ_UNCOMMITTED".equals(value)) {
                 level = Connection.TRANSACTION_READ_UNCOMMITTED;
-            } else if ("REPEATABLE_READ".equals(value)) {
+            }
+            else if ("REPEATABLE_READ".equals(value)) {
                 level = Connection.TRANSACTION_REPEATABLE_READ;
-            } else if ("SERIALIZABLE".equals(value)) {
+            }
+            else if ("SERIALIZABLE".equals(value)) {
                 level = Connection.TRANSACTION_SERIALIZABLE;
-            } else {
+            }
+            else {
                 try {
                     level = Integer.parseInt(value);
                 } catch (final NumberFormatException e) {
@@ -334,10 +323,8 @@ public class BasicDataSourceFactory implements ObjectFactory {
     /**
      * Parse list of property values from a delimited string
      *
-     * @param value
-     *            delimited list of values
-     * @param delimiter
-     *            character used to separate values in the list
+     * @param value     delimited list of values
+     * @param delimiter character used to separate values in the list
      * @return String Collection of values
      */
     private static Collection<String> parseList(final String value, final char delimiter) {
@@ -353,23 +340,17 @@ public class BasicDataSourceFactory implements ObjectFactory {
      * Creates and return a new <code>BasicDataSource</code> instance. If no instance can be created, return
      * <code>null</code> instead.
      *
-     * @param obj
-     *            The possibly null object containing location or reference information that can be used in creating an
-     *            object
-     * @param name
-     *            The name of this object relative to <code>nameCtx</code>
-     * @param nameCtx
-     *            The context relative to which the <code>name</code> parameter is specified, or <code>null</code> if
-     *            <code>name</code> is relative to the default initial context
-     * @param environment
-     *            The possibly null environment that is used in creating this object
-     *
-     * @throws Exception
-     *             if an exception occurs creating the instance
+     * @param obj         The possibly null object containing location or reference information that can be used in creating an
+     *                    object
+     * @param name        The name of this object relative to <code>nameCtx</code>
+     * @param nameCtx     The context relative to which the <code>name</code> parameter is specified, or <code>null</code> if
+     *                    <code>name</code> is relative to the default initial context
+     * @param environment The possibly null environment that is used in creating this object
+     * @throws Exception if an exception occurs creating the instance
      */
     @Override
     public Object getObjectInstance(final Object obj, final Name name, final Context nameCtx,
-            final Hashtable<?, ?> environment) throws Exception {
+                                    final Hashtable<?, ?> environment) throws Exception {
 
         // We only know how to deal with <code>javax.naming.Reference</code>s
         // that specify a class name of "javax.sql.DataSource"
@@ -403,19 +384,15 @@ public class BasicDataSourceFactory implements ObjectFactory {
      * Collects warnings and info messages. Warnings are generated when an obsolete property is set. Unknown properties
      * generate info messages.
      *
-     * @param ref
-     *            Reference to check properties of
-     * @param name
-     *            Name provided to getObject
-     * @param warnMessages
-     *            container for warning messages
-     * @param infoMessages
-     *            container for info messages
+     * @param ref          Reference to check properties of
+     * @param name         Name provided to getObject
+     * @param warnMessages container for warning messages
+     * @param infoMessages container for info messages
      */
     private void validatePropertyNames(final Reference ref, final Name name, final List<String> warnMessages,
-            final List<String> infoMessages) {
+                                       final List<String> infoMessages) {
         final List<String> allPropsAsList = Arrays.asList(ALL_PROPERTIES);
-        final String nameString = name != null ? "Name = " + name.toString() + " " : "";
+        final String nameString = name != null ? "Name = " + name + " " : "";
         if (NUPROP_WARNTEXT != null && !NUPROP_WARNTEXT.isEmpty()) {
             for (final String propertyName : NUPROP_WARNTEXT.keySet()) {
                 final RefAddr ra = ref.get(propertyName);
@@ -439,10 +416,9 @@ public class BasicDataSourceFactory implements ObjectFactory {
             if (!(allPropsAsList.contains(propertyName) || NUPROP_WARNTEXT.containsKey(propertyName)
                     || SILENT_PROPERTIES.contains(propertyName))) {
                 final String propertyValue = Objects.toString(ra.getContent(), null);
-                final StringBuilder stringBuilder = new StringBuilder(nameString);
-                stringBuilder.append("Ignoring unknown property: ").append("value of \"").append(propertyValue)
-                        .append("\" for \"").append(propertyName).append("\" property");
-                infoMessages.add(stringBuilder.toString());
+                String stringBuilder = nameString + "Ignoring unknown property: " + "value of \"" + propertyValue +
+                        "\" for \"" + propertyName + "\" property";
+                infoMessages.add(stringBuilder);
             }
         }
     }

@@ -17,13 +17,13 @@
 package org.apache.catalina.startup;
 
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 
 /**
@@ -73,21 +73,15 @@ public final class Tool {
     private static final Log log = LogFactory.getLog(Tool.class);
 
     // ------------------------------------------------------- Static Variables
-
-
-    /**
-     * Set <code>ant.home</code> system property?
-     */
-    private static boolean ant = false;
-
-
     /**
      * The pathname of our installation base directory.
      */
     private static final String catalinaHome =
             System.getProperty(Constants.CATALINA_HOME_PROP);
-
-
+    /**
+     * Set <code>ant.home</code> system property?
+     */
+    private static boolean ant = false;
     /**
      * Include common classes in the repositories?
      */
@@ -115,7 +109,7 @@ public final class Tool {
      * @param args Command line arguments to be processed
      */
     @SuppressWarnings("null")
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         // Verify that "catalina.home" was passed.
         if (catalinaHome == null) {
@@ -132,13 +126,17 @@ public final class Tool {
             }
             if ("-ant".equals(args[index])) {
                 ant = true;
-            } else if ("-common".equals(args[index])) {
+            }
+            else if ("-common".equals(args[index])) {
                 common = true;
-            } else if ("-server".equals(args[index])) {
+            }
+            else if ("-server".equals(args[index])) {
                 server = true;
-            } else if ("-shared".equals(args[index])) {
+            }
+            else if ("-shared".equals(args[index])) {
                 shared = true;
-            } else {
+            }
+            else {
                 break;
             }
             index++;
@@ -162,27 +160,27 @@ public final class Tool {
             packed.add(new File(catalinaHome, "lib"));
             if (common) {
                 unpacked.add(new File(catalinaHome,
-                                      "common" + File.separator + "classes"));
+                        "common" + File.separator + "classes"));
                 packed.add(new File(catalinaHome,
-                                    "common" + File.separator + "lib"));
+                        "common" + File.separator + "lib"));
             }
             if (server) {
                 unpacked.add(new File(catalinaHome,
-                                      "server" + File.separator + "classes"));
+                        "server" + File.separator + "classes"));
                 packed.add(new File(catalinaHome,
-                                    "server" + File.separator + "lib"));
+                        "server" + File.separator + "lib"));
             }
             if (shared) {
                 unpacked.add(new File(catalinaHome,
-                                      "shared" + File.separator + "classes"));
+                        "shared" + File.separator + "classes"));
                 packed.add(new File(catalinaHome,
-                                    "shared" + File.separator + "lib"));
+                        "shared" + File.separator + "lib"));
             }
             classLoader =
-                ClassLoaderFactory.createClassLoader
-                (unpacked.toArray(new File[0]),
-                 packed.toArray(new File[0]),
-                 null);
+                    ClassLoaderFactory.createClassLoader
+                            (unpacked.toArray(new File[0]),
+                                    packed.toArray(new File[0]),
+                                    null);
         } catch (Throwable t) {
             Bootstrap.handleThrowable(t);
             log.error("Class loader creation threw exception", t);
@@ -205,14 +203,14 @@ public final class Tool {
         }
 
         Method method = null;
-        String params[] = new String[args.length - index];
+        String[] params = new String[args.length - index];
         System.arraycopy(args, index, params, 0, params.length);
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Identifying main() method");
             }
             String methodName = "main";
-            Class<?> paramTypes[] = new Class[1];
+            Class<?>[] paramTypes = new Class[1];
             paramTypes[0] = params.getClass();
             method = clazz.getMethod(methodName, paramTypes);
         } catch (Throwable t) {
@@ -226,7 +224,7 @@ public final class Tool {
             if (log.isDebugEnabled()) {
                 log.debug("Calling main() method");
             }
-            Object paramValues[] = new Object[1];
+            Object[] paramValues = new Object[1];
             paramValues[0] = params;
             method.invoke(null, paramValues);
         } catch (Throwable t) {

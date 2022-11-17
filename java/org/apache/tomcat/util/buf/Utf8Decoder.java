@@ -43,7 +43,7 @@ public class Utf8Decoder extends CharsetDecoder {
     // 11oyyyyy 1oxxxxxx                   00000000 00000yyy yyxxxxxx
     // 111ozzzz 1oyyyyyy 1oxxxxxx          00000000 zzzzyyyy yyxxxxxx
     // 1111ouuu 1ouuzzzz 1oyyyyyy 1oxxxxxx 000uuuuu zzzzyyyy yyxxxxxx
-    private static final int remainingBytes[] = {
+    private static final int[] remainingBytes = {
             // 1owwwwww
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -58,13 +58,13 @@ public class Utf8Decoder extends CharsetDecoder {
             3, 3, 3, 3, 3, -1, -1, -1,
             // > 11110111
             -1, -1, -1, -1, -1, -1, -1, -1};
-    private static final int remainingNumbers[] = {0, // 0 1 2 3
+    private static final int[] remainingNumbers = {0, // 0 1 2 3
             4224, // (01o00000b << 6)+(1o000000b)
             401536, // (011o0000b << 12)+(1o000000b << 6)+(1o000000b)
             29892736 // (0111o000b << 18)+(1o000000b << 12)+(1o000000b <<
-                     // 6)+(1o000000b)
+            // 6)+(1o000000b)
     };
-    private static final int lowerEncodingLimit[] = {-1, 0x80, 0x800, 0x10000};
+    private static final int[] lowerEncodingLimit = {-1, 0x80, 0x800, 0x10000};
 
 
     public Utf8Decoder() {
@@ -128,7 +128,8 @@ public class Utf8Decoder extends CharsetDecoder {
                 if (jchar <= 0xffff) {
                     out.put((char) jchar);
                     outRemaining--;
-                } else {
+                }
+                else {
                     if (outRemaining < 2) {
                         return CoderResult.OVERFLOW;
                     }
@@ -208,7 +209,7 @@ public class Utf8Decoder extends CharsetDecoder {
                     // First byte F0, second byte 90..BF
                     if (jchar == 0x70 &&
                             ((bArr[inIndex + 1] & 0xFF) < 0x90 ||
-                            (bArr[inIndex + 1] & 0xFF) > 0xBF)) {
+                                    (bArr[inIndex + 1] & 0xFF) > 0xBF)) {
                         in.position(inIndex - in.arrayOffset());
                         out.position(outIndex - out.arrayOffset());
                         return CoderResult.malformedForLength(1);
@@ -276,7 +277,8 @@ public class Utf8Decoder extends CharsetDecoder {
             if (jchar <= 0xffff) {
                 cArr[outIndex++] = (char) jchar;
                 outRemaining--;
-            } else {
+            }
+            else {
                 if (outRemaining < 2) {
                     // Encoded with 4 bytes. inIndex currently points
                     // to the final byte. Move it back to first byte.

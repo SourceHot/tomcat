@@ -16,19 +16,15 @@
  */
 package org.apache.catalina.ant;
 
+import org.apache.catalina.util.IOTools;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.Authenticator;
-import java.net.HttpURLConnection;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLConnection;
-
-import org.apache.catalina.util.IOTools;
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
+import java.net.*;
 
 /**
  * Abstract base class for Ant tasks that interact with the <em>Manager</em> web
@@ -54,57 +50,18 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
      * The charset used during URL encoding.
      */
     protected String charset = "ISO-8859-1";
-
-    public String getCharset() {
-        return charset;
-    }
-
-    public void setCharset(String charset) {
-        this.charset = charset;
-    }
-
-
     /**
      * The login password for the <code>Manager</code> application.
      */
     protected String password = null;
-
-    public String getPassword() {
-        return this.password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-
     /**
      * The URL of the <code>Manager</code> application to be used.
      */
     protected String url = "http://localhost:8080/manager/text";
-
-    public String getUrl() {
-        return this.url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-
     /**
      * The login username for the <code>Manager</code> application.
      */
     protected String username = null;
-
-    public String getUsername() {
-        return this.username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     /**
      * If set to true - ignore the constraint of the first line of the response
      * message that must be "OK -".
@@ -118,6 +75,38 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
      * response is treated like any other, regardless of its text.
      */
     protected boolean ignoreResponseConstraint = false;
+
+    public String getCharset() {
+        return charset;
+    }
+
+    public void setCharset(String charset) {
+        this.charset = charset;
+    }
+
+    public String getPassword() {
+        return this.password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getUrl() {
+        return this.url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public boolean isIgnoreResponseConstraint() {
         return ignoreResponseConstraint;
@@ -135,7 +124,7 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
      * attribute validation required by all subclasses; it does not perform any
      * functional logic directly.
      *
-     * @exception BuildException if a validation error occurs
+     * @throws BuildException if a validation error occurs
      */
     @Override
     public void execute() throws BuildException {
@@ -149,8 +138,7 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
      * Execute the specified command, based on the configured properties.
      *
      * @param command Command to be executed
-     *
-     * @exception BuildException if an error occurs
+     * @throws BuildException if an error occurs
      */
     public void execute(String command) throws BuildException {
         execute(command, null, null, -1);
@@ -162,15 +150,14 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
      * input stream will be closed upon completion of this task, whether it was
      * executed successfully or not.
      *
-     * @param command Command to be executed
-     * @param istream InputStream to include in an HTTP PUT, if any
-     * @param contentType Content type to specify for the input, if any
+     * @param command       Command to be executed
+     * @param istream       InputStream to include in an HTTP PUT, if any
+     * @param contentType   Content type to specify for the input, if any
      * @param contentLength Content length to specify for the input, if any
-     *
-     * @exception BuildException if an error occurs
+     * @throws BuildException if an error occurs
      */
     public void execute(String command, InputStream istream, String contentType, long contentLength)
-                    throws BuildException {
+            throws BuildException {
 
         URLConnection conn = null;
         InputStreamReader reader = null;
@@ -199,7 +186,8 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
 
                     hconn.setFixedLengthStreamingMode(contentLength);
                 }
-            } else {
+            }
+            else {
                 hconn.setDoOutput(false);
                 hconn.setRequestMethod("GET");
             }
@@ -230,7 +218,8 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
                 int ch = reader.read();
                 if (ch < 0) {
                     break;
-                } else if ((ch == '\r') || (ch == '\n')) {
+                }
+                else if ((ch == '\r') || (ch == '\n')) {
                     // in Win \r\n would cause handleOutput() to be called
                     // twice, the second time with an empty string,
                     // producing blank lines
@@ -246,7 +235,8 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
                         }
                         handleOutput(line, msgPriority);
                     }
-                } else {
+                }
+                else {
                     buff.append((char) ch);
                 }
             }
@@ -261,7 +251,8 @@ public abstract class AbstractCatalinaTask extends BaseRedirectorHelperTask {
         } catch (Exception e) {
             if (isFailOnError()) {
                 throw new BuildException(e);
-            } else {
+            }
+            else {
                 handleErrorOutput(e.getMessage());
             }
         } finally {

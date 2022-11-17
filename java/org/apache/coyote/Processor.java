@@ -16,13 +16,13 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler.SocketState;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.SocketEvent;
 import org.apache.tomcat.util.net.SocketWrapperBase;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Common interface for processors of all protocols.
@@ -35,38 +35,38 @@ public interface Processor {
      * not currently being processed.
      *
      * @param socketWrapper The connection to process
-     * @param status The status of the connection that triggered this additional
-     *               processing
-     *
+     * @param status        The status of the connection that triggered this additional
+     *                      processing
      * @return The state the caller should put the socket in when this method
-     *         returns
-     *
+     * returns
      * @throws IOException If an I/O error occurs during the processing of the
-     *         request
+     *                     request
      */
     SocketState process(SocketWrapperBase<?> socketWrapper, SocketEvent status) throws IOException;
 
     /**
      * Generate an upgrade token.
-     *
+     * <p>
      * 获取升级令牌
-     * @return An upgrade token encapsulating the information required to
-     *         process the upgrade request
      *
+     * @return An upgrade token encapsulating the information required to
+     * process the upgrade request
      * @throws IllegalStateException if this is called on a Processor that does
-     *         not support upgrading
+     *                               not support upgrading
      */
     UpgradeToken getUpgradeToken();
 
     /**
      * 是否处于正在升级阶段
+     *
      * @return {@code true} if the Processor is currently processing an upgrade
-     *         request, otherwise {@code false}
+     * request, otherwise {@code false}
      */
     boolean isUpgrade();
 
     /**
      * 是否异步
+     *
      * @return
      */
     boolean isAsync();
@@ -106,12 +106,12 @@ public interface Processor {
 
     /**
      * Allows retrieving additional input during the upgrade process.
-     *
+     * <p>
      * 获取剩余的字节数据
-     * @return leftover bytes
      *
+     * @return leftover bytes
      * @throws IllegalStateException if this is called on a Processor that does
-     *         not support upgrading
+     *                               not support upgrading
      */
     ByteBuffer getLeftoverInput();
 
@@ -130,7 +130,7 @@ public interface Processor {
      * to avoid unnecessary processing.
      *
      * @return {@code true} If the async generation has not changed since the
-     *         async timeout was triggered
+     * async timeout was triggered
      */
     boolean checkAsyncTimeoutGeneration();
 }

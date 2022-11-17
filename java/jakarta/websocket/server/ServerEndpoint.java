@@ -16,13 +16,13 @@
  */
 package jakarta.websocket.server;
 
+import jakarta.websocket.Decoder;
+import jakarta.websocket.Encoder;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import jakarta.websocket.Decoder;
-import jakarta.websocket.Encoder;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
@@ -30,8 +30,9 @@ public @interface ServerEndpoint {
 
     /**
      * URI or URI-template that the annotated class should be mapped to.
+     *
      * @return The URI or URI-template that the annotated class should be mapped
-     *         to.
+     * to.
      */
     String value();
 
@@ -41,6 +42,6 @@ public @interface ServerEndpoint {
 
     Class<? extends Encoder>[] encoders() default {};
 
-    public Class<? extends ServerEndpointConfig.Configurator> configurator()
+    Class<? extends ServerEndpointConfig.Configurator> configurator()
             default ServerEndpointConfig.Configurator.class;
 }

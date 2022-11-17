@@ -16,9 +16,9 @@
  */
 package org.apache.coyote.http11.upgrade;
 
-import java.nio.ByteBuffer;
-
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
+
+import java.nio.ByteBuffer;
 
 /**
  * Trivial implementation of {@link ApplicationBufferHandler} to support saving
@@ -29,13 +29,13 @@ public class UpgradeApplicationBufferHandler implements ApplicationBufferHandler
     private ByteBuffer byteBuffer;
 
     @Override
-    public void setByteBuffer(ByteBuffer byteBuffer) {
-        this.byteBuffer = byteBuffer;
+    public ByteBuffer getByteBuffer() {
+        return byteBuffer;
     }
 
     @Override
-    public ByteBuffer getByteBuffer() {
-        return byteBuffer;
+    public void setByteBuffer(ByteBuffer byteBuffer) {
+        this.byteBuffer = byteBuffer;
     }
 
     @Override

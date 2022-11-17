@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import jakarta.websocket.Decoder;
 import jakarta.websocket.Encoder;
 import jakarta.websocket.Extension;
 import jakarta.websocket.server.ServerEndpointConfig;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Wraps the provided {@link ServerEndpointConfig} and provides a per session
@@ -34,7 +34,7 @@ import jakarta.websocket.server.ServerEndpointConfig;
 class WsPerSessionServerEndpointConfig implements ServerEndpointConfig {
 
     private final ServerEndpointConfig perEndpointConfig;
-    private final Map<String,Object> perSessionUserProperties =
+    private final Map<String, Object> perSessionUserProperties =
             new ConcurrentHashMap<>();
 
     WsPerSessionServerEndpointConfig(ServerEndpointConfig perEndpointConfig) {
@@ -53,7 +53,7 @@ class WsPerSessionServerEndpointConfig implements ServerEndpointConfig {
     }
 
     @Override
-    public Map<String,Object> getUserProperties() {
+    public Map<String, Object> getUserProperties() {
         return perSessionUserProperties;
     }
 

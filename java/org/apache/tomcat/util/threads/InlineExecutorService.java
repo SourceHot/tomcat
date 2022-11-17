@@ -23,11 +23,10 @@ import java.util.concurrent.TimeUnit;
 
 public class InlineExecutorService extends AbstractExecutorService {
 
+    private final Object lock = new Object();
     private volatile boolean shutdown;
     private volatile boolean taskRunning;
     private volatile boolean terminated;
-
-    private final Object lock = new Object();
 
     @Override
     public void shutdown() {

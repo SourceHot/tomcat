@@ -16,15 +16,11 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.io.IOException;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.GenericFilter;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 /**
  * Handles the initial HTTP connection for WebSocket connections.
@@ -45,7 +41,7 @@ public class WsFilter extends GenericFilter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+                         FilterChain chain) throws IOException, ServletException {
 
         // This filter only needs to handle WebSocket upgrade requests
         if (!sc.areEndpointsRegistered() ||
@@ -63,7 +59,8 @@ public class WsFilter extends GenericFilter {
         String pathInfo = req.getPathInfo();
         if (pathInfo == null) {
             path = req.getServletPath();
-        } else {
+        }
+        else {
             path = req.getServletPath() + pathInfo;
         }
         WsMappingResult mappingResult = sc.findMapping(path);

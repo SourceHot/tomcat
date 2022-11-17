@@ -16,31 +16,25 @@
  */
 package org.apache.tomcat.util.net.openssl.ciphers;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * All the standard cipher suites for SSL/TSL.
  *
  * @see <a href="https://github.com/openssl/openssl/blob/master/ssl/s3_lib.c"
- *      >OpenSSL cipher definitions</a>
+ * >OpenSSL cipher definitions</a>
  * @see <a href="http://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4"
- *      >The cipher suite registry</a>
+ * >The cipher suite registry</a>
  * @see <a href="https://www.thesprawl.org/research/tls-and-ssl-cipher-suites/"
- *      >Another list of cipher suites with some non-standard IDs</a>
+ * >Another list of cipher suites with some non-standard IDs</a>
  * @see <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#ciphersuites"
- *      >Oracle standard names for cipher suites</a>
+ * >Oracle standard names for cipher suites</a>
  * @see <a href="https://www.openssl.org/docs/apps/ciphers.html"
- *      >Mapping of OpenSSL cipher suites names to registry names</a>
+ * >Mapping of OpenSSL cipher suites names to registry names</a>
  * @see <a href="https://github.com/ssllabs/sslhaf/blob/0.1.x/suites.csv"
- *      >SSL Labs tool - list of ciphers</a>
+ * >SSL Labs tool - list of ciphers</a>
  * @see <a href="http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/e30cd0d37abf/src/java.base/share/classes/sun/security/ssl/CipherSuite.java"
- *      >OpenJDK source code</a>
+ * >OpenJDK source code</a>
  */
 public enum Cipher {
 
@@ -65,7 +59,7 @@ public enum Cipher {
             false,
             0,
             0,
-            new String[] {"SSL_RSA_WITH_NULL_MD5"},
+            new String[]{"SSL_RSA_WITH_NULL_MD5"},
             null
     ),
     // Cipher 02
@@ -82,7 +76,7 @@ public enum Cipher {
             true,
             0,
             0,
-            new String[] {"SSL_RSA_WITH_NULL_SHA"},
+            new String[]{"SSL_RSA_WITH_NULL_SHA"},
             null
     ),
     // Cipher 03
@@ -99,7 +93,7 @@ public enum Cipher {
             false,
             40,
             128,
-            new String[] {"SSL_RSA_EXPORT_WITH_RC4_40_MD5"},
+            new String[]{"SSL_RSA_EXPORT_WITH_RC4_40_MD5"},
             null
     ),
     // Cipher 04
@@ -116,7 +110,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_RSA_WITH_RC4_128_MD5"},
+            new String[]{"SSL_RSA_WITH_RC4_128_MD5"},
             null
     ),
     // Cipher 05
@@ -133,7 +127,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_RSA_WITH_RC4_128_SHA"},
+            new String[]{"SSL_RSA_WITH_RC4_128_SHA"},
             null
     ),
     // Cipher 06
@@ -150,7 +144,7 @@ public enum Cipher {
             false,
             40,
             128,
-            new String[] {"SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5"},
+            new String[]{"SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5"},
             null
     ),
     // Cipher 07
@@ -167,7 +161,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_RSA_WITH_IDEA_CBC_SHA"},
+            new String[]{"SSL_RSA_WITH_IDEA_CBC_SHA"},
             null
     ),
     // Cipher 08
@@ -184,7 +178,7 @@ public enum Cipher {
             false,
             40,
             56,
-            new String[] {"SSL_RSA_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"SSL_RSA_EXPORT_WITH_DES40_CBC_SHA"},
             null
     ),
     // Cipher 09
@@ -201,7 +195,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_RSA_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_RSA_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 0A
@@ -218,7 +212,7 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_RSA_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"SSL_RSA_WITH_3DES_EDE_CBC_SHA"},
             null
     ),
     /* The DH ciphers */
@@ -236,7 +230,7 @@ public enum Cipher {
             false,
             40,
             56,
-            new String[] {"SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA"},
             null
     ),
     // Cipher 0C
@@ -253,7 +247,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DH_DSS_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_DH_DSS_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 0D
@@ -270,7 +264,7 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA"},
             null
     ),
     // Cipher 0E
@@ -287,7 +281,7 @@ public enum Cipher {
             false,
             40,
             56,
-            new String[] {"SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA"},
             null
     ),
     // Cipher 0F
@@ -304,7 +298,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DH_RSA_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_DH_RSA_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 10
@@ -321,7 +315,7 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA"},
             null
     ),
     /* The Ephemeral DH ciphers */
@@ -339,8 +333,8 @@ public enum Cipher {
             false,
             40,
             56,
-            new String[] {"SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"},
-            new String[] {"EXP-EDH-DSS-DES-CBC-SHA"}
+            new String[]{"SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"EXP-EDH-DSS-DES-CBC-SHA"}
     ),
     // Cipher 12
     TLS_DHE_DSS_WITH_DES_CBC_SHA(
@@ -356,8 +350,8 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DHE_DSS_WITH_DES_CBC_SHA"},
-            new String[] {"EDH-DSS-DES-CBC-SHA"}
+            new String[]{"SSL_DHE_DSS_WITH_DES_CBC_SHA"},
+            new String[]{"EDH-DSS-DES-CBC-SHA"}
     ),
     // Cipher 13
     TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA(
@@ -373,8 +367,8 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA"},
-            new String[] {"EDH-DSS-DES-CBC3-SHA"}
+            new String[]{"SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"EDH-DSS-DES-CBC3-SHA"}
     ),
     // Cipher 14
     TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA(
@@ -390,8 +384,8 @@ public enum Cipher {
             false,
             40,
             56,
-            new String[] {"SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA"},
-            new String[] {"EXP-EDH-RSA-DES-CBC-SHA"}
+            new String[]{"SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"EXP-EDH-RSA-DES-CBC-SHA"}
     ),
     // Cipher 15
     TLS_DHE_RSA_WITH_DES_CBC_SHA(
@@ -407,8 +401,8 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DHE_RSA_WITH_DES_CBC_SHA"},
-            new String[] {"EDH-RSA-DES-CBC-SHA"}
+            new String[]{"SSL_DHE_RSA_WITH_DES_CBC_SHA"},
+            new String[]{"EDH-RSA-DES-CBC-SHA"}
     ),
     // Cipher 16
     TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA(
@@ -424,8 +418,8 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA"},
-            new String[] {"EDH-RSA-DES-CBC3-SHA"}
+            new String[]{"SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"EDH-RSA-DES-CBC3-SHA"}
     ),
     // Cipher 17
     TLS_DH_anon_EXPORT_WITH_RC4_40_MD5(
@@ -441,7 +435,7 @@ public enum Cipher {
             false,
             40,
             128,
-            new String[] {"SSL_DH_anon_EXPORT_WITH_RC4_40_MD5"},
+            new String[]{"SSL_DH_anon_EXPORT_WITH_RC4_40_MD5"},
             null
     ),
     // Cipher 18
@@ -458,7 +452,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_DH_anon_WITH_RC4_128_MD5"},
+            new String[]{"SSL_DH_anon_WITH_RC4_128_MD5"},
             null
     ),
     // Cipher 19
@@ -475,7 +469,7 @@ public enum Cipher {
             false,
             40,
             128,
-            new String[] {"SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA"},
+            new String[]{"SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA"},
             null
     ),
     // Cipher 1A
@@ -492,7 +486,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DH_anon_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_DH_anon_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 1B
@@ -509,7 +503,7 @@ public enum Cipher {
             true,
             112,
             168,
-            new String[] {"SSL_DH_anon_WITH_3DES_EDE_CBC_SHA"},
+            new String[]{"SSL_DH_anon_WITH_3DES_EDE_CBC_SHA"},
             null
     ),
     /* Fortezza ciphersuite from SSL 3.0 spec
@@ -1273,7 +1267,7 @@ public enum Cipher {
             false,
             56,
             128,
-            new String[] {"SSL_RSA_EXPORT1024_WITH_RC4_56_MD5"},
+            new String[]{"SSL_RSA_EXPORT1024_WITH_RC4_56_MD5"},
             null
     ),
     // Cipher 61
@@ -1290,7 +1284,7 @@ public enum Cipher {
             false,
             56,
             128,
-            new String[] {"SSL_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5"},
+            new String[]{"SSL_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5"},
             null
     ),
     // Cipher 62
@@ -1307,7 +1301,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 63
@@ -1324,7 +1318,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA"},
+            new String[]{"SSL_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA"},
             null
     ),
     // Cipher 64
@@ -1341,7 +1335,7 @@ public enum Cipher {
             false,
             56,
             128,
-            new String[] {"SSL_RSA_EXPORT1024_WITH_RC4_56_SHA"},
+            new String[]{"SSL_RSA_EXPORT1024_WITH_RC4_56_SHA"},
             null
     ),
     // Cipher 65
@@ -1358,7 +1352,7 @@ public enum Cipher {
             false,
             56,
             128,
-            new String[] {"SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA"},
+            new String[]{"SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA"},
             null
     ),
     // Cipher 66
@@ -1375,7 +1369,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_DHE_DSS_WITH_RC4_128_SHA"},
+            new String[]{"SSL_DHE_DSS_WITH_RC4_128_SHA"},
             null
     ),
 
@@ -2286,7 +2280,7 @@ public enum Cipher {
             null
     ),
     // Cipher AE
-    TLS_PSK_WITH_AES_128_CBC_SHA256    (
+    TLS_PSK_WITH_AES_128_CBC_SHA256(
             0x00AE,
             "PSK-AES128-CBC-SHA256",
             KeyExchange.PSK,
@@ -2303,7 +2297,7 @@ public enum Cipher {
             null
     ),
     // Cipher AF
-    TLS_PSK_WITH_AES_256_CBC_SHA384    (
+    TLS_PSK_WITH_AES_256_CBC_SHA384(
             0x00AF,
             "PSK-AES256-CBC-SHA384",
             KeyExchange.PSK,
@@ -2320,7 +2314,7 @@ public enum Cipher {
             null
     ),
     // Cipher B0
-    TLS_PSK_WITH_NULL_SHA256           (
+    TLS_PSK_WITH_NULL_SHA256(
             0x00B0,
             "PSK-NULL-SHA256",
             KeyExchange.PSK,
@@ -2337,7 +2331,7 @@ public enum Cipher {
             null
     ),
     // Cipher B1
-    TLS_PSK_WITH_NULL_SHA384           (
+    TLS_PSK_WITH_NULL_SHA384(
             0x00B1,
             "PSK-NULL-SHA384",
             KeyExchange.PSK,
@@ -2388,7 +2382,7 @@ public enum Cipher {
             null
     ),
     // Cipher B4
-    TLS_DHE_PSK_WITH_NULL_SHA256       (
+    TLS_DHE_PSK_WITH_NULL_SHA256(
             0x00B4,
             "DHE-PSK-NULL-SHA256",
             KeyExchange.DHEPSK,
@@ -2405,7 +2399,7 @@ public enum Cipher {
             null
     ),
     // Cipher B5
-    TLS_DHE_PSK_WITH_NULL_SHA384       (
+    TLS_DHE_PSK_WITH_NULL_SHA384(
             0x00B5,
             "DHE-PSK-NULL-SHA384",
             KeyExchange.DHEPSK,
@@ -2456,7 +2450,7 @@ public enum Cipher {
             null
     ),
     // Cipher B8
-    TLS_RSA_PSK_WITH_NULL_SHA256       (
+    TLS_RSA_PSK_WITH_NULL_SHA256(
             0x00B8,
             "RSA-PSK-NULL-SHA256",
             KeyExchange.RSAPSK,
@@ -2473,7 +2467,7 @@ public enum Cipher {
             null
     ),
     // Cipher B9
-    TLS_RSA_PSK_WITH_NULL_SHA384       (
+    TLS_RSA_PSK_WITH_NULL_SHA384(
             0x00B9,
             "RSA-PSK-NULL-SHA384",
             KeyExchange.RSAPSK,
@@ -4841,7 +4835,7 @@ public enum Cipher {
             false,
             40,
             128,
-            new String[] {"SSL_RC4_128_EXPORT40_WITH_MD5"},
+            new String[]{"SSL_RC4_128_EXPORT40_WITH_MD5"},
             null
     ),
     // Cipher 0x030080 (SSLv2)
@@ -4894,7 +4888,7 @@ public enum Cipher {
             false,
             128,
             128,
-            new String[] {"SSL_CK_IDEA_128_CBC_WITH_MD5"},
+            new String[]{"SSL_CK_IDEA_128_CBC_WITH_MD5"},
             null
     ),
     // Cipher 0x060040 (SSLv2)
@@ -4912,7 +4906,7 @@ public enum Cipher {
             false,
             56,
             56,
-            new String[] {"SSL_CK_DES_64_CBC_WITH_MD5"},
+            new String[]{"SSL_CK_DES_64_CBC_WITH_MD5"},
             null
     ),
     // Cipher 0x0700C0 (SSLv2)
@@ -4930,7 +4924,7 @@ public enum Cipher {
             false,
             112,
             168,
-            new String[] {"SSL_CK_DES_192_EDE3_CBC_WITH_MD5"},
+            new String[]{"SSL_CK_DES_192_EDE3_CBC_WITH_MD5"},
             null
     );
 
@@ -4990,6 +4984,18 @@ public enum Cipher {
      },*/
 
 
+    private static final Map<Integer, Cipher> idMap = new HashMap<>();
+
+    static {
+        for (Cipher cipher : Cipher.values()) {
+            int id = cipher.getId();
+
+            if (id > 0 && id < 0xFFFF) {
+                idMap.put(Integer.valueOf(id), cipher);
+            }
+        }
+    }
+
     private final int id;
     private final String openSSLAlias;
     private final Set<String> openSSLAltNames;
@@ -5011,16 +5017,17 @@ public enum Cipher {
      */
     private final int alg_bits;
 
-    private Cipher(int id, String openSSLAlias, KeyExchange kx, Authentication au, Encryption enc,
-            MessageDigest mac, Protocol protocol, boolean export, EncryptionLevel level,
-            boolean fipsCompatible, int strength_bits, int alg_bits, String[] jsseAltNames,
-            String[] openSSlAltNames) {
+    Cipher(int id, String openSSLAlias, KeyExchange kx, Authentication au, Encryption enc,
+                   MessageDigest mac, Protocol protocol, boolean export, EncryptionLevel level,
+                   boolean fipsCompatible, int strength_bits, int alg_bits, String[] jsseAltNames,
+                   String[] openSSlAltNames) {
         this.id = id;
         this.openSSLAlias = openSSLAlias;
         if (openSSlAltNames != null && openSSlAltNames.length != 0) {
             Set<String> altNames = new HashSet<>(Arrays.asList(openSSlAltNames));
             this.openSSLAltNames = Collections.unmodifiableSet(altNames);
-        } else {
+        }
+        else {
             this.openSSLAltNames = Collections.emptySet();
         }
         Set<String> jsseNames = new LinkedHashSet<>();
@@ -5039,6 +5046,10 @@ public enum Cipher {
         this.fipsCompatible = fipsCompatible;
         this.strength_bits = strength_bits;
         this.alg_bits = alg_bits;
+    }
+
+    public static Cipher valueOf(int cipherId) {
+        return idMap.get(Integer.valueOf(cipherId));
     }
 
     public int getId() {
@@ -5095,23 +5106,5 @@ public enum Cipher {
 
     public int getAlg_bits() {
         return alg_bits;
-    }
-
-
-    private static final Map<Integer,Cipher> idMap = new HashMap<>();
-
-    static {
-        for (Cipher cipher : Cipher.values()) {
-            int id = cipher.getId();
-
-            if (id > 0 && id < 0xFFFF) {
-                idMap.put(Integer.valueOf(id), cipher);
-            }
-        }
-    }
-
-
-    public static Cipher valueOf(int cipherId) {
-        return idMap.get(Integer.valueOf(cipherId));
     }
 }

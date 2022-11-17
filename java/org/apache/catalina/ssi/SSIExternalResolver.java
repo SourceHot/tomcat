@@ -20,6 +20,7 @@ package org.apache.catalina.ssi;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+
 /**
  * Interface used by SSIMediator to talk to the 'outside world' ( usually a
  * servlet )
@@ -30,13 +31,12 @@ public interface SSIExternalResolver {
     /**
      * Adds any external variables to the variableNames collection.
      *
-     * @param variableNames
-     *            the collection to add to
+     * @param variableNames the collection to add to
      */
-    public void addVariableNames(Collection<String> variableNames);
+    void addVariableNames(Collection<String> variableNames);
 
 
-    public String getVariableValue(String name);
+    String getVariableValue(String name);
 
 
     /**
@@ -44,12 +44,10 @@ public interface SSIExternalResolver {
      * the variable will be removed ( ie. a call to getVariableValue will
      * return null )
      *
-     * @param name
-     *            of the variable
-     * @param value
-     *            of the variable
+     * @param name  of the variable
+     * @param value of the variable
      */
-    public void setVariableValue(String name, String value);
+    void setVariableValue(String name, String value);
 
 
     /**
@@ -59,18 +57,18 @@ public interface SSIExternalResolver {
      *
      * @return the data
      */
-    public Date getCurrentDate();
+    Date getCurrentDate();
 
 
-    public long getFileSize(String path, boolean virtual) throws IOException;
+    long getFileSize(String path, boolean virtual) throws IOException;
 
 
-    public long getFileLastModified(String path, boolean virtual)
+    long getFileLastModified(String path, boolean virtual)
             throws IOException;
 
 
-    public String getFileText(String path, boolean virtual) throws IOException;
+    String getFileText(String path, boolean virtual) throws IOException;
 
 
-    public void log(String message, Throwable throwable);
+    void log(String message, Throwable throwable);
 }

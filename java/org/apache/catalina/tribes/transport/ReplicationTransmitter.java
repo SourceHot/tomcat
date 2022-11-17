@@ -16,15 +16,11 @@
  */
 package org.apache.catalina.tribes.transport;
 
-import javax.management.ObjectName;
-
-import org.apache.catalina.tribes.Channel;
-import org.apache.catalina.tribes.ChannelException;
-import org.apache.catalina.tribes.ChannelMessage;
-import org.apache.catalina.tribes.ChannelSender;
-import org.apache.catalina.tribes.Member;
+import org.apache.catalina.tribes.*;
 import org.apache.catalina.tribes.jmx.JmxRegistry;
 import org.apache.catalina.tribes.transport.nio.PooledParallelSender;
+
+import javax.management.ObjectName;
 
 /**
  * Transmit message to other cluster members
@@ -39,11 +35,10 @@ public class ReplicationTransmitter implements ChannelSender {
      * the ObjectName of this Sender.
      */
     private ObjectName oname = null;
+    private MultiPointSender transport = new PooledParallelSender();
 
     public ReplicationTransmitter() {
     }
-
-    private MultiPointSender transport = new PooledParallelSender();
 
     public MultiPointSender getTransport() {
         return transport;
@@ -57,12 +52,13 @@ public class ReplicationTransmitter implements ChannelSender {
 
     /**
      * Send data to one member
+     *
      * @see org.apache.catalina.tribes.ChannelSender#sendMessage(org.apache.catalina.tribes.ChannelMessage, org.apache.catalina.tribes.Member[])
      */
     @Override
     public void sendMessage(ChannelMessage message, Member[] destination) throws ChannelException {
         MultiPointSender sender = getTransport();
-        sender.sendMessage(destination,message);
+        sender.sendMessage(destination, message);
     }
 
 
@@ -103,7 +99,7 @@ public class ReplicationTransmitter implements ChannelSender {
      */
     @Override
     public void heartbeat() {
-        if (getTransport()!=null) {
+        if (getTransport() != null) {
             getTransport().keepalive();
         }
     }

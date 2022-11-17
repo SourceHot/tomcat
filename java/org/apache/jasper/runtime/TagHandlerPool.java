@@ -19,7 +19,6 @@ package org.apache.jasper.runtime;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.Tag;
-
 import org.apache.jasper.Constants;
 import org.apache.tomcat.InstanceManager;
 
@@ -30,16 +29,22 @@ import org.apache.tomcat.InstanceManager;
  */
 public class TagHandlerPool {
 
-    private Tag[] handlers;
-
     public static final String OPTION_TAGPOOL = "tagpoolClassName";
     public static final String OPTION_MAXSIZE = "tagpoolMaxSize";
     public static final String OPTION_USEIMFORTAGS = "useInstanceManagerForTags";
-
-    // index of next available tag handler
-    private int current;
     protected InstanceManager instanceManager = null;
     protected boolean useInstanceManagerForTags;
+    private Tag[] handlers;
+    // index of next available tag handler
+    private int current;
+
+    /**
+     * Constructs a tag handler pool with the default capacity.
+     */
+    public TagHandlerPool() {
+        // Nothing - jasper generated servlets call the other constructor,
+        // this should be used in future + init .
+    }
 
     public static TagHandlerPool getTagHandlerPool(ServletConfig config) {
         TagHandlerPool result = null;
@@ -60,6 +65,26 @@ public class TagHandlerPool {
         result.init(config);
 
         return result;
+    }
+
+    protected static String getOption(ServletConfig config, String name,
+                                      String defaultV) {
+        if (config == null) {
+            return defaultV;
+        }
+
+        String value = config.getInitParameter(name);
+        if (value != null) {
+            return value;
+        }
+        if (config.getServletContext() == null) {
+            return defaultV;
+        }
+        value = config.getServletContext().getInitParameter(name);
+        if (value != null) {
+            return value;
+        }
+        return defaultV;
     }
 
     protected void init(ServletConfig config) {
@@ -83,22 +108,12 @@ public class TagHandlerPool {
     }
 
     /**
-     * Constructs a tag handler pool with the default capacity.
-     */
-    public TagHandlerPool() {
-        // Nothing - jasper generated servlets call the other constructor,
-        // this should be used in future + init .
-    }
-
-    /**
      * Gets the next available tag handler from this tag handler pool,
      * instantiating one if this tag handler pool is empty.
      *
-     * @param handlerClass
-     *            Tag handler class
+     * @param handlerClass Tag handler class
      * @return Reused or newly instantiated tag handler
-     * @throws JspException
-     *             if a tag handler cannot be instantiated
+     * @throws JspException if a tag handler cannot be instantiated
      */
     public Tag get(Class<? extends Tag> handlerClass) throws JspException {
         Tag handler;
@@ -115,7 +130,8 @@ public class TagHandlerPool {
             if (useInstanceManagerForTags) {
                 return (Tag) instanceManager.newInstance(
                         handlerClass.getName(), handlerClass.getClassLoader());
-            } else {
+            }
+            else {
                 Tag instance = handlerClass.getConstructor().newInstance();
                 instanceManager.newInstance(instance);
                 return instance;
@@ -132,8 +148,7 @@ public class TagHandlerPool {
      * handler pool has already reached its capacity, in which case the tag
      * handler's release() method is called.
      *
-     * @param handler
-     *            Tag handler to add to this tag handler pool
+     * @param handler Tag handler to add to this tag handler pool
      */
     public void reuse(Tag handler) {
         synchronized (this) {
@@ -154,27 +169,6 @@ public class TagHandlerPool {
         for (int i = current; i >= 0; i--) {
             JspRuntimeLibrary.releaseTag(handlers[i], instanceManager);
         }
-    }
-
-
-    protected static String getOption(ServletConfig config, String name,
-            String defaultV) {
-        if (config == null) {
-            return defaultV;
-        }
-
-        String value = config.getInitParameter(name);
-        if (value != null) {
-            return value;
-        }
-        if (config.getServletContext() == null) {
-            return defaultV;
-        }
-        value = config.getServletContext().getInitParameter(name);
-        if (value != null) {
-            return value;
-        }
-        return defaultV;
     }
 
 }

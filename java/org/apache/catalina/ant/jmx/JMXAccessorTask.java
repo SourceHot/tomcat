@@ -16,34 +16,23 @@
  */
 package org.apache.catalina.ant.jmx;
 
+import org.apache.catalina.ant.BaseRedirectorHelperTask;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.openmbean.*;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.StringTokenizer;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-
-import org.apache.catalina.ant.BaseRedirectorHelperTask;
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
+import java.util.*;
 
 /**
  * Access <em>JMX</em> JSR 160 MBeans Server.
@@ -57,7 +46,7 @@ import org.apache.tools.ant.Project;
  * <li>Show Get, Call, Query result at Ant console log</li>
  * <li>Bind Get, Call, Query result at Ant properties</li>
  * </ul>
- *
+ * <p>
  * Examples: open server with reference and authorisation
  *
  * <pre>
@@ -71,7 +60,7 @@ import org.apache.tools.ant.Project;
  *        /&gt;
  *
  * </pre>
- *
+ * <p>
  * All calls after opening with same refid reuse the connection.
  * <p>
  * First call to a remote MBeanserver save the JMXConnection a referenz
@@ -92,36 +81,102 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
     public static final String JMX_SERVICE_SUFFIX = "/jmxrmi";
 
     // ----------------------------------------------------- Instance Variables
-
+    private final Properties properties = new Properties();
     private String name = null;
-
     private String resultproperty;
-
     private String url = null;
-
     private String host = "localhost";
-
     private String port = "8050";
-
     private String password = null;
-
     private String username = null;
-
     private String ref = "jmx.server";
-
     private boolean echo = false;
-
     private boolean separatearrayresults = true;
-
     private String delimiter;
-
     private String unlessCondition;
-
     private String ifCondition;
 
-    private final Properties properties = new Properties();
-
     // ------------------------------------------------------------- Properties
+
+    /**
+     * Create a new JMX Connection with auth when username and password is set.
+     *
+     * @param url      URL to be used for the JMX connection
+     *                 (if specified, it is a complete URL so host and port will not
+     *                 be used)
+     * @param host     Host name of the JMX server
+     * @param port     Port number for the JMX server
+     * @param username User name for the connection
+     * @param password Credentials corresponding to the specified user
+     * @return the JMX connection
+     * @throws MalformedURLException Invalid URL specified
+     * @throws IOException           Other connection error
+     */
+    public static MBeanServerConnection createJMXConnection(String url,
+                                                            String host, String port, String username, String password)
+            throws MalformedURLException, IOException {
+        String urlForJMX;
+        if (url != null) {
+            urlForJMX = url;
+        }
+        else {
+            urlForJMX = JMX_SERVICE_PREFIX + host + ":" + port + JMX_SERVICE_SUFFIX;
+        }
+        Map<String, String[]> environment = null;
+        if (username != null && password != null) {
+            String[] credentials = new String[2];
+            credentials[0] = username;
+            credentials[1] = password;
+            environment = new HashMap<>();
+            environment.put(JMXConnector.CREDENTIALS, credentials);
+        }
+        return JMXConnectorFactory.connect(new JMXServiceURL(urlForJMX),
+                environment).getMBeanServerConnection();
+
+    }
+
+    /**
+     * Get Current Connection from <em>ref</em> parameter or create a new one!
+     *
+     * @param project  The Ant project
+     * @param url      URL to be used for the JMX connection
+     *                 (if specified, it is a complete URL so host and port will not
+     *                 be used)
+     * @param host     Host name of the JMX server
+     * @param port     Port number for the JMX server
+     * @param username User name for the connection
+     * @param password Credentials corresponding to the specified user
+     * @param refId    The Id of the reference to retrieve in the project
+     * @return the JMX connection
+     * @throws MalformedURLException Invalid URL specified
+     * @throws IOException           Other connection error
+     */
+    @SuppressWarnings("null")
+    public static MBeanServerConnection accessJMXConnection(Project project,
+                                                            String url, String host, String port, String username,
+                                                            String password, String refId) throws MalformedURLException,
+            IOException {
+        MBeanServerConnection jmxServerConnection = null;
+        boolean isRef = project != null && refId != null && refId.length() > 0;
+        if (isRef) {
+            Object pref = project.getReference(refId);
+            try {
+                jmxServerConnection = (MBeanServerConnection) pref;
+            } catch (ClassCastException cce) {
+                project.log("wrong object reference " + refId + " - "
+                        + pref.getClass());
+                return null;
+            }
+        }
+        if (jmxServerConnection == null) {
+            jmxServerConnection = createJMXConnection(url, host, port,
+                    username, password);
+        }
+        if (isRef && jmxServerConnection != null) {
+            project.addReference(refId, jmxServerConnection);
+        }
+        return jmxServerConnection;
+    }
 
     /**
      * Get the name used at remote MbeanServer.
@@ -172,8 +227,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
     }
 
     /**
-     * @param echo
-     *            The echo to set.
+     * @param echo The echo to set.
      */
     public void setEcho(boolean echo) {
         this.echo = echo;
@@ -187,8 +241,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
     }
 
     /**
-     * @param separateArrayResults
-     *            The separatearrayresults to set.
+     * @param separateArrayResults The separatearrayresults to set.
      */
     public void setSeparatearrayresults(boolean separateArrayResults) {
         this.separatearrayresults = separateArrayResults;
@@ -287,6 +340,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
         ifCondition = c;
     }
 
+    // --------------------------------------------------------- Public Methods
+
     /**
      * @return Returns the unlessCondition.
      */
@@ -304,15 +359,12 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
         unlessCondition = c;
     }
 
-    // --------------------------------------------------------- Public Methods
-
     /**
      * Execute the specified command. This logic only performs the common
      * attribute validation required by all subclasses; it does not perform any
      * functional logic directly.
      *
-     * @exception BuildException
-     *                if a validation error occurs
+     * @throws BuildException if a validation error occurs
      */
     @Override
     public void execute() throws BuildException {
@@ -330,49 +382,14 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
             } catch (Exception e) {
                 if (isFailOnError()) {
                     throw new BuildException(e);
-                } else {
+                }
+                else {
                     handleErrorOutput(e.getMessage());
                 }
             } finally {
                 closeRedirector();
             }
         }
-    }
-
-    /**
-     * Create a new JMX Connection with auth when username and password is set.
-     *
-     * @param url URL to be used for the JMX connection
-     *        (if specified, it is a complete URL so host and port will not
-     *        be used)
-     * @param host Host name of the JMX server
-     * @param port Port number for the JMX server
-     * @param username User name for the connection
-     * @param password Credentials corresponding to the specified user
-     * @throws MalformedURLException Invalid URL specified
-     * @throws IOException Other connection error
-     * @return the JMX connection
-     */
-    public static MBeanServerConnection createJMXConnection(String url,
-            String host, String port, String username, String password)
-            throws MalformedURLException, IOException {
-        String urlForJMX;
-        if (url != null) {
-            urlForJMX = url;
-        } else {
-            urlForJMX = JMX_SERVICE_PREFIX + host + ":" + port + JMX_SERVICE_SUFFIX;
-        }
-        Map<String, String[]> environment = null;
-        if (username != null && password != null) {
-            String[] credentials = new String[2];
-            credentials[0] = username;
-            credentials[1] = password;
-            environment = new HashMap<>();
-            environment.put(JMXConnector.CREDENTIALS, credentials);
-        }
-        return JMXConnectorFactory.connect(new JMXServiceURL(urlForJMX),
-                environment).getMBeanServerConnection();
-
     }
 
     /**
@@ -391,7 +408,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
      * test the unless condition
      *
      * @return true if there is no unless condition, or there is a named
-     *         property but it doesn't exist
+     * property but it doesn't exist
      */
     protected boolean testUnlessCondition() {
         if (unlessCondition == null || "".equals(unlessCondition)) {
@@ -400,73 +417,30 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
         return getProperty(unlessCondition) == null;
     }
 
-    /**
-     * Get Current Connection from <em>ref</em> parameter or create a new one!
-     *
-     * @param project The Ant project
-     * @param url URL to be used for the JMX connection
-     *        (if specified, it is a complete URL so host and port will not
-     *        be used)
-     * @param host Host name of the JMX server
-     * @param port Port number for the JMX server
-     * @param username User name for the connection
-     * @param password Credentials corresponding to the specified user
-     * @param refId The Id of the reference to retrieve in the project
-     * @throws MalformedURLException Invalid URL specified
-     * @throws IOException Other connection error
-     * @return the JMX connection
-     */
-    @SuppressWarnings("null")
-    public static MBeanServerConnection accessJMXConnection(Project project,
-            String url, String host, String port, String username,
-            String password, String refId) throws MalformedURLException,
-            IOException {
-        MBeanServerConnection jmxServerConnection = null;
-        boolean isRef = project != null && refId != null && refId.length() > 0;
-        if (isRef) {
-            Object pref = project.getReference(refId);
-            try {
-                jmxServerConnection = (MBeanServerConnection) pref;
-            } catch (ClassCastException cce) {
-                project.log("wrong object reference " + refId + " - "
-                            + pref.getClass());
-                return null;
-            }
-        }
-        if (jmxServerConnection == null) {
-            jmxServerConnection = createJMXConnection(url, host, port,
-                    username, password);
-        }
-        if (isRef && jmxServerConnection != null) {
-            project.addReference(refId, jmxServerConnection);
-        }
-        return jmxServerConnection;
-    }
-
     // ------------------------------------------------------ protected Methods
 
     /**
      * get JMXConnection
      *
-     * @throws MalformedURLException Invalid URL specified
-     * @throws IOException Other connection error
      * @return the JMX connection
+     * @throws MalformedURLException Invalid URL specified
+     * @throws IOException           Other connection error
      */
     protected MBeanServerConnection getJMXConnection()
             throws MalformedURLException, IOException {
 
         MBeanServerConnection jmxServerConnection = null;
         if (isUseRef()) {
-            Object pref = null ;
-            if(getProject() != null) {
+            Object pref = null;
+            if (getProject() != null) {
                 pref = getProject().getReference(getRef());
                 if (pref != null) {
                     try {
                         jmxServerConnection = (MBeanServerConnection) pref;
                     } catch (ClassCastException cce) {
                         getProject().log(
-                            "Wrong object reference " + getRef() + " - "
-                                    + pref.getClass());
+                                "Wrong object reference " + getRef() + " - "
+                                        + pref.getClass());
                         return null;
                     }
                 }
@@ -476,7 +450,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                         getUrl(), getHost(), getPort(), getUsername(),
                         getPassword(), getRef());
             }
-        } else {
+        }
+        else {
             jmxServerConnection = accessJMXConnection(getProject(), getUrl(),
                     getHost(), getPort(), getUsername(), getPassword(), null);
         }
@@ -490,14 +465,15 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
      *
      * @param jmxServerConnection The JMX connection that should be used
      * @return An error message string in some situations
-     * @exception Exception if an error occurs
+     * @throws Exception if an error occurs
      */
     public String jmxExecute(MBeanServerConnection jmxServerConnection)
             throws Exception {
 
         if ((jmxServerConnection == null)) {
             throw new BuildException("Must open a connection!");
-        } else if (isEcho()) {
+        }
+        else if (isEcho()) {
             handleOutput("JMX Connection ref=" + ref + " is open!");
         }
         return null;
@@ -507,7 +483,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
      * Convert string to datatype FIXME How we can transfer values from ant
      * project reference store (ref)?
      *
-     * @param value The value
+     * @param value     The value
      * @param valueType The type
      * @return The converted object
      */
@@ -525,7 +501,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                     handleErrorOutput("Unable to convert to integer:" + value);
                 }
             }
-        } else if ("java.lang.Long".equals(valueType)
+        }
+        else if ("java.lang.Long".equals(valueType)
                 || "long".equals(valueType)) {
             try {
                 convertValue = Long.valueOf(value);
@@ -534,10 +511,12 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                     handleErrorOutput("Unable to convert to long:" + value);
                 }
             }
-        } else if ("java.lang.Boolean".equals(valueType)
+        }
+        else if ("java.lang.Boolean".equals(valueType)
                 || "boolean".equals(valueType)) {
             convertValue = Boolean.valueOf(value);
-        } else if ("java.lang.Float".equals(valueType)
+        }
+        else if ("java.lang.Float".equals(valueType)
                 || "float".equals(valueType)) {
             try {
                 convertValue = Float.valueOf(value);
@@ -546,7 +525,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                     handleErrorOutput("Unable to convert to float:" + value);
                 }
             }
-        } else if ("java.lang.Double".equals(valueType)
+        }
+        else if ("java.lang.Double".equals(valueType)
                 || "double".equals(valueType)) {
             try {
                 convertValue = Double.valueOf(value);
@@ -555,7 +535,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                     handleErrorOutput("Unable to convert to double:" + value);
                 }
             }
-        } else if ("javax.management.ObjectName".equals(valueType)
+        }
+        else if ("javax.management.ObjectName".equals(valueType)
                 || "name".equals(valueType)) {
             try {
                 convertValue = new ObjectName(value);
@@ -564,7 +545,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                     handleErrorOutput("Unable to convert to ObjectName:" + value);
                 }
             }
-        } else if ("java.net.InetAddress".equals(valueType)) {
+        }
+        else if ("java.net.InetAddress".equals(valueType)) {
             try {
                 convertValue = InetAddress.getByName(value);
             } catch (UnknownHostException exc) {
@@ -577,7 +559,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
     }
 
     /**
-     * @param name context of result
+     * @param name   context of result
      * @param result The result
      */
     protected void echoResult(String name, Object result) {
@@ -586,7 +568,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                 for (int i = 0; i < Array.getLength(result); i++) {
                     handleOutput(name + "." + i + "=" + Array.get(result, i));
                 }
-            } else {
+            }
+            else {
                 handleOutput(name + "=" + result);
             }
         }
@@ -613,7 +596,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
      * (java.util.StringTokenizer is used).
      *
      * @param propertyPrefix Prefix for the property
-     * @param result The result
+     * @param result         The result
      */
     protected void createProperty(String propertyPrefix, Object result) {
         if (propertyPrefix == null) {
@@ -628,26 +611,30 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                 OpenType<?> type = compositeType.getType(key);
                 if (type instanceof SimpleType<?>) {
                     setProperty(propertyPrefix + "." + key, value);
-                } else {
+                }
+                else {
                     createProperty(propertyPrefix + "." + key, value);
                 }
             }
-        } else if (result instanceof TabularDataSupport) {
+        }
+        else if (result instanceof TabularDataSupport) {
             TabularDataSupport data = (TabularDataSupport) result;
             for (Object key : data.keySet()) {
                 for (Object key1 : ((List<?>) key)) {
-                    CompositeData valuedata = data.get(new Object[] { key1 });
+                    CompositeData valuedata = data.get(new Object[]{key1});
                     Object value = valuedata.get("value");
                     OpenType<?> type = valuedata.getCompositeType().getType(
                             "value");
                     if (type instanceof SimpleType<?>) {
                         setProperty(propertyPrefix + "." + key1, value);
-                    } else {
+                    }
+                    else {
                         createProperty(propertyPrefix + "." + key1, value);
                     }
                 }
             }
-        } else if (result.getClass().isArray()) {
+        }
+        else if (result.getClass().isArray()) {
             if (isSeparatearrayresults()) {
                 int size = 0;
                 for (int i = 0; i < Array.getLength(result); i++) {
@@ -661,13 +648,14 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                             .toString(size));
                 }
             }
-        } else {
+        }
+        else {
             String delim = getDelimiter();
             if (delim != null) {
                 StringTokenizer tokenizer = new StringTokenizer(result
                         .toString(), delim);
                 int size = 0;
-                for (; tokenizer.hasMoreTokens();) {
+                while (tokenizer.hasMoreTokens()) {
                     String token = tokenizer.nextToken();
                     if (setProperty(propertyPrefix + "." + size, token)) {
                         size++;
@@ -676,7 +664,8 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                 if (size > 0) {
                     setProperty(propertyPrefix + ".Length", Integer.toString(size));
                 }
-            } else {
+            }
+            else {
                 setProperty(propertyPrefix, result.toString());
             }
         }
@@ -684,6 +673,7 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
 
     /**
      * Get Property
+     *
      * @param property name
      * @return The property value
      */
@@ -691,14 +681,15 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
         Project currentProject = getProject();
         if (currentProject != null) {
             return currentProject.getProperty(property);
-        } else {
+        }
+        else {
             return properties.getProperty(property);
         }
     }
 
     /**
      * @param property The property
-     * @param value The value
+     * @param value    The value
      * @return True if successful
      */
     public boolean setProperty(String property, Object value) {
@@ -707,12 +698,13 @@ public class JMXAccessorTask extends BaseRedirectorHelperTask {
                 value = "";
             }
             if (isEcho()) {
-                handleOutput(property + "=" + value.toString());
+                handleOutput(property + "=" + value);
             }
             Project currentProject = getProject();
             if (currentProject != null) {
                 currentProject.setNewProperty(property, value.toString());
-            } else {
+            }
+            else {
                 properties.setProperty(property, value.toString());
             }
             return true;

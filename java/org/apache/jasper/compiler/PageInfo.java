@@ -16,21 +16,13 @@
  */
 package org.apache.jasper.compiler;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
-
 import jakarta.el.ExpressionFactory;
 import jakarta.servlet.jsp.tagext.TagLibraryInfo;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspCompilationContext;
+
+import java.util.*;
 
 /**
  * A repository for various info about the translation unit under compilation.
@@ -40,25 +32,30 @@ import org.apache.jasper.JspCompilationContext;
 
 class PageInfo {
 
+    private static final String defaultLanguage = "java";
     private final Vector<String> imports;
-    private final Map<String,Long> dependants;
-
+    private final Map<String, Long> dependants;
     private final BeanRepository beanRepository;
     private final Set<String> varInfoNames;
-    private final HashMap<String,TagLibraryInfo> taglibsMap;
+    private final HashMap<String, TagLibraryInfo> taglibsMap;
     private final HashMap<String, String> jspPrefixMapper;
     private final HashMap<String, LinkedList<String>> xmlPrefixMapper;
     private final HashMap<String, Mark> nonCustomTagPrefixMap;
     private final String jspFile;
-    private static final String defaultLanguage = "java";
-    private String language;
     private final String defaultExtends;
+    private final ExpressionFactory expressionFactory =
+            ExpressionFactory.newInstance();
+    // Set of all element and attribute prefixes used in this translation unit
+    private final HashSet<String> prefixes;
+    private final Vector<String> pluginDcls;  // Id's for tagplugin declarations
+    private final boolean isTagFile;
+    private String language;
     private String xtends;
     private String contentType = null;
     private String session;
     private boolean isSession = true;
     private String bufferValue;
-    private int buffer = 8*1024;
+    private int buffer = 8 * 1024;
     private String autoFlush;
     private boolean isAutoFlush = true;
     private String isThreadSafeValue;
@@ -67,40 +64,25 @@ class PageInfo {
     private boolean isErrorPage = false;
     private String errorPage = null;
     private String info;
-
     private boolean scriptless = false;
     private boolean scriptingInvalid = false;
-
     private String isELIgnoredValue;
     private boolean isELIgnored = false;
-
     // JSP 2.1
     private String deferredSyntaxAllowedAsLiteralValue;
     private boolean deferredSyntaxAllowedAsLiteral = false;
-    private final ExpressionFactory expressionFactory =
-        ExpressionFactory.newInstance();
     private String trimDirectiveWhitespacesValue;
     private boolean trimDirectiveWhitespaces = false;
-
     private String omitXmlDecl = null;
     private String doctypeName = null;
     private String doctypePublic = null;
     private String doctypeSystem = null;
-
     private boolean isJspPrefixHijacked;
-
-    // Set of all element and attribute prefixes used in this translation unit
-    private final HashSet<String> prefixes;
-
     private boolean hasJspRoot = false;
     private Collection<String> includePrelude;
     private Collection<String> includeCoda;
-    private final Vector<String> pluginDcls;  // Id's for tagplugin declarations
-
     // JSP 2.2
     private boolean errorOnUndeclaredNamespace = false;
-
-    private final boolean isTagFile;
 
     PageInfo(BeanRepository beanRepository, JspCompilationContext ctxt) {
         isTagFile = ctxt.isTagFile();
@@ -131,7 +113,6 @@ class PageInfo {
      * that this Id is now declared.
      *
      * @param id The plugin ID to check
-     *
      * @return true if Id has been declared.
      */
     public boolean isPluginDeclared(String id) {
@@ -164,7 +145,7 @@ class PageInfo {
         }
     }
 
-    public Map<String,Long> getDependants() {
+    public Map<String, Long> getDependants() {
         return dependants;
     }
 
@@ -172,20 +153,20 @@ class PageInfo {
         return beanRepository;
     }
 
-    public void setScriptless(boolean s) {
-        scriptless = s;
-    }
-
     public boolean isScriptless() {
         return scriptless;
     }
 
-    public void setScriptingInvalid(boolean s) {
-        scriptingInvalid = s;
+    public void setScriptless(boolean s) {
+        scriptless = s;
     }
 
     public boolean isScriptingInvalid() {
         return scriptingInvalid;
+    }
+
+    public void setScriptingInvalid(boolean s) {
+        scriptingInvalid = s;
     }
 
     public Collection<String> getIncludePrelude() {
@@ -366,7 +347,8 @@ class PageInfo {
         LinkedList<String> stack = xmlPrefixMapper.get(prefix);
         if (stack == null || stack.size() == 0) {
             uri = jspPrefixMapper.get(prefix);
-        } else {
+        }
+        else {
             uri = stack.getFirst();
         }
 
@@ -380,13 +362,14 @@ class PageInfo {
      * language
      */
     public void setLanguage(String value, Node n, ErrorDispatcher err,
-                boolean pagedir)
-        throws JasperException {
+                            boolean pagedir)
+            throws JasperException {
 
         if (!"java".equalsIgnoreCase(value)) {
             if (pagedir) {
                 err.jspError(n, "jsp.error.page.language.nonjava");
-            } else {
+            }
+            else {
                 err.jspError(n, "jsp.error.tag.language.nonjava");
             }
         }
@@ -398,20 +381,12 @@ class PageInfo {
         return (language == null && useDefault ? defaultLanguage : language);
     }
 
-    /*
-     * extends
-     */
-    public void setExtends(String value) {
-        xtends = value;
-    }
-
     /**
      * Gets the value of the 'extends' page directive attribute.
      *
      * @param useDefault TRUE if the default
-     * (org.apache.jasper.runtime.HttpJspBase) should be returned if this
-     * attribute has not been set, FALSE otherwise
-     *
+     *                   (org.apache.jasper.runtime.HttpJspBase) should be returned if this
+     *                   attribute has not been set, FALSE otherwise
      * @return The value of the 'extends' page directive attribute, or the
      * default (org.apache.jasper.runtime.HttpJspBase) if this attribute has
      * not been set and useDefault is TRUE
@@ -431,6 +406,16 @@ class PageInfo {
         return getExtends(true);
     }
 
+    /*
+     * extends
+     */
+    public void setExtends(String value) {
+        xtends = value;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
 
     /*
      * contentType
@@ -439,35 +424,33 @@ class PageInfo {
         contentType = value;
     }
 
-    public String getContentType() {
-        return contentType;
-    }
-
-
     /*
      * buffer
      */
     public void setBufferValue(String value, Node n, ErrorDispatcher err)
-        throws JasperException {
+            throws JasperException {
 
         if ("none".equalsIgnoreCase(value)) {
             buffer = 0;
-        } else {
+        }
+        else {
             if (value == null || !value.endsWith("kb")) {
                 if (n == null) {
                     err.jspError("jsp.error.page.invalid.buffer");
-                } else {
+                }
+                else {
                     err.jspError(n, "jsp.error.page.invalid.buffer");
                 }
             }
             try {
                 @SuppressWarnings("null") // value can't be null here
-                int k = Integer.parseInt(value.substring(0, value.length()-2));
+                int k = Integer.parseInt(value.substring(0, value.length() - 2));
                 buffer = k * 1024;
             } catch (NumberFormatException e) {
                 if (n == null) {
                     err.jspError("jsp.error.page.invalid.buffer");
-                } else {
+                }
+                else {
                     err.jspError(n, "jsp.error.page.invalid.buffer");
                 }
             }
@@ -489,13 +472,15 @@ class PageInfo {
      * session
      */
     public void setSession(String value, Node n, ErrorDispatcher err)
-        throws JasperException {
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             isSession = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             isSession = false;
-        } else {
+        }
+        else {
             err.jspError(n, "jsp.error.page.invalid.session");
         }
 
@@ -515,13 +500,15 @@ class PageInfo {
      * autoFlush
      */
     public void setAutoFlush(String value, Node n, ErrorDispatcher err)
-        throws JasperException {
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             isAutoFlush = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             isAutoFlush = false;
-        } else {
+        }
+        else {
             err.jspError(n, "jsp.error.autoFlush.invalid");
         }
 
@@ -541,13 +528,15 @@ class PageInfo {
      * isThreadSafe
      */
     public void setIsThreadSafe(String value, Node n, ErrorDispatcher err)
-        throws JasperException {
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             isThreadSafe = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             isThreadSafe = false;
-        } else {
+        }
+        else {
             err.jspError(n, "jsp.error.page.invalid.isthreadsafe");
         }
 
@@ -562,6 +551,9 @@ class PageInfo {
         return isThreadSafe;
     }
 
+    public String getInfo() {
+        return info;
+    }
 
     /*
      * info
@@ -570,34 +562,23 @@ class PageInfo {
         info = value;
     }
 
-    public String getInfo() {
-        return info;
-    }
-
-
-    /*
-     * errorPage
-     */
-    public void setErrorPage(String value) {
-        errorPage = value;
-    }
-
     public String getErrorPage() {
         return errorPage;
     }
-
 
     /*
      * isErrorPage
      */
     public void setIsErrorPage(String value, Node n, ErrorDispatcher err)
-        throws JasperException {
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             isErrorPage = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             isErrorPage = false;
-        } else {
+        }
+        else {
             err.jspError(n, "jsp.error.page.invalid.iserrorpage");
         }
 
@@ -612,22 +593,31 @@ class PageInfo {
         return isErrorPage;
     }
 
+    /*
+     * errorPage
+     */
+    public void setErrorPage(String value) {
+        errorPage = value;
+    }
 
     /*
      * isELIgnored
      */
     public void setIsELIgnored(String value, Node n, ErrorDispatcher err,
-                   boolean pagedir)
-        throws JasperException {
+                               boolean pagedir)
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             isELIgnored = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             isELIgnored = false;
-        } else {
+        }
+        else {
             if (pagedir) {
                 err.jspError(n, "jsp.error.page.invalid.iselignored");
-            } else {
+            }
+            else {
                 err.jspError(n, "jsp.error.tag.invalid.iselignored");
             }
         }
@@ -639,17 +629,20 @@ class PageInfo {
      * deferredSyntaxAllowedAsLiteral
      */
     public void setDeferredSyntaxAllowedAsLiteral(String value, Node n, ErrorDispatcher err,
-                   boolean pagedir)
-        throws JasperException {
+                                                  boolean pagedir)
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             deferredSyntaxAllowedAsLiteral = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             deferredSyntaxAllowedAsLiteral = false;
-        } else {
+        }
+        else {
             if (pagedir) {
                 err.jspError(n, "jsp.error.page.invalid.deferredsyntaxallowedasliteral");
-            } else {
+            }
+            else {
                 err.jspError(n, "jsp.error.tag.invalid.deferredsyntaxallowedasliteral");
             }
         }
@@ -661,26 +654,25 @@ class PageInfo {
      * trimDirectiveWhitespaces
      */
     public void setTrimDirectiveWhitespaces(String value, Node n, ErrorDispatcher err,
-                   boolean pagedir)
-        throws JasperException {
+                                            boolean pagedir)
+            throws JasperException {
 
         if ("true".equalsIgnoreCase(value)) {
             trimDirectiveWhitespaces = true;
-        } else if ("false".equalsIgnoreCase(value)) {
+        }
+        else if ("false".equalsIgnoreCase(value)) {
             trimDirectiveWhitespaces = false;
-        } else {
+        }
+        else {
             if (pagedir) {
                 err.jspError(n, "jsp.error.page.invalid.trimdirectivewhitespaces");
-            } else {
+            }
+            else {
                 err.jspError(n, "jsp.error.tag.invalid.trimdirectivewhitespaces");
             }
         }
 
         trimDirectiveWhitespacesValue = value;
-    }
-
-    public void setELIgnored(boolean s) {
-        isELIgnored = s;
     }
 
     public String getIsELIgnored() {
@@ -689,6 +681,10 @@ class PageInfo {
 
     public boolean isELIgnored() {
         return isELIgnored;
+    }
+
+    public void setELIgnored(boolean s) {
+        isELIgnored = s;
     }
 
     public void putNonCustomTagPrefix(String prefix, Mark where) {

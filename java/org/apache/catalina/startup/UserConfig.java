@@ -17,6 +17,11 @@
 package org.apache.catalina.startup;
 
 
+import org.apache.catalina.*;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -24,15 +29,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
-
-import org.apache.catalina.Context;
-import org.apache.catalina.Host;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 
 /**
@@ -45,70 +41,53 @@ import org.apache.tomcat.util.res.StringManager;
  * @author Craig R. McClanahan
  */
 public final class UserConfig
-    implements LifecycleListener {
+        implements LifecycleListener {
 
 
     private static final Log log = LogFactory.getLog(UserConfig.class);
 
 
     // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The Java class name of the Context configuration class we should use.
-     */
-    private String configClass = "org.apache.catalina.startup.ContextConfig";
-
-
-    /**
-     * The Java class name of the Context implementation we should use.
-     */
-    private String contextClass = "org.apache.catalina.core.StandardContext";
-
-
-    /**
-     * The directory name to be searched for within each user home directory.
-     */
-    private String directoryName = "public_html";
-
-
-    /**
-     * The base directory containing user home directories.
-     */
-    private String homeBase = null;
-
-
-    /**
-     * The Host we are associated with.
-     */
-    private Host host = null;
-
-
     /**
      * The string resources for this package.
      */
     private static final StringManager sm =
-        StringManager.getManager(Constants.Package);
-
-
-    /**
-     * The Java class name of the user database class we should use.
-     */
-    private String userClass =
-        "org.apache.catalina.startup.PasswdUserDatabase";
-
+            StringManager.getManager(Constants.Package);
     /**
      * A regular expression defining user who deployment is allowed.
      */
     Pattern allow = null;
-
     /**
      * A regular expression defining user who deployment is denied.
      */
     Pattern deny = null;
+    /**
+     * The Java class name of the Context configuration class we should use.
+     */
+    private String configClass = "org.apache.catalina.startup.ContextConfig";
+    /**
+     * The Java class name of the Context implementation we should use.
+     */
+    private String contextClass = "org.apache.catalina.core.StandardContext";
+    /**
+     * The directory name to be searched for within each user home directory.
+     */
+    private String directoryName = "public_html";
+    /**
+     * The base directory containing user home directories.
+     */
+    private String homeBase = null;
+    /**
+     * The Host we are associated with.
+     */
+    private Host host = null;
+    /**
+     * The Java class name of the user database class we should use.
+     */
+    private String userClass =
+            "org.apache.catalina.startup.PasswdUserDatabase";
 
     // ------------------------------------------------------------- Properties
-
 
     /**
      * @return the Context configuration class name.
@@ -192,6 +171,7 @@ public final class UserConfig
 
     /**
      * Set the user database class name for this component.
+     *
      * @param userClass The user database class name
      */
     public void setUserClass(String userClass) {
@@ -217,7 +197,8 @@ public final class UserConfig
     public void setAllow(String allow) {
         if (allow == null || allow.length() == 0) {
             this.allow = null;
-        } else {
+        }
+        else {
             this.allow = Pattern.compile(allow);
         }
     }
@@ -242,7 +223,8 @@ public final class UserConfig
     public void setDeny(String deny) {
         if (deny == null || deny.length() == 0) {
             this.deny = null;
-        } else {
+        }
+        else {
             this.deny = Pattern.compile(deny);
         }
     }
@@ -270,7 +252,8 @@ public final class UserConfig
         // Process the event that has occurred
         if (event.getType().equals(Lifecycle.START_EVENT)) {
             start();
-        } else if (event.getType().equals(Lifecycle.STOP_EVENT)) {
+        }
+        else if (event.getType().equals(Lifecycle.STOP_EVENT)) {
             stop();
         }
 
@@ -392,32 +375,28 @@ public final class UserConfig
      * Test allow and deny rules for the provided user.
      *
      * @return <code>true</code> if this user is allowed to deploy,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     private boolean isDeployAllowed(String user) {
         if (deny != null && deny.matcher(user).matches()) {
             return false;
         }
         if (allow != null) {
-            if (allow.matcher(user).matches()) {
-                return true;
-            } else {
-                return false;
-            }
+            return allow.matcher(user).matches();
         }
         return true;
     }
 
     private static class DeployUserDirectory implements Runnable {
 
-        private UserConfig config;
-        private String user;
-        private String home;
+        private final UserConfig config;
+        private final String user;
+        private final String home;
 
         public DeployUserDirectory(UserConfig config, String user, String home) {
             this.config = config;
             this.user = user;
-            this.home= home;
+            this.home = home;
         }
 
         @Override

@@ -33,7 +33,8 @@ public class ContainerThreadMarker {
         Boolean flag = marker.get();
         if (flag == null) {
             return false;
-        } else {
+        }
+        else {
             return flag.booleanValue();
         }
     }

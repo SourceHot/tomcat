@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public final class UriUtil {
 
     private static final char[] HEX =
-        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+            {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     private static final Pattern PATTERN_EXCLAMATION_MARK = Pattern.compile("!/");
     private static final Pattern PATTERN_CARET = Pattern.compile("\\^/");
@@ -43,7 +43,8 @@ public final class UriUtil {
             WAR_SEPARATOR = "*/";
             PATTERN_CUSTOM = null;
             REPLACE_CUSTOM = null;
-        } else {
+        }
+        else {
             WAR_SEPARATOR = custom + "/";
             PATTERN_CUSTOM = Pattern.compile(Pattern.quote(WAR_SEPARATOR));
             StringBuilder sb = new StringBuilder(custom.length() * 3);
@@ -72,9 +73,8 @@ public final class UriUtil {
      * See RFC 2396, Section 3.1
      *
      * @param c The character to test
-     *
      * @return {@code true} if a the character is allowed, otherwise {code
-     *         @false}
+     * @false}
      */
     private static boolean isSchemeChar(char c) {
         return Character.isLetterOrDigit(c) || c == '+' || c == '-' || c == '.';
@@ -85,16 +85,16 @@ public final class UriUtil {
      * Determine if a URI string has a <code>scheme</code> component.
      *
      * @param uri The URI to test
-     *
      * @return {@code true} if a scheme is present, otherwise {code @false}
      */
     public static boolean hasScheme(CharSequence uri) {
         int len = uri.length();
-        for(int i=0; i < len ; i++) {
+        for (int i = 0; i < len; i++) {
             char c = uri.charAt(i);
-            if(c == ':') {
+            if (c == ':') {
                 return i > 0;
-            } else if(!UriUtil.isSchemeChar(c)) {
+            }
+            else if (!UriUtil.isSchemeChar(c)) {
                 return false;
             }
         }
@@ -170,9 +170,7 @@ public final class UriUtil {
      * <code>jar:file:...</code>.
      *
      * @param warUrl The WAR URL to convert
-     *
      * @return The equivalent JAR URL
-     *
      * @throws MalformedURLException If the conversion fails
      */
     public static URL warToJar(URL warUrl) throws MalformedURLException {
@@ -180,9 +178,11 @@ public final class UriUtil {
         String file = warUrl.getFile();
         if (file.contains("*/")) {
             file = file.replaceFirst("\\*/", "!/");
-        } else if (file.contains("^/")) {
+        }
+        else if (file.contains("^/")) {
             file = file.replaceFirst("\\^/", "!/");
-        } else if (PATTERN_CUSTOM != null) {
+        }
+        else if (PATTERN_CUSTOM != null) {
             file = file.replaceFirst(PATTERN_CUSTOM.pattern(), "!/");
         }
 
@@ -200,9 +200,8 @@ public final class UriUtil {
      * <code>&lt;protocol&gt;://</code>.
      *
      * @param path The path to test
-     *
      * @return {@code true} if the supplied path starts with once of the
-     *         recognised sequences.
+     * recognised sequences.
      */
     public static boolean isAbsoluteURI(String path) {
         // Special case as only a single /
@@ -223,9 +222,6 @@ public final class UriUtil {
         }
         // path starts with something that might be a protocol. Look for a
         // following "://"
-        if (i + 2 < path.length() && path.charAt(i++) == ':' && path.charAt(i++) == '/' && path.charAt(i) == '/') {
-            return true;
-        }
-        return false;
+        return i + 2 < path.length() && path.charAt(i++) == ':' && path.charAt(i++) == '/' && path.charAt(i) == '/';
     }
 }

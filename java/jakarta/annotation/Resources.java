@@ -16,11 +16,7 @@
  */
 package jakarta.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * @since Common Annotations 1.0
@@ -33,5 +29,5 @@ public @interface Resources {
     /**
      * @return a Resource[] with the value of this Resources
      */
-    public Resource[] value();
+    Resource[] value();
 }

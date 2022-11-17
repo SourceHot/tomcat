@@ -33,7 +33,6 @@ public final class RequestUtil {
      * {@link jakarta.servlet.http.HttpServletRequestWrapper}.
      *
      * @param request The request object for which the URL should be built
-     *
      * @return The request URL for the given request object
      */
     public static StringBuffer getRequestURL(HttpServletRequest request) {
@@ -49,7 +48,7 @@ public final class RequestUtil {
         url.append("://");
         url.append(request.getServerName());
         if ((scheme.equals("http") && (port != 80))
-            || (scheme.equals("https") && (port != 443))) {
+                || (scheme.equals("https") && (port != 443))) {
             url.append(':');
             url.append(port);
         }

@@ -17,11 +17,7 @@
 package jakarta.el;
 
 import java.beans.FeatureDescriptor;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -50,14 +46,15 @@ public class StaticFieldELResolver extends ELResolver {
                     return field.get(null);
                 }
             } catch (IllegalArgumentException | IllegalAccessException |
-                    NoSuchFieldException | SecurityException e) {
+                     NoSuchFieldException | SecurityException e) {
                 exception = e;
             }
             String msg = Util.message(context, "staticFieldELResolver.notFound",
                     name, clazz.getName());
             if (exception == null) {
                 throw new PropertyNotFoundException(msg);
-            } else {
+            }
+            else {
                 throw new PropertyNotFoundException(msg, exception);
             }
         }
@@ -67,7 +64,7 @@ public class StaticFieldELResolver extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         Objects.requireNonNull(context);
 
         if (base instanceof ELClass && property instanceof String) {
@@ -83,7 +80,7 @@ public class StaticFieldELResolver extends ELResolver {
 
     @Override
     public Object invoke(ELContext context, Object base, Object method,
-            Class<?>[] paramTypes, Object[] params) {
+                         Class<?>[] paramTypes, Object[] params) {
         Objects.requireNonNull(context);
 
         if (base instanceof ELClass && method instanceof String) {
@@ -111,7 +108,8 @@ public class StaticFieldELResolver extends ELResolver {
                 }
                 return result;
 
-            } else {
+            }
+            else {
                 // Static method so base should be null
                 Method match = Util.findMethod(context, clazz, null, methodName, paramTypes, params);
 
@@ -163,14 +161,15 @@ public class StaticFieldELResolver extends ELResolver {
                     return field.getType();
                 }
             } catch (IllegalArgumentException | NoSuchFieldException |
-                    SecurityException e) {
+                     SecurityException e) {
                 exception = e;
             }
             String msg = Util.message(context, "staticFieldELResolver.notFound",
                     name, clazz.getName());
             if (exception == null) {
                 throw new PropertyNotFoundException(msg);
-            } else {
+            }
+            else {
                 throw new PropertyNotFoundException(msg, exception);
             }
         }
@@ -194,7 +193,7 @@ public class StaticFieldELResolver extends ELResolver {
      */
     @Override
     public Iterator<FeatureDescriptor> getFeatureDescriptors(ELContext context,
-            Object base) {
+                                                             Object base) {
         return null;
     }
 

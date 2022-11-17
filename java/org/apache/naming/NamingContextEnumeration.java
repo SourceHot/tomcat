@@ -16,11 +16,10 @@
  */
 package org.apache.naming;
 
-import java.util.Iterator;
-
 import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import java.util.Iterator;
 
 /**
  * Naming enumeration implementation.
@@ -28,18 +27,10 @@ import javax.naming.NamingException;
  * @author Remy Maucherat
  */
 public class NamingContextEnumeration
-    implements NamingEnumeration<NameClassPair> {
+        implements NamingEnumeration<NameClassPair> {
 
 
     // ----------------------------------------------------------- Constructors
-
-
-    public NamingContextEnumeration(Iterator<NamingEntry> entries) {
-        iterator = entries;
-    }
-
-
-    // -------------------------------------------------------------- Variables
 
 
     /**
@@ -48,15 +39,22 @@ public class NamingContextEnumeration
     protected final Iterator<NamingEntry> iterator;
 
 
-    // --------------------------------------------------------- Public Methods
+    // -------------------------------------------------------------- Variables
 
+
+    public NamingContextEnumeration(Iterator<NamingEntry> entries) {
+        iterator = entries;
+    }
+
+
+    // --------------------------------------------------------- Public Methods
 
     /**
      * Retrieves the next element in the enumeration.
      */
     @Override
     public NameClassPair next()
-        throws NamingException {
+            throws NamingException {
         return nextElement();
     }
 
@@ -66,7 +64,7 @@ public class NamingContextEnumeration
      */
     @Override
     public boolean hasMore()
-        throws NamingException {
+            throws NamingException {
         return iterator.hasNext();
     }
 
@@ -76,7 +74,7 @@ public class NamingContextEnumeration
      */
     @Override
     public void close()
-        throws NamingException {
+            throws NamingException {
     }
 
 

@@ -16,17 +16,10 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.websocket.DeploymentException;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.*;
 
 /**
  * Extracts path parameters from URIs used to create web socket connections
@@ -66,7 +59,8 @@ public class UriTemplate {
                     // Ending with a '/' is also OK for instances used for
                     // matches but not for parameterised templates.
                     continue;
-                } else {
+                }
+                else {
                     // As per EG discussion, all other empty segments are
                     // invalid
                     throw new DeploymentException(sm.getString(
@@ -85,7 +79,8 @@ public class UriTemplate {
                     throw new DeploymentException(sm.getString(
                             "uriTemplate.duplicateParameter", segment));
                 }
-            } else {
+            }
+            else {
                 if (segment.contains("{") || segment.contains("}")) {
                     throw new DeploymentException(sm.getString(
                             "uriTemplate.invalidSegment", segment, path));
@@ -101,9 +96,9 @@ public class UriTemplate {
     }
 
 
-    public Map<String,String> match(UriTemplate candidate) {
+    public Map<String, String> match(UriTemplate candidate) {
 
-        Map<String,String> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
 
         // Should not happen but for safety
         if (candidate.getSegmentCount() != getSegmentCount()) {
@@ -125,7 +120,8 @@ public class UriTemplate {
                     // Not a match. Stop here
                     return null;
                 }
-            } else {
+            }
+            else {
                 // Parameter
                 result.put(targetSegment.getValue(),
                         candidateSegment.getValue());

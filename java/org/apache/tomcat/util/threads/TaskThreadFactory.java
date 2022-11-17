@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.util.threads;
 
+import org.apache.tomcat.util.security.PrivilegedSetAccessControlContext;
+import org.apache.tomcat.util.security.PrivilegedSetTccl;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.tomcat.util.security.PrivilegedSetAccessControlContext;
-import org.apache.tomcat.util.security.PrivilegedSetTccl;
 
 /**
  * Simple task thread factory to use to create threads for an executor
@@ -62,7 +62,8 @@ public class TaskThreadFactory implements ThreadFactory {
             // the thread inherits an appropriate AccessControlContext
             pa = new PrivilegedSetAccessControlContext(t);
             AccessController.doPrivileged(pa);
-        } else {
+        }
+        else {
             t.setContextClassLoader(getClass().getClassLoader());
         }
 

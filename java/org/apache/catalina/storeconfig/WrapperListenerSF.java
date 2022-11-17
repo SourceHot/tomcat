@@ -16,14 +16,14 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.core.StandardContext;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.PrintWriter;
+
 public class WrapperListenerSF extends StoreFactoryBase {
-    private static Log log = LogFactory.getLog(WrapperListenerSF.class);
+    private static final Log log = LogFactory.getLog(WrapperListenerSF.class);
 
     /*
      * Store nested Element Value Arrays
@@ -47,7 +47,8 @@ public class WrapperListenerSF extends StoreFactoryBase {
                 getStoreAppender().printTagArray(aWriter, "WrapperListener",
                         indent, listeners);
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("storeFactory.noDescriptor", aElement.getClass(), "WrapperListener"));
         }
     }

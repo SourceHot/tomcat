@@ -16,19 +16,14 @@
  */
 package org.apache.catalina.filters;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 
 /**
@@ -39,7 +34,7 @@ import org.apache.juli.logging.LogFactory;
  * auto-detect the character set. This may be exploited by an attacker to
  * perform an XSS attack. Internet Explorer has this behaviour by default. Other
  * browsers have an option to enable it.<br>
- *
+ * <p>
  * This filter prevents the attack by explicitly setting a character set. Unless
  * the provided character set is explicitly overridden by the user - in which
  * case they deserve everything they get - the browser will adhere to an
@@ -47,12 +42,10 @@ import org.apache.juli.logging.LogFactory;
  */
 public class AddDefaultCharsetFilter extends FilterBase {
 
+    private static final String DEFAULT_ENCODING = "ISO-8859-1";
     // Log must be non-static as loggers are created per class-loader and this
     // Filter may be used in multiple class loaders
     private final Log log = LogFactory.getLog(AddDefaultCharsetFilter.class); // must not be static
-
-    private static final String DEFAULT_ENCODING = "ISO-8859-1";
-
     private String encoding;
 
     public void setEncoding(String encoding) {
@@ -70,9 +63,11 @@ public class AddDefaultCharsetFilter extends FilterBase {
         if (encoding == null || encoding.length() == 0 ||
                 encoding.equalsIgnoreCase("default")) {
             encoding = DEFAULT_ENCODING;
-        } else if (encoding.equalsIgnoreCase("system")) {
+        }
+        else if (encoding.equalsIgnoreCase("system")) {
             encoding = Charset.defaultCharset().name();
-        } else if (!Charset.isSupported(encoding)) {
+        }
+        else if (!Charset.isSupported(encoding)) {
             throw new IllegalArgumentException(sm.getString(
                     "addDefaultCharset.unsupportedCharset", encoding));
         }
@@ -80,14 +75,15 @@ public class AddDefaultCharsetFilter extends FilterBase {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+                         FilterChain chain) throws IOException, ServletException {
 
         // Wrap the response
         if (response instanceof HttpServletResponse) {
             ResponseWrapper wrapped =
-                new ResponseWrapper((HttpServletResponse)response, encoding);
+                    new ResponseWrapper((HttpServletResponse) response, encoding);
             chain.doFilter(request, wrapped);
-        } else {
+        }
+        else {
             chain.doFilter(request, response);
         }
     }
@@ -111,11 +107,13 @@ public class AddDefaultCharsetFilter extends FilterBase {
             if (contentType != null && contentType.startsWith("text/")) {
                 if (!contentType.contains("charset=")) {
                     super.setContentType(contentType + ";charset=" + encoding);
-                } else {
+                }
+                else {
                     super.setContentType(contentType);
                     encoding = getCharacterEncoding();
                 }
-            } else {
+            }
+            else {
                 super.setContentType(contentType);
             }
 
@@ -125,7 +123,8 @@ public class AddDefaultCharsetFilter extends FilterBase {
         public void setHeader(String name, String value) {
             if (name.trim().equalsIgnoreCase("content-type")) {
                 setContentType(value);
-            } else {
+            }
+            else {
                 super.setHeader(name, value);
             }
         }
@@ -134,7 +133,8 @@ public class AddDefaultCharsetFilter extends FilterBase {
         public void addHeader(String name, String value) {
             if (name.trim().equalsIgnoreCase("content-type")) {
                 setContentType(value);
-            } else {
+            }
+            else {
                 super.addHeader(name, value);
             }
         }

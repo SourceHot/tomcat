@@ -16,16 +16,15 @@
  */
 package org.apache.tomcat.util.descriptor.tld;
 
-import java.lang.reflect.Method;
-
 import jakarta.servlet.jsp.tagext.TagAttributeInfo;
 import jakarta.servlet.jsp.tagext.TagVariableInfo;
 import jakarta.servlet.jsp.tagext.VariableInfo;
-
 import org.apache.tomcat.util.digester.Digester;
 import org.apache.tomcat.util.digester.Rule;
 import org.apache.tomcat.util.digester.RuleSet;
 import org.xml.sax.Attributes;
+
+import java.lang.reflect.Method;
 
 /**
  * RulesSet for digesting TLD files.
@@ -145,6 +144,7 @@ public class TldRuleSet implements RuleSet {
 
     private static class TagAttributeRule extends Rule {
         private boolean allowShortNames = false;
+
         @Override
         public void begin(String namespace, String name, Attributes attributes) throws Exception {
             TaglibXml taglibXml = (TaglibXml) digester.peek(digester.getCount() - 1);
@@ -156,7 +156,7 @@ public class TldRuleSet implements RuleSet {
             if (code != null) {
                 code.append(System.lineSeparator());
                 code.append(TldRuleSet.class.getName()).append(".Attribute ").append(digester.toVariableName(attribute)).append(" = new ");
-                code.append(TldRuleSet.class.getName()).append(".Attribute").append('(').append(Boolean.toString(allowShortNames));
+                code.append(TldRuleSet.class.getName()).append(".Attribute").append('(').append(allowShortNames);
                 code.append(");").append(System.lineSeparator());
             }
         }
@@ -238,7 +238,8 @@ public class TldRuleSet implements RuleSet {
                         this.type = type;
                         break;
                 }
-            } else {
+            }
+            else {
                 this.type = type;
             }
         }
@@ -276,12 +277,14 @@ public class TldRuleSet implements RuleSet {
                 // JSP8.5.2: for a fragment type is fixed and rexprvalue is true
                 type = "jakarta.servlet.jsp.tagext.JspFragment";
                 requestTime = true;
-            } else if (deferredValue) {
+            }
+            else if (deferredValue) {
                 type = "jakarta.el.ValueExpression";
                 if (expectedTypeName == null) {
                     expectedTypeName = "java.lang.Object";
                 }
-            } else if (deferredMethod) {
+            }
+            else if (deferredMethod) {
                 type = "jakarta.el.MethodExpression";
                 if (methodSignature == null) {
                     methodSignature = "java.lang.Object method()";
@@ -392,7 +395,7 @@ public class TldRuleSet implements RuleSet {
 
         @Override
         public void body(String namespace, String name, String text) throws Exception {
-            if(null != text) {
+            if (null != text) {
                 text = text.trim();
             }
             boolean value = "true".equalsIgnoreCase(text) || "yes".equalsIgnoreCase(text);

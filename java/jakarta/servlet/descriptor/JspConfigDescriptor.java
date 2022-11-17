@@ -22,8 +22,9 @@ import java.util.Collection;
  * This interface exposes the JSP specific configuration information obtain ed
  * from the deployment descriptors. It is primarily provided so that JSP
  * implementations do not have to parse deployment descriptors.
- *
+ * <p>
  * JSP 配置描述
+ *
  * @since Servlet 3.0
  */
 public interface JspConfigDescriptor {
@@ -35,7 +36,7 @@ public interface JspConfigDescriptor {
      *
      * @return the tag library descriptors
      */
-    public Collection<TaglibDescriptor> getTaglibs();
+    Collection<TaglibDescriptor> getTaglibs();
 
     /**
      * Provide the set of JSP property groups obtained from the
@@ -44,5 +45,5 @@ public interface JspConfigDescriptor {
      *
      * @return the JSP property groups
      */
-    public Collection<JspPropertyGroupDescriptor> getJspPropertyGroups();
+    Collection<JspPropertyGroupDescriptor> getJspPropertyGroups();
 }

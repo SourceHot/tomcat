@@ -16,14 +16,16 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.WebResource;
+import org.apache.catalina.WebResourceRoot;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.security.Permission;
 import java.security.cert.Certificate;
@@ -33,12 +35,6 @@ import java.util.Locale;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * This class is designed to wrap a 'raw' WebResource and providing caching for
@@ -76,13 +72,28 @@ public class CachedResource implements WebResource {
 
 
     public CachedResource(Cache cache, StandardRoot root, String path, long ttl,
-            int objectMaxSizeBytes, boolean usesClassLoaderResources) {
+                          int objectMaxSizeBytes, boolean usesClassLoaderResources) {
         this.cache = cache;
         this.root = root;
         this.webAppPath = path;
         this.ttl = ttl;
         this.objectMaxSizeBytes = objectMaxSizeBytes;
         this.usesClassLoaderResources = usesClassLoaderResources;
+    }
+
+    /*
+     * Mimics the behaviour of FileURLConnection.getInputStream for a directory.
+     * Deliberately uses default locale.
+     */
+    private static InputStream buildInputStream(String[] files) {
+        Arrays.sort(files, Collator.getInstance(Locale.getDefault()));
+        StringBuilder result = new StringBuilder();
+        for (String file : files) {
+            result.append(file);
+            // Every entry is followed by \n including the last
+            result.append('\n');
+        }
+        return new ByteArrayInputStream(result.toString().getBytes(Charset.defaultCharset()));
     }
 
     protected boolean validateResource(boolean useClassLoaderResources) {
@@ -111,7 +122,8 @@ public class CachedResource implements WebResource {
                     // use the fact that we know if it exists at this point
                     if (webResource instanceof EmptyResource) {
                         cachedExists = Boolean.FALSE;
-                    } else {
+                    }
+                    else {
                         cachedExists = Boolean.TRUE;
                     }
                     return true;
@@ -171,7 +183,8 @@ public class CachedResource implements WebResource {
         if (root.isPackedWarFile()) {
             nextCheck = ttl + now;
             return true;
-        } else {
+        }
+        else {
             // At this point, always expire the entry and re-populating it is
             // likely to be as expensive as validating it.
             return false;
@@ -293,13 +306,13 @@ public class CachedResource implements WebResource {
     }
 
     @Override
-    public void setMimeType(String mimeType) {
-        webResource.setMimeType(mimeType);
+    public String getMimeType() {
+        return webResource.getMimeType();
     }
 
     @Override
-    public String getMimeType() {
-        return webResource.getMimeType();
+    public void setMimeType(String mimeType) {
+        webResource.setMimeType(mimeType);
     }
 
     @Override
@@ -408,7 +421,6 @@ public class CachedResource implements WebResource {
         return usesClassLoaderResources;
     }
 
-
     // Assume that the cache entry will always include the content unless the
     // resource content is larger than objectMaxSizeBytes. This isn't always the
     // case but it makes tracking the current cache size easier.
@@ -417,29 +429,12 @@ public class CachedResource implements WebResource {
         // Longer paths use a noticeable amount of memory so account for this in
         // the cache size. The fixed component of a String instance's memory
         // usage is accounted for in the 500 bytes above.
-        result += getWebappPath().length() * 2;
+        result += getWebappPath().length() * 2L;
         if (getContentLength() <= objectMaxSizeBytes) {
             result += getContentLength();
         }
         return result;
     }
-
-
-    /*
-     * Mimics the behaviour of FileURLConnection.getInputStream for a directory.
-     * Deliberately uses default locale.
-     */
-    private static InputStream buildInputStream(String[] files) {
-        Arrays.sort(files, Collator.getInstance(Locale.getDefault()));
-        StringBuilder result = new StringBuilder();
-        for (String file : files) {
-            result.append(file);
-            // Every entry is followed by \n including the last
-            result.append('\n');
-        }
-        return new ByteArrayInputStream(result.toString().getBytes(Charset.defaultCharset()));
-    }
-
 
     private static class CachedResourceURLStreamHandler extends URLStreamHandler {
 
@@ -451,7 +446,7 @@ public class CachedResource implements WebResource {
         private URL associatedURL = null;
 
         public CachedResourceURLStreamHandler(URL resourceURL, StandardRoot root, String webAppPath,
-                boolean usesClassLoaderResources) {
+                                              boolean usesClassLoaderResources) {
             this.resourceURL = resourceURL;
             this.root = root;
             this.webAppPath = webAppPath;
@@ -470,10 +465,12 @@ public class CachedResource implements WebResource {
             if (associatedURL != null && u == associatedURL) {
                 if ("jar".equals(associatedURL.getProtocol())) {
                     return new CachedResourceJarURLConnection(resourceURL, root, webAppPath, usesClassLoaderResources);
-                } else {
+                }
+                else {
                     return new CachedResourceURLConnection(resourceURL, root, webAppPath, usesClassLoaderResources);
                 }
-            } else {
+            }
+            else {
                 // The stream handler has been inherited by a URL that was
                 // constructed from a cache URL. We need to break that link.
                 URL constructedURL = new URL(u.toExternalForm());
@@ -494,7 +491,7 @@ public class CachedResource implements WebResource {
         private final URL resourceURL;
 
         protected CachedResourceURLConnection(URL resourceURL, StandardRoot root, String webAppPath,
-                boolean usesClassLoaderResources) {
+                                              boolean usesClassLoaderResources) {
             super(resourceURL);
             this.root = root;
             this.webAppPath = webAppPath;
@@ -512,7 +509,8 @@ public class CachedResource implements WebResource {
             WebResource resource = getResource();
             if (resource.isDirectory()) {
                 return buildInputStream(resource.getWebResourceRoot().list(webAppPath));
-            } else {
+            }
+            else {
                 return getResource().getInputStream();
             }
         }
@@ -550,7 +548,7 @@ public class CachedResource implements WebResource {
         private final URL resourceURL;
 
         protected CachedResourceJarURLConnection(URL resourceURL, StandardRoot root, String webAppPath,
-                boolean usesClassLoaderResources) throws IOException {
+                                                 boolean usesClassLoaderResources) throws IOException {
             super(resourceURL);
             this.root = root;
             this.webAppPath = webAppPath;
@@ -568,7 +566,8 @@ public class CachedResource implements WebResource {
             WebResource resource = getResource();
             if (resource.isDirectory()) {
                 return buildInputStream(resource.getWebResourceRoot().list(webAppPath));
-            } else {
+            }
+            else {
                 return getResource().getInputStream();
             }
         }
@@ -602,7 +601,8 @@ public class CachedResource implements WebResource {
         public JarEntry getJarEntry() throws IOException {
             if (getEntryName() == null) {
                 return null;
-            } else {
+            }
+            else {
                 return super.getJarEntry();
             }
         }

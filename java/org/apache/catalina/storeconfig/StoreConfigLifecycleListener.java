@@ -16,9 +16,6 @@
  */
 package org.apache.catalina.storeconfig;
 
-import javax.management.DynamicMBean;
-import javax.management.ObjectName;
-
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
@@ -30,6 +27,9 @@ import org.apache.tomcat.util.modeler.ManagedBean;
 import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.res.StringManager;
 
+import javax.management.DynamicMBean;
+import javax.management.ObjectName;
+
 /**
  * Loads and registers a StoreConfig MBean with the name
  * <i>Catalina:type=StoreConfig</i>.
@@ -38,8 +38,8 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class StoreConfigLifecycleListener implements LifecycleListener {
 
-    private static Log log = LogFactory.getLog(StoreConfigLifecycleListener.class);
-    private static StringManager sm = StringManager.getManager(StoreConfigLifecycleListener.class);
+    private static final Log log = LogFactory.getLog(StoreConfigLifecycleListener.class);
+    private static final StringManager sm = StringManager.getManager(StoreConfigLifecycleListener.class);
 
     /**
      * The configuration information registry for our managed beans.
@@ -64,21 +64,24 @@ public class StoreConfigLifecycleListener implements LifecycleListener {
         if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
             if (event.getSource() instanceof Server) {
                 createMBean((Server) event.getSource());
-            } else {
+            }
+            else {
                 log.warn(sm.getString("storeConfigListener.notServer",
                         event.getLifecycle().getClass().getSimpleName()));
             }
-        } else if (Lifecycle.AFTER_STOP_EVENT.equals(event.getType())) {
+        }
+        else if (Lifecycle.AFTER_STOP_EVENT.equals(event.getType())) {
             if (oname != null) {
                 registry.unregisterComponent(oname);
                 oname = null;
             }
         }
-     }
+    }
 
     /**
      * Create StoreConfig MBean and load StoreRegistry MBeans name is
      * <code>Catalina:type=StoreConfig</code>.
+     *
      * @param server The Server instance
      */
     protected void createMBean(Server server) {
@@ -97,7 +100,7 @@ public class StoreConfigLifecycleListener implements LifecycleListener {
         }
         try {
             // Note: Hard-coded domain used since this object is per Server/JVM
-            oname = new ObjectName("Catalina:type=StoreConfig" );
+            oname = new ObjectName("Catalina:type=StoreConfig");
             registry.registerComponent(storeConfig, oname, "StoreConfig");
         } catch (Exception ex) {
             log.error(sm.getString("storeConfigListener.registerError"), ex);
@@ -124,8 +127,7 @@ public class StoreConfigLifecycleListener implements LifecycleListener {
     }
 
     /**
-     * @param storeConfig
-     *            The storeConfig to set.
+     * @param storeConfig The storeConfig to set.
      */
     public void setStoreConfig(IStoreConfig storeConfig) {
         this.storeConfig = storeConfig;
@@ -139,8 +141,7 @@ public class StoreConfigLifecycleListener implements LifecycleListener {
     }
 
     /**
-     * @param storeConfigClass
-     *            The storeConfigClass to set.
+     * @param storeConfigClass The storeConfigClass to set.
      */
     public void setStoreConfigClass(String storeConfigClass) {
         this.storeConfigClass = storeConfigClass;
@@ -154,8 +155,7 @@ public class StoreConfigLifecycleListener implements LifecycleListener {
     }
 
     /**
-     * @param storeRegistry
-     *            The storeRegistry to set.
+     * @param storeRegistry The storeRegistry to set.
      */
     public void setStoreRegistry(String storeRegistry) {
         this.storeRegistry = storeRegistry;

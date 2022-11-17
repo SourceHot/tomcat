@@ -16,32 +16,19 @@
  */
 package org.apache.catalina.core;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.catalina.AccessLog;
-import org.apache.catalina.Container;
-import org.apache.catalina.ContainerEvent;
-import org.apache.catalina.ContainerListener;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Host;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Realm;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import org.apache.catalina.*;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.realm.NullRealm;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Standard implementation of the <b>Engine</b> interface.  Each
@@ -56,30 +43,15 @@ public class StandardEngine extends ContainerBase implements Engine {
     private static final Log log = LogFactory.getLog(StandardEngine.class);
 
     // ----------------------------------------------------------- Constructors
-
-
     /**
-     * Create a new StandardEngine component with the default basic Valve.
+     * Default access log to use for request/response pairs where we can't ID
+     * the intended host and context.
      */
-    public StandardEngine() {
-
-        super();
-        pipeline.setBasic(new StandardEngineValve());
-        /* Set the jmvRoute using the system property jvmRoute */
-        try {
-            setJvmRoute(System.getProperty("jvmRoute"));
-        } catch(Exception ex) {
-            log.warn(sm.getString("standardEngine.jvmRouteFail"));
-        }
-        // By default, the engine will hold the reloading thread
-        backgroundProcessorDelay = 10;
-
-    }
+    private final AtomicReference<AccessLog> defaultAccessLog =
+            new AtomicReference<>();
 
 
     // ----------------------------------------------------- Instance Variables
-
-
     /**
      * Host name to use when no server host, or an unknown host,
      * is specified in the request.
@@ -99,11 +71,22 @@ public class StandardEngine extends ContainerBase implements Engine {
     private String jvmRouteId;
 
     /**
-     * Default access log to use for request/response pairs where we can't ID
-     * the intended host and context.
+     * Create a new StandardEngine component with the default basic Valve.
      */
-    private final AtomicReference<AccessLog> defaultAccessLog =
-        new AtomicReference<>();
+    public StandardEngine() {
+
+        super();
+        pipeline.setBasic(new StandardEngineValve());
+        /* Set the jmvRoute using the system property jvmRoute */
+        try {
+            setJvmRoute(System.getProperty("jvmRoute"));
+        } catch (Exception ex) {
+            log.warn(sm.getString("standardEngine.jvmRouteFail"));
+        }
+        // By default, the engine will hold the reloading thread
+        backgroundProcessorDelay = 10;
+
+    }
 
     // ------------------------------------------------------------- Properties
 
@@ -146,17 +129,26 @@ public class StandardEngine extends ContainerBase implements Engine {
         String oldDefaultHost = this.defaultHost;
         if (host == null) {
             this.defaultHost = null;
-        } else {
+        }
+        else {
             this.defaultHost = host.toLowerCase(Locale.ENGLISH);
         }
         if (getState().isAvailable()) {
             service.getMapper().setDefaultHostName(host);
         }
         support.firePropertyChange("defaultHost", oldDefaultHost,
-                                   this.defaultHost);
+                this.defaultHost);
 
     }
 
+    /**
+     * Retrieve the cluster-wide unique identifier for this Engine.
+     * This value is only useful in a load-balancing scenario.
+     */
+    @Override
+    public String getJvmRoute() {
+        return jvmRouteId;
+    }
 
     /**
      * Set the cluster-wide unique identifier for this Engine.
@@ -168,17 +160,6 @@ public class StandardEngine extends ContainerBase implements Engine {
     public void setJvmRoute(String routeId) {
         jvmRouteId = routeId;
     }
-
-
-    /**
-     * Retrieve the cluster-wide unique identifier for this Engine.
-     * This value is only useful in a load-balancing scenario.
-     */
-    @Override
-    public String getJvmRoute() {
-        return jvmRouteId;
-    }
-
 
     /**
      * Return the <code>Service</code> with which we are associated (if any).
@@ -213,7 +194,7 @@ public class StandardEngine extends ContainerBase implements Engine {
 
         if (!(child instanceof Host)) {
             throw new IllegalArgumentException
-                (sm.getString("standardEngine.notHost"));
+                    (sm.getString("standardEngine.notHost"));
         }
         super.addChild(child);
 
@@ -230,7 +211,7 @@ public class StandardEngine extends ContainerBase implements Engine {
     public void setParent(Container container) {
 
         throw new IllegalArgumentException
-            (sm.getString("standardEngine.notParent"));
+                (sm.getString("standardEngine.notParent"));
 
     }
 
@@ -248,8 +229,8 @@ public class StandardEngine extends ContainerBase implements Engine {
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -272,7 +253,7 @@ public class StandardEngine extends ContainerBase implements Engine {
      */
     @Override
     public void logAccess(Request request, Response response, long time,
-            boolean useDefault) {
+                          boolean useDefault) {
 
         boolean logged = false;
 
@@ -298,7 +279,8 @@ public class StandardEngine extends ContainerBase implements Engine {
                                     host, null);
                             l.install();
                         }
-                    } else {
+                    }
+                    else {
                         // Try the ROOT context of default host
                         context = (Context) host.findChild("");
                         if (context != null &&
@@ -402,16 +384,16 @@ public class StandardEngine extends ContainerBase implements Engine {
         }
 
         @Override
+        public boolean getRequestAttributesEnabled() {
+            // NOOP
+            return false;
+        }
+
+        @Override
         public void setRequestAttributesEnabled(
                 boolean requestAttributesEnabled) {
             // NOOP
 
-        }
-
-        @Override
-        public boolean getRequestAttributesEnabled() {
-            // NOOP
-            return false;
         }
     }
 
@@ -428,7 +410,7 @@ public class StandardEngine extends ContainerBase implements Engine {
         private volatile boolean disabled = false;
 
         public AccessLogListener(StandardEngine engine, Host host,
-                Context context) {
+                                 Context context) {
             this.engine = engine;
             this.host = host;
             this.context = context;

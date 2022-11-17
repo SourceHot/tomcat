@@ -16,11 +16,10 @@
  */
 package org.apache.tomcat.websocket;
 
-import java.util.List;
-
 import jakarta.websocket.Extension;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.util.List;
 
 public class TransformationFactory {
 
@@ -37,13 +36,14 @@ public class TransformationFactory {
     }
 
     public Transformation create(String name, List<List<Extension.Parameter>> preferences,
-            boolean isServer) {
+                                 boolean isServer) {
         if (PerMessageDeflate.NAME.equals(name)) {
             return PerMessageDeflate.negotiate(preferences, isServer);
         }
         if (Constants.ALLOW_UNSUPPORTED_EXTENSIONS) {
             return null;
-        } else {
+        }
+        else {
             throw new IllegalArgumentException(
                     sm.getString("transformerFactory.unsupportedExtension", name));
         }

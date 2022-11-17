@@ -36,8 +36,8 @@ public class MemoryGroup extends GenericGroup<MemoryUserDatabase> {
      * Package-private constructor used by the factory method in
      * {@link MemoryUserDatabase}.
      *
-     * @param database The {@link MemoryUserDatabase} that owns this group
-     * @param groupname Group name of this group
+     * @param database    The {@link MemoryUserDatabase} that owns this group
+     * @param groupname   Group name of this group
      * @param description Description of this group
      */
     MemoryGroup(MemoryUserDatabase database,

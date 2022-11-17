@@ -16,13 +16,13 @@
  */
 package org.apache.catalina.tribes.membership;
 
-import java.util.Properties;
-import java.util.concurrent.ScheduledExecutorService;
-
 import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.MembershipListener;
 import org.apache.catalina.tribes.MembershipProvider;
 import org.apache.catalina.tribes.MembershipService;
+
+import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class MembershipProviderBase implements MembershipProvider {
 
@@ -38,7 +38,7 @@ public abstract class MembershipProviderBase implements MembershipProvider {
 
     @Override
     public boolean hasMembers() {
-        if (membership == null ) {
+        if (membership == null) {
             return false;
         }
         return membership.hasMembers();

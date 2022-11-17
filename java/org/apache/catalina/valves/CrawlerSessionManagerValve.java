@@ -16,18 +16,10 @@
  */
 package org.apache.catalina.valves;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import jakarta.servlet.http.HttpSessionBindingListener;
-
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
@@ -35,6 +27,13 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * Web crawlers can trigger the creation of many thousands of sessions as they
@@ -70,6 +69,13 @@ public class CrawlerSessionManagerValve extends ValveBase {
         super(true);
     }
 
+    /**
+     * @return The current regular expression being used to match user agents.
+     * @see #setCrawlerUserAgents(String)
+     */
+    public String getCrawlerUserAgents() {
+        return crawlerUserAgents;
+    }
 
     /**
      * Specify the regular expression (using {@link Pattern}) that will be used
@@ -82,19 +88,19 @@ public class CrawlerSessionManagerValve extends ValveBase {
         this.crawlerUserAgents = crawlerUserAgents;
         if (crawlerUserAgents == null || crawlerUserAgents.length() == 0) {
             uaPattern = null;
-        } else {
+        }
+        else {
             uaPattern = Pattern.compile(crawlerUserAgents);
         }
     }
 
     /**
-     * @see #setCrawlerUserAgents(String)
-     * @return  The current regular expression being used to match user agents.
+     * @return The current regular expression being used to match IP addresses.
+     * @see #setCrawlerIps(String)
      */
-    public String getCrawlerUserAgents() {
-        return crawlerUserAgents;
+    public String getCrawlerIps() {
+        return crawlerIps;
     }
-
 
     /**
      * Specify the regular expression (using {@link Pattern}) that will be used
@@ -107,38 +113,29 @@ public class CrawlerSessionManagerValve extends ValveBase {
         this.crawlerIps = crawlerIps;
         if (crawlerIps == null || crawlerIps.length() == 0) {
             ipPattern = null;
-        } else {
+        }
+        else {
             ipPattern = Pattern.compile(crawlerIps);
         }
     }
 
     /**
-     * @see #setCrawlerIps(String)
-     * @return The current regular expression being used to match IP addresses.
-     */
-    public String getCrawlerIps() {
-        return crawlerIps;
-    }
-
-
-    /**
-     * Specify the session timeout (in seconds) for a crawler's session. This is
-     * typically lower than that for a user session. The default is 60 seconds.
-     *
-     * @param sessionInactiveInterval   The new timeout for crawler sessions
-     */
-    public void setSessionInactiveInterval(int sessionInactiveInterval) {
-        this.sessionInactiveInterval = sessionInactiveInterval;
-    }
-
-    /**
+     * @return The current timeout in seconds
      * @see #setSessionInactiveInterval(int)
-     * @return  The current timeout in seconds
      */
     public int getSessionInactiveInterval() {
         return sessionInactiveInterval;
     }
 
+    /**
+     * Specify the session timeout (in seconds) for a crawler's session. This is
+     * typically lower than that for a user session. The default is 60 seconds.
+     *
+     * @param sessionInactiveInterval The new timeout for crawler sessions
+     */
+    public void setSessionInactiveInterval(int sessionInactiveInterval) {
+        this.sessionInactiveInterval = sessionInactiveInterval;
+    }
 
     public Map<String, String> getClientIpSessionId() {
         return clientIdSessionId;
@@ -250,7 +247,8 @@ public class CrawlerSessionManagerValve extends ValveBase {
                         log.debug(request.hashCode() + ": New bot session. SessionID=" + s.getId());
                     }
                 }
-            } else {
+            }
+            else {
                 if (log.isDebugEnabled()) {
                     log.debug(
                             request.hashCode() + ": Bot session accessed. SessionID=" + sessionId);

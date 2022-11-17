@@ -20,7 +20,6 @@ package org.apache.catalina.users;
 /**
  * Manifest constants for this Java package.
  *
- *
  * @author Craig R. McClanahan
  * @since 4.1
  */

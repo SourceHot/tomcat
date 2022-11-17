@@ -16,15 +16,14 @@
  */
 package org.apache.tomcat.dbcp.dbcp2;
 
-import java.lang.management.ManagementFactory;
-import java.util.Objects;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
+import java.lang.management.ManagementFactory;
+import java.util.Objects;
 
 /**
  * Internal wrapper class that allows JMX to be a noop if absent or disabled.
@@ -36,6 +35,11 @@ class ObjectNameWrapper {
     private static final Log log = LogFactory.getLog(ObjectNameWrapper.class);
 
     private static final MBeanServer MBEAN_SERVER = getPlatformMBeanServer();
+    private final ObjectName objectName;
+
+    public ObjectNameWrapper(final ObjectName objectName) {
+        this.objectName = objectName;
+    }
 
     private static MBeanServer getPlatformMBeanServer() {
         try {
@@ -57,12 +61,6 @@ class ObjectNameWrapper {
 
     public static ObjectNameWrapper wrap(final String name) throws MalformedObjectNameException {
         return wrap(new ObjectName(name));
-    }
-
-    private final ObjectName objectName;
-
-    public ObjectNameWrapper(final ObjectName objectName) {
-        this.objectName = objectName;
     }
 
     public void registerMBean(final Object object) {

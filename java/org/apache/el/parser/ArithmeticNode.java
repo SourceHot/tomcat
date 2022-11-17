@@ -17,7 +17,6 @@
 package org.apache.el.parser;
 
 import jakarta.el.ELException;
-
 import org.apache.el.lang.EvaluationContext;
 
 /**

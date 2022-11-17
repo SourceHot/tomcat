@@ -16,22 +16,20 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.List;
-
-import javax.naming.NamingException;
-
 import jakarta.websocket.DecodeException;
 import jakarta.websocket.Decoder;
 import jakarta.websocket.Decoder.Binary;
 import jakarta.websocket.Decoder.BinaryStream;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.Session;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.naming.NamingException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * ByteBuffer specific concrete implementation for handling whole messages.
@@ -45,10 +43,10 @@ public class PojoMessageHandlerWholeBinary
     private final boolean isForInputStream;
 
     public PojoMessageHandlerWholeBinary(Object pojo, Method method,
-            Session session, EndpointConfig config,
-            List<Class<? extends Decoder>> decoderClazzes, Object[] params,
-            int indexPayload, boolean convert, int indexSession,
-            boolean isForInputStream, long maxMessageSize) {
+                                         Session session, EndpointConfig config,
+                                         List<Class<? extends Decoder>> decoderClazzes, Object[] params,
+                                         int indexPayload, boolean convert, int indexSession,
+                                         boolean isForInputStream, long maxMessageSize) {
         super(pojo, method, session, params, indexPayload, convert,
                 indexSession, maxMessageSize);
 
@@ -68,11 +66,13 @@ public class PojoMessageHandlerWholeBinary
                         Binary<?> decoder = (Binary<?>) createDecoderInstance(decoderClazz);
                         decoder.init(config);
                         decoders.add(decoder);
-                    } else if (BinaryStream.class.isAssignableFrom(decoderClazz)) {
+                    }
+                    else if (BinaryStream.class.isAssignableFrom(decoderClazz)) {
                         BinaryStream<?> decoder = (BinaryStream<?>) createDecoderInstance(decoderClazz);
                         decoder.init(config);
                         decoders.add(decoder);
-                    } else {
+                    }
+                    else {
                         // Text decoder - ignore it
                     }
                 }
@@ -91,7 +91,8 @@ public class PojoMessageHandlerWholeBinary
                 if (((Binary<?>) decoder).willDecode(message)) {
                     return ((Binary<?>) decoder).decode(message);
                 }
-            } else {
+            }
+            else {
                 byte[] array = new byte[message.limit() - message.position()];
                 message.get(array);
                 ByteArrayInputStream bais = new ByteArrayInputStream(array);
@@ -113,7 +114,8 @@ public class PojoMessageHandlerWholeBinary
         message.get(array);
         if (isForInputStream) {
             return new ByteArrayInputStream(array);
-        } else {
+        }
+        else {
             return array;
         }
     }

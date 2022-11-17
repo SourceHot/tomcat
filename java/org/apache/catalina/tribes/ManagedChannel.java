@@ -26,51 +26,58 @@ import java.util.Iterator;
 public interface ManagedChannel extends Channel {
 
     /**
-     * Sets the channel sender
-     * @param sender ChannelSender
-     * @see ChannelSender
-     */
-    public void setChannelSender(ChannelSender sender);
-
-    /**
-     * Sets the channel receiver
-     * @param receiver ChannelReceiver
-     * @see ChannelReceiver
-     */
-    public void setChannelReceiver(ChannelReceiver receiver);
-
-    /**
-     * Sets the membership service
-     * @param service MembershipService
-     * @see MembershipService
-     */
-    public void setMembershipService(MembershipService service);
-
-    /**
      * returns the channel sender
+     *
      * @return ChannelSender
      * @see ChannelSender
      */
-    public ChannelSender getChannelSender();
+    ChannelSender getChannelSender();
+
+    /**
+     * Sets the channel sender
+     *
+     * @param sender ChannelSender
+     * @see ChannelSender
+     */
+    void setChannelSender(ChannelSender sender);
 
     /**
      * returns the channel receiver
+     *
      * @return ChannelReceiver
      * @see ChannelReceiver
      */
-    public ChannelReceiver getChannelReceiver();
+    ChannelReceiver getChannelReceiver();
+
+    /**
+     * Sets the channel receiver
+     *
+     * @param receiver ChannelReceiver
+     * @see ChannelReceiver
+     */
+    void setChannelReceiver(ChannelReceiver receiver);
 
     /**
      * Returns the membership service
+     *
      * @return MembershipService
      * @see MembershipService
      */
-    public MembershipService getMembershipService();
+    MembershipService getMembershipService();
+
+    /**
+     * Sets the membership service
+     *
+     * @param service MembershipService
+     * @see MembershipService
+     */
+    void setMembershipService(MembershipService service);
 
     /**
      * Returns the interceptor stack
+     *
      * @return Iterator
      * @see Channel#addInterceptor(ChannelInterceptor)
      */
-    public Iterator<ChannelInterceptor> getInterceptors();
+    Iterator<ChannelInterceptor> getInterceptors();
 }

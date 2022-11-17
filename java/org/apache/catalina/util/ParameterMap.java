@@ -16,14 +16,10 @@
  */
 package org.apache.catalina.util;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * Implementation of <strong>java.util.Map</strong> that includes a
@@ -34,16 +30,21 @@ import org.apache.tomcat.util.res.StringManager;
  *
  * @param <K> The type of Key
  * @param <V> The type of Value
- *
  * @author Craig R. McClanahan
  */
-public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
+public final class ParameterMap<K, V> implements Map<K, V>, Serializable {
 
     private static final long serialVersionUID = 2L;
-
-    private final Map<K,V> delegatedMap;
-
-    private final Map<K,V> unmodifiableDelegatedMap;
+    /**
+     * The string manager for this package.
+     */
+    private static final StringManager sm = StringManager.getManager("org.apache.catalina.util");
+    private final Map<K, V> delegatedMap;
+    private final Map<K, V> unmodifiableDelegatedMap;
+    /**
+     * The current lock state of this parameter map.
+     */
+    private boolean locked = false;
 
 
     /**
@@ -73,7 +74,7 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
      * load factor.
      *
      * @param initialCapacity The initial capacity of this map
-     * @param loadFactor The load factor of this map
+     * @param loadFactor      The load factor of this map
      */
     public ParameterMap(int initialCapacity, float loadFactor) {
         delegatedMap = new LinkedHashMap<>(initialCapacity, loadFactor);
@@ -86,17 +87,10 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
      *
      * @param map Map whose contents are duplicated in the new map
      */
-    public ParameterMap(Map<K,V> map) {
+    public ParameterMap(Map<K, V> map) {
         delegatedMap = new LinkedHashMap<>(map);
         unmodifiableDelegatedMap = Collections.unmodifiableMap(delegatedMap);
     }
-
-
-    /**
-     * The current lock state of this parameter map.
-     */
-    private boolean locked = false;
-
 
     /**
      * @return the locked state of this parameter map.
@@ -104,7 +98,6 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
     public boolean isLocked() {
         return locked;
     }
-
 
     /**
      * Set the locked state of this parameter map.
@@ -115,17 +108,10 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
         this.locked = locked;
     }
 
-
-    /**
-     * The string manager for this package.
-     */
-    private static final StringManager sm = StringManager.getManager("org.apache.catalina.util");
-
-
     /**
      * {@inheritDoc}
      *
-     * @exception IllegalStateException if this map is currently locked
+     * @throws IllegalStateException if this map is currently locked
      */
     @Override
     public void clear() {
@@ -137,7 +123,7 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
     /**
      * {@inheritDoc}
      *
-     * @exception IllegalStateException if this map is currently locked
+     * @throws IllegalStateException if this map is currently locked
      */
     @Override
     public V put(K key, V value) {
@@ -149,10 +135,10 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
     /**
      * {@inheritDoc}
      *
-     * @exception IllegalStateException if this map is currently locked
+     * @throws IllegalStateException if this map is currently locked
      */
     @Override
-    public void putAll(Map<? extends K,? extends V> map) {
+    public void putAll(Map<? extends K, ? extends V> map) {
         checkLocked();
         delegatedMap.putAll(map);
     }
@@ -161,7 +147,7 @@ public final class ParameterMap<K,V> implements Map<K,V>, Serializable {
     /**
      * {@inheritDoc}
      *
-     * @exception IllegalStateException if this map is currently locked
+     * @throws IllegalStateException if this map is currently locked
      */
     @Override
     public V remove(Object key) {

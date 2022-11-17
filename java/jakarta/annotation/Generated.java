@@ -16,32 +16,30 @@
  */
 package jakarta.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * @since Common Annotations 1.0
  */
 @Documented
 @Target({ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR,
-    ElementType.FIELD, ElementType.LOCAL_VARIABLE, ElementType.METHOD,
-    ElementType.PACKAGE, ElementType.PARAMETER, ElementType.TYPE})
+        ElementType.FIELD, ElementType.LOCAL_VARIABLE, ElementType.METHOD,
+        ElementType.PACKAGE, ElementType.PARAMETER, ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface Generated {
     /**
      * @return The name of the code generator. It is recommended that the fully
-     *         qualified name of the code generator is used.
+     * qualified name of the code generator is used.
      */
-    public String[] value();
+    String[] value();
+
     /**
      * @return The date the code was generated
      */
-    public String date() default "";
+    String date() default "";
+
     /**
      * @return Additional comments (if any) related to the code generation
      */
-    public String comments() default "";
+    String comments() default "";
 }

@@ -18,7 +18,6 @@ package org.apache.el.lang;
 
 import jakarta.el.ValueExpression;
 import jakarta.el.VariableMapper;
-
 import org.apache.el.util.MessageFactory;
 
 public class VariableMapperFactory extends VariableMapper {

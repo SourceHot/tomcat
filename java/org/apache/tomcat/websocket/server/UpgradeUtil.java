@@ -16,16 +16,6 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -36,16 +26,17 @@ import jakarta.websocket.Endpoint;
 import jakarta.websocket.Extension;
 import jakarta.websocket.HandshakeResponse;
 import jakarta.websocket.server.ServerEndpointConfig;
-
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.security.ConcurrentMessageDigest;
 import org.apache.tomcat.websocket.Constants;
-import org.apache.tomcat.websocket.Transformation;
-import org.apache.tomcat.websocket.TransformationFactory;
-import org.apache.tomcat.websocket.Util;
-import org.apache.tomcat.websocket.WsHandshakeResponse;
+import org.apache.tomcat.websocket.*;
 import org.apache.tomcat.websocket.pojo.PojoMethodMapping;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class UpgradeUtil {
 
@@ -64,16 +55,17 @@ public class UpgradeUtil {
      * request to web socket.
      * <p>
      * Note: RFC 2616 does not limit HTTP upgrade to GET requests but the Java
-     *       WebSocket spec 1.0, section 8.2 implies such a limitation and RFC
-     *       6455 section 4.1 requires that a WebSocket Upgrade uses GET.
+     * WebSocket spec 1.0, section 8.2 implies such a limitation and RFC
+     * 6455 section 4.1 requires that a WebSocket Upgrade uses GET.
+     *
      * @param request  The request to check if it is an HTTP upgrade request for
      *                 a WebSocket connection
      * @param response The response associated with the request
      * @return <code>true</code> if the request includes an HTTP Upgrade request
-     *         for the WebSocket protocol, otherwise <code>false</code>
+     * for the WebSocket protocol, otherwise <code>false</code>
      */
     public static boolean isWebSocketUpgradeRequest(ServletRequest request,
-            ServletResponse response) {
+                                                    ServletResponse response) {
 
         return ((request instanceof HttpServletRequest) &&
                 (response instanceof HttpServletResponse) &&
@@ -85,8 +77,8 @@ public class UpgradeUtil {
 
 
     public static void doUpgrade(WsServerContainer sc, HttpServletRequest req,
-            HttpServletResponse resp, ServerEndpointConfig sec,
-            Map<String,String> pathParams)
+                                 HttpServletResponse resp, ServerEndpointConfig sec,
+                                 Map<String, String> pathParams)
             throws ServletException, IOException {
 
         // Validate the rest of the headers and reject the request if that
@@ -138,7 +130,8 @@ public class UpgradeUtil {
         List<Extension> installedExtensions = null;
         if (sec.getExtensions().size() == 0) {
             installedExtensions = Constants.INSTALLED_EXTENSIONS;
-        } else {
+        }
+        else {
             installedExtensions = new ArrayList<>();
             installedExtensions.addAll(sec.getExtensions());
             installedExtensions.addAll(Constants.INSTALLED_EXTENSIONS);
@@ -155,7 +148,8 @@ public class UpgradeUtil {
         List<Extension> negotiatedExtensionsPhase2;
         if (transformations.isEmpty()) {
             negotiatedExtensionsPhase2 = Collections.emptyList();
-        } else {
+        }
+        else {
             negotiatedExtensionsPhase2 = new ArrayList<>(transformations.size());
             for (Transformation t : transformations) {
                 negotiatedExtensionsPhase2.add(t.getExtensionResponse());
@@ -169,13 +163,15 @@ public class UpgradeUtil {
         for (Transformation t : transformations) {
             if (first) {
                 first = false;
-            } else {
+            }
+            else {
                 responseHeaderExtensions.append(',');
             }
             append(responseHeaderExtensions, t.getExtensionResponse());
             if (transformation == null) {
                 transformation = t;
-            } else {
+            }
+            else {
                 transformation.setNext(t);
             }
         }
@@ -215,7 +211,7 @@ public class UpgradeUtil {
                 }
             } catch (DeploymentException e) {
                 throw new ServletException(
-                        sm.getString("upgradeUtil.pojoMapFail", sec.getEndpointClass().getName()),  e);
+                        sm.getString("upgradeUtil.pojoMapFail", sec.getEndpointClass().getName()), e);
             }
         }
 
@@ -228,9 +224,9 @@ public class UpgradeUtil {
         wsRequest.finished();
 
         // Add any additional headers
-        for (Entry<String,List<String>> entry :
+        for (Entry<String, List<String>> entry :
                 wsResponse.getHeaders().entrySet()) {
-            for (String headerValue: entry.getValue()) {
+            for (String headerValue : entry.getValue()) {
                 resp.addHeader(entry.getKey(), headerValue);
             }
         }
@@ -249,7 +245,7 @@ public class UpgradeUtil {
 
         TransformationFactory factory = TransformationFactory.getInstance();
 
-        LinkedHashMap<String,List<List<Extension.Parameter>>> extensionPreferences =
+        LinkedHashMap<String, List<List<Extension.Parameter>>> extensionPreferences =
                 new LinkedHashMap<>();
 
         // Result will likely be smaller than this
@@ -267,8 +263,8 @@ public class UpgradeUtil {
             preferences.add(extension.getParameters());
         }
 
-        for (Map.Entry<String,List<List<Extension.Parameter>>> entry :
-            extensionPreferences.entrySet()) {
+        for (Map.Entry<String, List<List<Extension.Parameter>>> entry :
+                extensionPreferences.entrySet()) {
             Transformation transformation = factory.create(entry.getKey(), entry.getValue(), true);
             if (transformation != null) {
                 result.add(transformation);
@@ -301,7 +297,7 @@ public class UpgradeUtil {
      * parsing.
      */
     private static boolean headerContainsToken(HttpServletRequest req,
-            String headerName, String target) {
+                                               String headerName, String target) {
         Enumeration<String> headers = req.getHeaders(headerName);
         while (headers.hasMoreElements()) {
             String header = headers.nextElement();
@@ -321,7 +317,7 @@ public class UpgradeUtil {
      * parsing.
      */
     private static List<String> getTokensFromHeader(HttpServletRequest req,
-            String headerName) {
+                                                    String headerName) {
         List<String> result = new ArrayList<>();
         Enumeration<String> headers = req.getHeaders(headerName);
         while (headers.hasMoreElements()) {

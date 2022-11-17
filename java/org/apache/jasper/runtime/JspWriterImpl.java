@@ -16,23 +16,22 @@
  */
 package org.apache.jasper.runtime;
 
-import java.io.IOException;
-import java.io.Writer;
-
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.jsp.JspWriter;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.compiler.Localizer;
+
+import java.io.IOException;
+import java.io.Writer;
 
 /**
  * Write text to a character-output stream, buffering characters so as
  * to provide for the efficient writing of single characters, arrays,
  * and strings.
- *
+ * <p>
  * Provide support for discarding for the output that has been
  * buffered.
- *
+ * <p>
  * This needs revisiting when the buffering problems in the JSP spec
  * are fixed -akv
  *
@@ -42,27 +41,27 @@ public class JspWriterImpl extends JspWriter {
 
     private Writer out;
     private ServletResponse response;
-    private char cb[];
+    private char[] cb;
     private int nextChar;
     private boolean flushed = false;
     private boolean closed = false;
 
     public JspWriterImpl() {
-        super( Constants.DEFAULT_BUFFER_SIZE, true );
+        super(Constants.DEFAULT_BUFFER_SIZE, true);
     }
 
     /**
      * Create a new buffered character-output stream that uses an output
      * buffer of the given size.
      *
-     * @param  response A Servlet Response
-     * @param  sz       Output-buffer size, a positive integer
+     * @param response  A Servlet Response
+     * @param sz        Output-buffer size, a positive integer
      * @param autoFlush <code>true</code> to automatically flush on buffer
-     *  full, <code>false</code> to throw an overflow exception in that case
-     * @exception  IllegalArgumentException  If sz is &lt;= 0
+     *                  full, <code>false</code> to throw an overflow exception in that case
+     * @throws IllegalArgumentException If sz is &lt;= 0
      */
     public JspWriterImpl(ServletResponse response, int sz,
-            boolean autoFlush) {
+                         boolean autoFlush) {
         super(sz, autoFlush);
         if (sz < 0) {
             throw new IllegalArgumentException(Localizer.getMessage("jsp.error.negativeBufferSize"));
@@ -72,14 +71,25 @@ public class JspWriterImpl extends JspWriter {
         nextChar = 0;
     }
 
-    void init( ServletResponse response, int sz, boolean autoFlush ) {
-        this.response= response;
-        if( sz > 0 && ( cb == null || sz > cb.length ) ) {
-            cb=new char[sz];
+    /**
+     * Our own little min method, to avoid loading java.lang.Math if we've run
+     * out of file descriptors and we're trying to print a stack trace.
+     */
+    private static int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
+
+    void init(ServletResponse response, int sz, boolean autoFlush) {
+        this.response = response;
+        if (sz > 0 && (cb == null || sz > cb.length)) {
+            cb = new char[sz];
         }
         nextChar = 0;
-        this.autoFlush=autoFlush;
-        this.bufferSize=sz;
+        this.autoFlush = autoFlush;
+        this.bufferSize = sz;
     }
 
     /**
@@ -97,6 +107,7 @@ public class JspWriterImpl extends JspWriter {
      * Flush the output buffer to the underlying character stream, without
      * flushing the stream itself.  This method is non-private only so that it
      * may be invoked by PrintStream.
+     *
      * @throws IOException Error writing buffered data
      */
     protected final void flushBuffer() throws IOException {
@@ -153,10 +164,9 @@ public class JspWriterImpl extends JspWriter {
 
     /**
      * Flush the stream.
-     *
      */
     @Override
-    public void flush()  throws IOException {
+    public void flush() throws IOException {
         flushBuffer();
         if (out != null) {
             out.flush();
@@ -165,7 +175,6 @@ public class JspWriterImpl extends JspWriter {
 
     /**
      * Close the stream.
-     *
      */
     @Override
     public void close() throws IOException {
@@ -189,13 +198,14 @@ public class JspWriterImpl extends JspWriter {
         return bufferSize - nextChar;
     }
 
-    /** check to make sure that the stream has not been closed */
+    /**
+     * check to make sure that the stream has not been closed
+     */
     private void ensureOpen() throws IOException {
         if (response == null || closed) {
             throw new IOException(Localizer.getMessage("jsp.error.stream.closed"));
         }
     }
-
 
     /**
      * Write a single character.
@@ -206,27 +216,18 @@ public class JspWriterImpl extends JspWriter {
         if (bufferSize == 0) {
             initOut();
             out.write(c);
-        } else {
+        }
+        else {
             if (nextChar >= bufferSize) {
                 if (autoFlush) {
                     flushBuffer();
-                } else {
+                }
+                else {
                     bufferOverflow();
                 }
             }
             cb[nextChar++] = (char) c;
         }
-    }
-
-    /**
-     * Our own little min method, to avoid loading java.lang.Math if we've run
-     * out of file descriptors and we're trying to print a stack trace.
-     */
-    private static int min(int a, int b) {
-        if (a < b) {
-            return a;
-        }
-        return b;
     }
 
     /**
@@ -239,14 +240,13 @@ public class JspWriterImpl extends JspWriter {
      * directly to the underlying stream.  Thus redundant
      * <code>DiscardableBufferedWriter</code>s will not copy data unnecessarily.
      *
-     * @param  cbuf  A character array
-     * @param  off   Offset from which to start reading characters
-     * @param  len   Number of characters to write
+     * @param cbuf A character array
+     * @param off  Offset from which to start reading characters
+     * @param len  Number of characters to write
      */
     @Override
-    public void write(char cbuf[], int off, int len)
-    throws IOException
-    {
+    public void write(char[] cbuf, int off, int len)
+            throws IOException {
         ensureOpen();
 
         if (bufferSize == 0) {
@@ -258,7 +258,8 @@ public class JspWriterImpl extends JspWriter {
         if ((off < 0) || (off > cbuf.length) || (len < 0) ||
                 ((off + len) > cbuf.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        else if (len == 0) {
             return;
         }
 
@@ -268,7 +269,8 @@ public class JspWriterImpl extends JspWriter {
              way buffered streams will cascade harmlessly. */
             if (autoFlush) {
                 flushBuffer();
-            } else {
+            }
+            else {
                 bufferOverflow();
             }
             initOut();
@@ -285,7 +287,8 @@ public class JspWriterImpl extends JspWriter {
             if (nextChar >= bufferSize) {
                 if (autoFlush) {
                     flushBuffer();
-                } else {
+                }
+                else {
                     bufferOverflow();
                 }
             }
@@ -298,16 +301,16 @@ public class JspWriterImpl extends JspWriter {
      * Writer class because it must suppress I/O exceptions.
      */
     @Override
-    public void write(char buf[]) throws IOException {
+    public void write(char[] buf) throws IOException {
         write(buf, 0, buf.length);
     }
 
     /**
      * Write a portion of a String.
      *
-     * @param  s     String to be written
-     * @param  off   Offset from which to start reading characters
-     * @param  len   Number of characters to be written
+     * @param s   String to be written
+     * @param off Offset from which to start reading characters
+     * @param len Number of characters to be written
      */
     @Override
     public void write(String s, int off, int len) throws IOException {
@@ -326,7 +329,8 @@ public class JspWriterImpl extends JspWriter {
             if (nextChar >= bufferSize) {
                 if (autoFlush) {
                     flushBuffer();
-                } else {
+                }
+                else {
                     bufferOverflow();
                 }
             }
@@ -339,7 +343,7 @@ public class JspWriterImpl extends JspWriter {
      * system property <code>line.separator</code>, and is not necessarily a
      * single newline ('\n') character.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws IOException If an I/O error occurs
      */
 
     @Override
@@ -357,7 +361,7 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link
      * #write(int)}</code> method.
      *
-     * @param      b   The <code>boolean</code> to be printed
+     * @param b The <code>boolean</code> to be printed
      */
     @Override
     public void print(boolean b) throws IOException {
@@ -370,7 +374,7 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link
      * #write(int)}</code> method.
      *
-     * @param      c   The <code>char</code> to be printed
+     * @param c The <code>char</code> to be printed
      */
     @Override
     public void print(char c) throws IOException {
@@ -384,7 +388,7 @@ public class JspWriterImpl extends JspWriter {
      * written in exactly the manner of the <code>{@link #write(int)}</code>
      * method.
      *
-     * @param      i   The <code>int</code> to be printed
+     * @param i The <code>int</code> to be printed
      */
     @Override
     public void print(int i) throws IOException {
@@ -398,7 +402,7 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link #write(int)}</code>
      * method.
      *
-     * @param      l   The <code>long</code> to be printed
+     * @param l The <code>long</code> to be printed
      */
     @Override
     public void print(long l) throws IOException {
@@ -412,7 +416,7 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link #write(int)}</code>
      * method.
      *
-     * @param      f   The <code>float</code> to be printed
+     * @param f The <code>float</code> to be printed
      */
     @Override
     public void print(float f) throws IOException {
@@ -426,7 +430,7 @@ public class JspWriterImpl extends JspWriter {
      * bytes are written in exactly the manner of the <code>{@link
      * #write(int)}</code> method.
      *
-     * @param      d   The <code>double</code> to be printed
+     * @param d The <code>double</code> to be printed
      */
     @Override
     public void print(double d) throws IOException {
@@ -439,12 +443,11 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link #write(int)}</code>
      * method.
      *
-     * @param      s   The array of chars to be printed
-     *
-     * @throws  NullPointerException  If <code>s</code> is <code>null</code>
+     * @param s The array of chars to be printed
+     * @throws NullPointerException If <code>s</code> is <code>null</code>
      */
     @Override
-    public void print(char s[]) throws IOException {
+    public void print(char[] s) throws IOException {
         write(s);
     }
 
@@ -455,7 +458,7 @@ public class JspWriterImpl extends JspWriter {
      * encoding, and these bytes are written in exactly the manner of the
      * <code>{@link #write(int)}</code> method.
      *
-     * @param      s   The <code>String</code> to be printed
+     * @param s The <code>String</code> to be printed
      */
     @Override
     public void print(String s) throws IOException {
@@ -472,7 +475,7 @@ public class JspWriterImpl extends JspWriter {
      * are written in exactly the manner of the <code>{@link #write(int)}</code>
      * method.
      *
-     * @param      obj   The <code>Object</code> to be printed
+     * @param obj The <code>Object</code> to be printed
      */
     @Override
     public void print(Object obj) throws IOException {
@@ -486,7 +489,7 @@ public class JspWriterImpl extends JspWriter {
      * line separator string is defined by the system property
      * <code>line.separator</code>, and is not necessarily a single newline
      * character (<code>'\n'</code>).
-     *
+     * <p>
      * Need to change this from PrintWriter because the default
      * println() writes  to the sink directly instead of through the
      * write method...
@@ -568,7 +571,7 @@ public class JspWriterImpl extends JspWriter {
      * <code>{@link #println()}</code>.
      */
     @Override
-    public void println(char x[]) throws IOException {
+    public void println(char[] x) throws IOException {
         print(x);
         println();
     }

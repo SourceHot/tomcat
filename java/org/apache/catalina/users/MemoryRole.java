@@ -34,8 +34,8 @@ public class MemoryRole extends GenericRole<MemoryUserDatabase> {
      * Package-private constructor used by the factory method in
      * {@link MemoryUserDatabase}.
      *
-     * @param database The {@link MemoryUserDatabase} that owns this role
-     * @param rolename Role name of this role
+     * @param database    The {@link MemoryUserDatabase} that owns this role
+     * @param rolename    Role name of this role
      * @param description Description of this role
      */
     MemoryRole(MemoryUserDatabase database,

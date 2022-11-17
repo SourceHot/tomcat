@@ -21,9 +21,9 @@ package org.apache.coyote;
  * connector. Actions are implemented by ProtocolHandler, using the ActionHook
  * interface.
  *
+ * @author Remy Maucherat
  * @see ProtocolHandler
  * @see ActionHook
- * @author Remy Maucherat
  */
 public enum ActionCode {
     ACK,
@@ -61,7 +61,6 @@ public enum ActionCode {
     /**
      * Hook called if swallowing request input should be disabled.
      * Example: Cancel a large file upload.
-     *
      */
     DISABLE_SWALLOW_INPUT,
 
@@ -193,8 +192,8 @@ public enum ActionCode {
     ASYNC_IS_TIMINGOUT,
 
     /**
-    * Callback to determine if async is in error.
-    */
+     * Callback to determine if async is in error.
+     */
     ASYNC_IS_ERROR,
 
     /**

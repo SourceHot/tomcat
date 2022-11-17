@@ -16,6 +16,9 @@
  */
 package org.apache.tomcat.util.scan;
 
+import org.apache.tomcat.Jar;
+import org.apache.tomcat.util.compat.JreCompat;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,9 +32,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
-
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.util.compat.JreCompat;
 
 /**
  * Implementation of {@link Jar} that is optimised for file based JAR URLs that
@@ -54,7 +54,8 @@ public class JarFileUrlJar implements Jar {
             jarConn.setUseCaches(false);
             jarFile = jarConn.getJarFile();
             jarFileURL = jarConn.getJarFileURL();
-        } else {
+        }
+        else {
             // file:...
             File f;
             try {
@@ -81,7 +82,8 @@ public class JarFileUrlJar implements Jar {
         ZipEntry entry = jarFile.getEntry(name);
         if (entry == null) {
             return null;
-        } else {
+        }
+        else {
             return jarFile.getInputStream(entry);
         }
     }
@@ -92,7 +94,8 @@ public class JarFileUrlJar implements Jar {
         ZipEntry entry = jarFile.getEntry(name);
         if (entry == null) {
             return -1;
-        } else {
+        }
+        else {
             return entry.getTime();
         }
     }
@@ -106,12 +109,11 @@ public class JarFileUrlJar implements Jar {
 
     @Override
     public String getURL(String entry) {
-        StringBuilder result = new StringBuilder("jar:");
-        result.append(getJarFileURL().toExternalForm());
-        result.append("!/");
-        result.append(entry);
+        String result = "jar:" + getJarFileURL().toExternalForm() +
+                "!/" +
+                entry;
 
-        return result.toString();
+        return result;
     }
 
     @Override
@@ -168,15 +170,18 @@ public class JarFileUrlJar implements Jar {
                     // JarFile.getJarEntry is version aware so use it
                     entry = jarFile.getJarEntry(entry.getName());
                     break;
-                } else {
+                }
+                else {
                     entry = null;
                     break;
                 }
             }
-        } else {
+        }
+        else {
             if (entries.hasMoreElements()) {
                 entry = entries.nextElement();
-            } else {
+            }
+            else {
                 entry = null;
             }
         }
@@ -186,7 +191,8 @@ public class JarFileUrlJar implements Jar {
     public String getEntryName() {
         if (entry == null) {
             return null;
-        } else {
+        }
+        else {
             return entry.getName();
         }
     }
@@ -195,7 +201,8 @@ public class JarFileUrlJar implements Jar {
     public InputStream getEntryInputStream() throws IOException {
         if (entry == null) {
             return null;
-        } else {
+        }
+        else {
             return jarFile.getInputStream(entry);
         }
     }

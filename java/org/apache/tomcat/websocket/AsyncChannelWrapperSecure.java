@@ -16,32 +16,24 @@
  */
 package org.apache.tomcat.websocket;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Wraps the {@link AsynchronousSocketChannel} with SSL/TLS. This needs a lot
@@ -49,12 +41,11 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
-    private final Log log =
-            LogFactory.getLog(AsyncChannelWrapperSecure.class);
     private static final StringManager sm =
             StringManager.getManager(AsyncChannelWrapperSecure.class);
-
     private static final ByteBuffer DUMMY = ByteBuffer.allocate(16921);
+    private final Log log =
+            LogFactory.getLog(AsyncChannelWrapperSecure.class);
     private final AsynchronousSocketChannel socketChannel;
     private final SSLEngine sslEngine;
     private final ByteBuffer socketReadBuffer;
@@ -62,11 +53,11 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
     // One thread for read, one for write
     private final ExecutorService executor =
             Executors.newFixedThreadPool(2, new SecureIOThreadFactory());
-    private AtomicBoolean writing = new AtomicBoolean(false);
-    private AtomicBoolean reading = new AtomicBoolean(false);
+    private final AtomicBoolean writing = new AtomicBoolean(false);
+    private final AtomicBoolean reading = new AtomicBoolean(false);
 
     public AsyncChannelWrapperSecure(AsynchronousSocketChannel socketChannel,
-            SSLEngine sslEngine) {
+                                     SSLEngine sslEngine) {
         this.socketChannel = socketChannel;
         this.sslEngine = sslEngine;
 
@@ -77,7 +68,7 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
     @Override
     public Future<Integer> read(ByteBuffer dst) {
-        WrapperFuture<Integer,Void> future = new WrapperFuture<>();
+        WrapperFuture<Integer, Void> future = new WrapperFuture<>();
 
         if (!reading.compareAndSet(false, true)) {
             throw new IllegalStateException(sm.getString(
@@ -92,10 +83,10 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
     }
 
     @Override
-    public <B,A extends B> void read(ByteBuffer dst, A attachment,
-            CompletionHandler<Integer,B> handler) {
+    public <B, A extends B> void read(ByteBuffer dst, A attachment,
+                                      CompletionHandler<Integer, B> handler) {
 
-        WrapperFuture<Integer,B> future =
+        WrapperFuture<Integer, B> future =
                 new WrapperFuture<>(handler, attachment);
 
         if (!reading.compareAndSet(false, true)) {
@@ -111,7 +102,7 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
     @Override
     public Future<Integer> write(ByteBuffer src) {
 
-        WrapperFuture<Long,Void> inner = new WrapperFuture<>();
+        WrapperFuture<Long, Void> inner = new WrapperFuture<>();
 
         if (!writing.compareAndSet(false, true)) {
             throw new IllegalStateException(sm.getString(
@@ -119,7 +110,7 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
         }
 
         WriteTask writeTask =
-                new WriteTask(new ByteBuffer[] {src}, 0, 1, inner);
+                new WriteTask(new ByteBuffer[]{src}, 0, 1, inner);
 
         executor.execute(writeTask);
 
@@ -128,11 +119,11 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
     }
 
     @Override
-    public <B,A extends B> void write(ByteBuffer[] srcs, int offset, int length,
-            long timeout, TimeUnit unit, A attachment,
-            CompletionHandler<Long,B> handler) {
+    public <B, A extends B> void write(ByteBuffer[] srcs, int offset, int length,
+                                       long timeout, TimeUnit unit, A attachment,
+                                       CompletionHandler<Long, B> handler) {
 
-        WrapperFuture<Long,B> future =
+        WrapperFuture<Long, B> future =
                 new WrapperFuture<>(handler, attachment);
 
         if (!writing.compareAndSet(false, true)) {
@@ -158,7 +149,7 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
     @Override
     public Future<Void> handshake() throws SSLException {
 
-        WrapperFuture<Void,Void> wFuture = new WrapperFuture<>();
+        WrapperFuture<Void, Void> wFuture = new WrapperFuture<>();
 
         Thread t = new WebSocketSslHandshakeThread(wFuture);
         t.start();
@@ -172,16 +163,151 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
         return socketChannel.getLocalAddress();
     }
 
+    private static class WrapperFuture<T, A> implements Future<T> {
+
+        private final CompletionHandler<T, A> handler;
+        private final A attachment;
+
+        private volatile T result = null;
+        private volatile Throwable throwable = null;
+        private final CountDownLatch completionLatch = new CountDownLatch(1);
+
+        public WrapperFuture() {
+            this(null, null);
+        }
+
+        public WrapperFuture(CompletionHandler<T, A> handler, A attachment) {
+            this.handler = handler;
+            this.attachment = attachment;
+        }
+
+        public void complete(T result) {
+            this.result = result;
+            completionLatch.countDown();
+            if (handler != null) {
+                handler.completed(result, attachment);
+            }
+        }
+
+        public void fail(Throwable t) {
+            throwable = t;
+            completionLatch.countDown();
+            if (handler != null) {
+                handler.failed(throwable, attachment);
+            }
+        }
+
+        @Override
+        public final boolean cancel(boolean mayInterruptIfRunning) {
+            // Could support cancellation by closing the connection
+            return false;
+        }
+
+        @Override
+        public final boolean isCancelled() {
+            // Could support cancellation by closing the connection
+            return false;
+        }
+
+        @Override
+        public final boolean isDone() {
+            return completionLatch.getCount() > 0;
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            completionLatch.await();
+            if (throwable != null) {
+                throw new ExecutionException(throwable);
+            }
+            return result;
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException,
+                TimeoutException {
+            boolean latchResult = completionLatch.await(timeout, unit);
+            if (!latchResult) {
+                throw new TimeoutException();
+            }
+            if (throwable != null) {
+                throw new ExecutionException(throwable);
+            }
+            return result;
+        }
+    }
+
+    private static final class LongToIntegerFuture implements Future<Integer> {
+
+        private final Future<Long> wrapped;
+
+        public LongToIntegerFuture(Future<Long> wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return wrapped.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return wrapped.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return wrapped.isDone();
+        }
+
+        @Override
+        public Integer get() throws InterruptedException, ExecutionException {
+            Long result = wrapped.get();
+            if (result.longValue() > Integer.MAX_VALUE) {
+                throw new ExecutionException(sm.getString(
+                        "asyncChannelWrapperSecure.tooBig", result), null);
+            }
+            return Integer.valueOf(result.intValue());
+        }
+
+        @Override
+        public Integer get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException,
+                TimeoutException {
+            Long result = wrapped.get(timeout, unit);
+            if (result.longValue() > Integer.MAX_VALUE) {
+                throw new ExecutionException(sm.getString(
+                        "asyncChannelWrapperSecure.tooBig", result), null);
+            }
+            return Integer.valueOf(result.intValue());
+        }
+    }
+
+    private static class SecureIOThreadFactory implements ThreadFactory {
+
+        private final AtomicInteger count = new AtomicInteger(0);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+            t.setName("WebSocketClient-SecureIO-" + count.incrementAndGet());
+            // No need to set the context class loader. The threads will be
+            // cleaned up when the connection is closed.
+            t.setDaemon(true);
+            return t;
+        }
+    }
 
     private class WriteTask implements Runnable {
 
         private final ByteBuffer[] srcs;
         private final int offset;
         private final int length;
-        private final WrapperFuture<Long,?> future;
+        private final WrapperFuture<Long, ?> future;
 
         public WriteTask(ByteBuffer[] srcs, int offset, int length,
-                WrapperFuture<Long,?> future) {
+                         WrapperFuture<Long, ?> future) {
             this.srcs = srcs;
             this.future = future;
             this.offset = offset;
@@ -206,7 +332,8 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
                         if (s == Status.OK || s == Status.BUFFER_OVERFLOW) {
                             // Need to write out the bytes and may need to read from
                             // the source again to empty it
-                        } else {
+                        }
+                        else {
                             // Status.BUFFER_UNDERFLOW - only happens on unwrap
                             // Status.CLOSED - unexpected
                             throw new IllegalStateException(sm.getString(
@@ -238,7 +365,8 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
                 if (writing.compareAndSet(true, false)) {
                     future.complete(Long.valueOf(written));
-                } else {
+                }
+                else {
                     future.fail(new IllegalStateException(sm.getString(
                             "asyncChannelWrapperSecure.wrongStateWrite")));
                 }
@@ -249,13 +377,12 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
         }
     }
 
-
     private class ReadTask implements Runnable {
 
         private final ByteBuffer dest;
-        private final WrapperFuture<Integer,?> future;
+        private final WrapperFuture<Integer, ?> future;
 
-        public ReadTask(ByteBuffer dest, WrapperFuture<Integer,?> future) {
+        public ReadTask(ByteBuffer dest, WrapperFuture<Integer, ?> future) {
             this.dest = dest;
             this.future = future;
         }
@@ -292,7 +419,8 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
                             // sufficient data in the socketReadBuffer to
                             // support further reads without reading from the
                             // socket
-                        } else if (s == Status.BUFFER_UNDERFLOW) {
+                        }
+                        else if (s == Status.BUFFER_UNDERFLOW) {
                             // There is partial data in the socketReadBuffer
                             if (read == 0) {
                                 // Need more data before the partial data can be
@@ -301,7 +429,8 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
                             }
                             // else return the data we have and deal with the
                             // partial data on the next read
-                        } else if (s == Status.BUFFER_OVERFLOW) {
+                        }
+                        else if (s == Status.BUFFER_OVERFLOW) {
                             // Not enough space in the destination buffer to
                             // store all of the data. We could use a bytes read
                             // value of -bufferSizeRequired to signal the new
@@ -310,11 +439,13 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
                             if (reading.compareAndSet(true, false)) {
                                 throw new ReadBufferOverflowException(sslEngine.
                                         getSession().getApplicationBufferSize());
-                            } else {
+                            }
+                            else {
                                 future.fail(new IllegalStateException(sm.getString(
                                         "asyncChannelWrapperSecure.wrongStateRead")));
                             }
-                        } else {
+                        }
+                        else {
                             // Status.CLOSED - unexpected
                             throw new IllegalStateException(sm.getString(
                                     "asyncChannelWrapperSecure.statusUnwrap"));
@@ -328,7 +459,8 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
                                 runnable = sslEngine.getDelegatedTask();
                             }
                         }
-                    } else {
+                    }
+                    else {
                         forceRead = true;
                     }
                 }
@@ -336,27 +468,27 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
                 if (reading.compareAndSet(true, false)) {
                     future.complete(Integer.valueOf(read));
-                } else {
+                }
+                else {
                     future.fail(new IllegalStateException(sm.getString(
                             "asyncChannelWrapperSecure.wrongStateRead")));
                 }
             } catch (RuntimeException | ReadBufferOverflowException | SSLException | EOFException |
-                    ExecutionException | InterruptedException e) {
+                     ExecutionException | InterruptedException e) {
                 reading.set(false);
                 future.fail(e);
             }
         }
     }
 
-
     private class WebSocketSslHandshakeThread extends Thread {
 
-        private final WrapperFuture<Void,Void> hFuture;
+        private final WrapperFuture<Void, Void> hFuture;
 
         private HandshakeStatus handshakeStatus;
         private Status resultStatus;
 
-        public WebSocketSslHandshakeThread(WrapperFuture<Void,Void> hFuture) {
+        public WebSocketSslHandshakeThread(WrapperFuture<Void, Void> hFuture) {
             this.hFuture = hFuture;
         }
 
@@ -372,7 +504,7 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
                 boolean handshaking = true;
 
-                while(handshaking) {
+                while (handshaking) {
                     switch (handshakeStatus) {
                         case NEED_WRAP: {
                             socketWriteBuffer.clear();
@@ -442,144 +574,6 @@ public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
             if (!wrap && result.bytesProduced() != 0) {
                 throw new SSLException(sm.getString("asyncChannelWrapperSecure.check.unwrap"));
             }
-        }
-    }
-
-
-    private static class WrapperFuture<T,A> implements Future<T> {
-
-        private final CompletionHandler<T,A> handler;
-        private final A attachment;
-
-        private volatile T result = null;
-        private volatile Throwable throwable = null;
-        private CountDownLatch completionLatch = new CountDownLatch(1);
-
-        public WrapperFuture() {
-            this(null, null);
-        }
-
-        public WrapperFuture(CompletionHandler<T,A> handler, A attachment) {
-            this.handler = handler;
-            this.attachment = attachment;
-        }
-
-        public void complete(T result) {
-            this.result = result;
-            completionLatch.countDown();
-            if (handler != null) {
-                handler.completed(result, attachment);
-            }
-        }
-
-        public void fail(Throwable t) {
-            throwable = t;
-            completionLatch.countDown();
-            if (handler != null) {
-                handler.failed(throwable, attachment);
-            }
-        }
-
-        @Override
-        public final boolean cancel(boolean mayInterruptIfRunning) {
-            // Could support cancellation by closing the connection
-            return false;
-        }
-
-        @Override
-        public final boolean isCancelled() {
-            // Could support cancellation by closing the connection
-            return false;
-        }
-
-        @Override
-        public final boolean isDone() {
-            return completionLatch.getCount() > 0;
-        }
-
-        @Override
-        public T get() throws InterruptedException, ExecutionException {
-            completionLatch.await();
-            if (throwable != null) {
-                throw new ExecutionException(throwable);
-            }
-            return result;
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit)
-                throws InterruptedException, ExecutionException,
-                TimeoutException {
-            boolean latchResult = completionLatch.await(timeout, unit);
-            if (latchResult == false) {
-                throw new TimeoutException();
-            }
-            if (throwable != null) {
-                throw new ExecutionException(throwable);
-            }
-            return result;
-        }
-    }
-
-    private static final class LongToIntegerFuture implements Future<Integer> {
-
-        private final Future<Long> wrapped;
-
-        public LongToIntegerFuture(Future<Long> wrapped) {
-            this.wrapped = wrapped;
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return wrapped.cancel(mayInterruptIfRunning);
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return wrapped.isCancelled();
-        }
-
-        @Override
-        public boolean isDone() {
-            return wrapped.isDone();
-        }
-
-        @Override
-        public Integer get() throws InterruptedException, ExecutionException {
-            Long result = wrapped.get();
-            if (result.longValue() > Integer.MAX_VALUE) {
-                throw new ExecutionException(sm.getString(
-                        "asyncChannelWrapperSecure.tooBig", result), null);
-            }
-            return Integer.valueOf(result.intValue());
-        }
-
-        @Override
-        public Integer get(long timeout, TimeUnit unit)
-                throws InterruptedException, ExecutionException,
-                TimeoutException {
-            Long result = wrapped.get(timeout, unit);
-            if (result.longValue() > Integer.MAX_VALUE) {
-                throw new ExecutionException(sm.getString(
-                        "asyncChannelWrapperSecure.tooBig", result), null);
-            }
-            return Integer.valueOf(result.intValue());
-        }
-    }
-
-
-    private static class SecureIOThreadFactory implements ThreadFactory {
-
-        private AtomicInteger count = new AtomicInteger(0);
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("WebSocketClient-SecureIO-" + count.incrementAndGet());
-            // No need to set the context class loader. The threads will be
-            // cleaned up when the connection is closed.
-            t.setDaemon(true);
-            return t;
         }
     }
 }

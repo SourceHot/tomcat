@@ -16,13 +16,13 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.http11.InputFilter;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Input filter responsible for replaying the request body when restoring the
@@ -46,7 +46,7 @@ public class SavedRequestInputFilter implements InputFilter {
 
     @Override
     public int doRead(ApplicationBufferHandler handler) throws IOException {
-        if(input.getOffset()>= input.getEnd()) {
+        if (input.getOffset() >= input.getEnd()) {
             return -1;
         }
 

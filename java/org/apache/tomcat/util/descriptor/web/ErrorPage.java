@@ -16,9 +16,9 @@
  */
 package org.apache.tomcat.util.descriptor.web;
 
-import java.io.Serializable;
-
 import org.apache.tomcat.util.buf.UDecoder;
+
+import java.io.Serializable;
 
 /**
  * 异常页
@@ -143,7 +143,8 @@ public class ErrorPage extends XmlEncodingBase implements Serializable {
         if (exceptionType == null) {
             sb.append("errorCode=");
             sb.append(errorCode);
-        } else {
+        }
+        else {
             sb.append("exceptionType=");
             sb.append(exceptionType);
         }
@@ -156,7 +157,8 @@ public class ErrorPage extends XmlEncodingBase implements Serializable {
     public String getName() {
         if (exceptionType == null) {
             return Integer.toString(errorCode);
-        } else {
+        }
+        else {
             return exceptionType;
         }
     }

@@ -17,9 +17,6 @@
 package org.apache.catalina.startup;
 
 
-import java.util.HashMap;
-import java.util.Set;
-
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 import org.apache.juli.logging.Log;
@@ -28,14 +25,17 @@ import org.apache.tomcat.util.digester.ObjectCreateRule;
 import org.apache.tomcat.util.res.StringManager;
 import org.xml.sax.Attributes;
 
+import java.util.HashMap;
+import java.util.Set;
+
 
 /**
  * Rule implementation that creates a server listener.
  */
 public class ListenerCreateRule extends ObjectCreateRule {
 
-    private static final Log log = LogFactory.getLog(ListenerCreateRule.class);
     protected static final StringManager sm = StringManager.getManager(ListenerCreateRule.class);
+    private static final Log log = LogFactory.getLog(ListenerCreateRule.class);
 
     public ListenerCreateRule(String className, String attributeName) {
         super(className, attributeName);
@@ -51,7 +51,8 @@ public class ListenerCreateRule extends ObjectCreateRule {
                 String className = getRealClassName(attributes);
                 if (log.isDebugEnabled()) {
                     log.info(sm.getString("listener.createFailed", className), e);
-                } else {
+                }
+                else {
                     log.info(sm.getString("listener.createFailed", className));
                 }
                 Object instance = new OptionalListener(className);
@@ -64,7 +65,8 @@ public class ListenerCreateRule extends ObjectCreateRule {
                     code.append(System.lineSeparator());
                 }
             }
-        } else {
+        }
+        else {
             super.begin(namespace, name, attributes);
         }
     }
@@ -72,26 +74,32 @@ public class ListenerCreateRule extends ObjectCreateRule {
     public static class OptionalListener implements LifecycleListener {
         protected final String className;
         protected final HashMap<String, String> properties = new HashMap<>();
+
         public OptionalListener(String className) {
             this.className = className;
         }
+
         /**
          * @return the className
          */
         public String getClassName() {
             return className;
         }
+
         @Override
         public void lifecycleEvent(LifecycleEvent event) {
             // Do nothing
         }
+
         /**
          * Return a set of the property keys.
+         *
          * @return the set
          */
         public Set<String> getProperties() {
             return properties.keySet();
         }
+
         /**
          * Return a property from the protocol handler.
          *
@@ -101,10 +109,11 @@ public class ListenerCreateRule extends ObjectCreateRule {
         public Object getProperty(String name) {
             return properties.get(name);
         }
+
         /**
          * Set the given property.
          *
-         * @param name the property name
+         * @param name  the property name
          * @param value the property value
          * @return <code>true</code>
          */

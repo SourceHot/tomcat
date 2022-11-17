@@ -16,11 +16,11 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.util.Map;
-
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpointConfig;
+
+import java.util.Map;
 
 /**
  * Wrapper class for instances of POJOs annotated with
@@ -29,7 +29,7 @@ import jakarta.websocket.server.ServerEndpointConfig;
  */
 public class PojoEndpointServer extends PojoEndpointBase {
 
-    public PojoEndpointServer(Map<String,String> pathParameters, Object pojo) {
+    public PojoEndpointServer(Map<String, String> pathParameters, Object pojo) {
         super(pathParameters);
         setPojo(pojo);
     }

@@ -16,10 +16,6 @@
  */
 package org.apache.jasper.runtime;
 
-import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRequest;
@@ -28,8 +24,11 @@ import jakarta.servlet.jsp.JspApplicationContext;
 import jakarta.servlet.jsp.JspEngineInfo;
 import jakarta.servlet.jsp.JspFactory;
 import jakarta.servlet.jsp.PageContext;
-
 import org.apache.jasper.Constants;
+
+import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Implementation of JspFactory.
@@ -43,15 +42,16 @@ public class JspFactoryImpl extends JspFactory {
 
     @Override
     public PageContext getPageContext(Servlet servlet, ServletRequest request,
-            ServletResponse response, String errorPageURL, boolean needsSession,
-            int bufferSize, boolean autoflush) {
+                                      ServletResponse response, String errorPageURL, boolean needsSession,
+                                      int bufferSize, boolean autoflush) {
 
-        if( Constants.IS_SECURITY_ENABLED ) {
+        if (Constants.IS_SECURITY_ENABLED) {
             PrivilegedGetPageContext dp = new PrivilegedGetPageContext(
                     this, servlet, request, response, errorPageURL,
                     needsSession, bufferSize, autoflush);
             return AccessController.doPrivileged(dp);
-        } else {
+        }
+        else {
             return internalGetPageContext(servlet, request, response,
                     errorPageURL, needsSession,
                     bufferSize, autoflush);
@@ -60,14 +60,15 @@ public class JspFactoryImpl extends JspFactory {
 
     @Override
     public void releasePageContext(PageContext pc) {
-        if( pc == null ) {
+        if (pc == null) {
             return;
         }
-        if( Constants.IS_SECURITY_ENABLED ) {
+        if (Constants.IS_SECURITY_ENABLED) {
             PrivilegedReleasePageContext dp = new PrivilegedReleasePageContext(
-                    this,pc);
+                    this, pc);
             AccessController.doPrivileged(dp);
-        } else {
+        }
+        else {
             internalReleasePageContext(pc);
         }
     }
@@ -87,8 +88,8 @@ public class JspFactoryImpl extends JspFactory {
     }
 
     private PageContext internalGetPageContext(Servlet servlet, ServletRequest request,
-            ServletResponse response, String errorPageURL, boolean needsSession,
-            int bufferSize, boolean autoflush) {
+                                               ServletResponse response, String errorPageURL, boolean needsSession,
+                                               int bufferSize, boolean autoflush) {
 
         PageContext pc;
         if (poolSize > 0) {
@@ -101,7 +102,8 @@ public class JspFactoryImpl extends JspFactory {
             if (pc == null) {
                 pc = new PageContextImpl();
             }
-        } else {
+        }
+        else {
             pc = new PageContextImpl();
         }
 
@@ -123,21 +125,33 @@ public class JspFactoryImpl extends JspFactory {
         }
     }
 
+    @Override
+    public JspApplicationContext getJspApplicationContext(
+            final ServletContext context) {
+        if (Constants.IS_SECURITY_ENABLED) {
+            return AccessController.doPrivileged(
+                    (PrivilegedAction<JspApplicationContext>) () -> JspApplicationContextImpl.getInstance(context));
+        }
+        else {
+            return JspApplicationContextImpl.getInstance(context);
+        }
+    }
+
     private static class PrivilegedGetPageContext
             implements PrivilegedAction<PageContext> {
 
-        private JspFactoryImpl factory;
-        private Servlet servlet;
-        private ServletRequest request;
-        private ServletResponse response;
-        private String errorPageURL;
-        private boolean needsSession;
-        private int bufferSize;
-        private boolean autoflush;
+        private final JspFactoryImpl factory;
+        private final Servlet servlet;
+        private final ServletRequest request;
+        private final ServletResponse response;
+        private final String errorPageURL;
+        private final boolean needsSession;
+        private final int bufferSize;
+        private final boolean autoflush;
 
         PrivilegedGetPageContext(JspFactoryImpl factory, Servlet servlet,
-                ServletRequest request, ServletResponse response, String errorPageURL,
-                boolean needsSession, int bufferSize, boolean autoflush) {
+                                 ServletRequest request, ServletResponse response, String errorPageURL,
+                                 boolean needsSession, int bufferSize, boolean autoflush) {
             this.factory = factory;
             this.servlet = servlet;
             this.request = request;
@@ -158,11 +172,11 @@ public class JspFactoryImpl extends JspFactory {
     private static class PrivilegedReleasePageContext
             implements PrivilegedAction<Void> {
 
-        private JspFactoryImpl factory;
-        private PageContext pageContext;
+        private final JspFactoryImpl factory;
+        private final PageContext pageContext;
 
         PrivilegedReleasePageContext(JspFactoryImpl factory,
-                PageContext pageContext) {
+                                     PageContext pageContext) {
             this.factory = factory;
             this.pageContext = pageContext;
         }
@@ -174,7 +188,7 @@ public class JspFactoryImpl extends JspFactory {
         }
     }
 
-    private static final class PageContextPool  {
+    private static final class PageContextPool {
 
         private final PageContext[] pool;
 
@@ -200,16 +214,5 @@ public class JspFactoryImpl extends JspFactory {
             return item;
         }
 
-    }
-
-    @Override
-    public JspApplicationContext getJspApplicationContext(
-            final ServletContext context) {
-        if (Constants.IS_SECURITY_ENABLED) {
-            return AccessController.doPrivileged(
-                    (PrivilegedAction<JspApplicationContext>) () -> JspApplicationContextImpl.getInstance(context));
-        } else {
-            return JspApplicationContextImpl.getInstance(context);
-        }
     }
 }

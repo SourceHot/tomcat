@@ -61,17 +61,14 @@ public class TaglibDescriptorImpl implements TaglibDescriptor {
             if (other.location != null) {
                 return false;
             }
-        } else if (!location.equals(other.location)) {
+        }
+        else if (!location.equals(other.location)) {
             return false;
         }
         if (uri == null) {
-            if (other.uri != null) {
-                return false;
-            }
-        } else if (!uri.equals(other.uri)) {
-            return false;
+            return other.uri == null;
         }
-        return true;
+        else return uri.equals(other.uri);
     }
 
 }

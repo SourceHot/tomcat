@@ -17,7 +17,6 @@
 package org.apache.tomcat.util.descriptor.web;
 
 
-
 /**
  * Representation of an EJB resource reference for a web application, as
  * represented in a <code>&lt;ejb-ref&gt;</code> element in the
@@ -37,6 +36,14 @@ public class ContextEjb extends ResourceBase {
      * The name of the EJB home implementation class.
      */
     private String home = null;
+    /**
+     * The link to a Jakarta EE EJB definition.
+     */
+    private String link = null;
+    /**
+     * The name of the EJB remote implementation class.
+     */
+    private String remote = null;
 
     public String getHome() {
         return this.home;
@@ -46,12 +53,6 @@ public class ContextEjb extends ResourceBase {
         this.home = home;
     }
 
-
-    /**
-     * The link to a Jakarta EE EJB definition.
-     */
-    private String link = null;
-
     public String getLink() {
         return this.link;
     }
@@ -59,11 +60,6 @@ public class ContextEjb extends ResourceBase {
     public void setLink(String link) {
         this.link = link;
     }
-
-    /**
-     * The name of the EJB remote implementation class.
-     */
-    private String remote = null;
 
     public String getRemote() {
         return this.remote;
@@ -139,23 +135,21 @@ public class ContextEjb extends ResourceBase {
             if (other.home != null) {
                 return false;
             }
-        } else if (!home.equals(other.home)) {
+        }
+        else if (!home.equals(other.home)) {
             return false;
         }
         if (link == null) {
             if (other.link != null) {
                 return false;
             }
-        } else if (!link.equals(other.link)) {
+        }
+        else if (!link.equals(other.link)) {
             return false;
         }
         if (remote == null) {
-            if (other.remote != null) {
-                return false;
-            }
-        } else if (!remote.equals(other.remote)) {
-            return false;
+            return other.remote == null;
         }
-        return true;
+        else return remote.equals(other.remote);
     }
 }

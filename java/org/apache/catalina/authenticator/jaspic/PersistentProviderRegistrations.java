@@ -1,43 +1,35 @@
 /**
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.catalina.authenticator.jaspic;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.digester.Digester;
 import org.apache.tomcat.util.res.StringManager;
 import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Utility class for the loading and saving of JASPIC persistent provider
@@ -115,14 +107,14 @@ public final class PersistentProviderRegistrations {
 
         // Write out the providers to the temporary new file
         try (OutputStream fos = new FileOutputStream(configFileNew);
-                Writer writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+             Writer writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
             writer.write(
                     "<?xml version='1.0' encoding='utf-8'?>\n" +
-                    "<jaspic-providers\n" +
-                    "    xmlns=\"http://tomcat.apache.org/xml\"\n" +
-                    "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-                    "    xsi:schemaLocation=\"http://tomcat.apache.org/xml jaspic-providers.xsd\"\n" +
-                    "    version=\"1.0\">\n");
+                            "<jaspic-providers\n" +
+                            "    xmlns=\"http://tomcat.apache.org/xml\"\n" +
+                            "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                            "    xsi:schemaLocation=\"http://tomcat.apache.org/xml jaspic-providers.xsd\"\n" +
+                            "    version=\"1.0\">\n");
             for (Provider provider : providers.providers) {
                 writer.write("  <provider");
                 writeOptional("className", provider.getClassName(), writer);
@@ -130,7 +122,7 @@ public final class PersistentProviderRegistrations {
                 writeOptional("appContext", provider.getAppContext(), writer);
                 writeOptional("description", provider.getDescription(), writer);
                 writer.write(">\n");
-                for (Entry<String,String> entry : provider.getProperties().entrySet()) {
+                for (Entry<String, String> entry : provider.getProperties().entrySet()) {
                     writer.write("    <property name=\"");
                     writer.write(entry.getKey());
                     writer.write("\" value=\"");
@@ -195,16 +187,16 @@ public final class PersistentProviderRegistrations {
 
 
     public static class Provider {
+        private final Map<String, String> properties = new HashMap<>();
         private String className;
         private String layer;
         private String appContext;
         private String description;
-        private final Map<String,String> properties = new HashMap<>();
-
 
         public String getClassName() {
             return className;
         }
+
         public void setClassName(String className) {
             this.className = className;
         }
@@ -213,6 +205,7 @@ public final class PersistentProviderRegistrations {
         public String getLayer() {
             return layer;
         }
+
         public void setLayer(String layer) {
             this.layer = layer;
         }
@@ -221,6 +214,7 @@ public final class PersistentProviderRegistrations {
         public String getAppContext() {
             return appContext;
         }
+
         public void setAppContext(String appContext) {
             this.appContext = appContext;
         }
@@ -229,6 +223,7 @@ public final class PersistentProviderRegistrations {
         public String getDescription() {
             return description;
         }
+
         public void setDescription(String description) {
             this.description = description;
         }
@@ -247,10 +242,12 @@ public final class PersistentProviderRegistrations {
         public void setProperty(String name, String value) {
             addProperty(name, value);
         }
+
         void addProperty(String name, String value) {
             properties.put(name, value);
         }
-        public Map<String,String> getProperties() {
+
+        public Map<String, String> getProperties() {
             return properties;
         }
     }
@@ -264,6 +261,7 @@ public final class PersistentProviderRegistrations {
         public String getName() {
             return name;
         }
+
         public void setName(String name) {
             this.name = name;
         }
@@ -272,6 +270,7 @@ public final class PersistentProviderRegistrations {
         public String getValue() {
             return value;
         }
+
         public void setValue(String value) {
             this.value = value;
         }

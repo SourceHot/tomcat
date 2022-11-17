@@ -37,10 +37,10 @@ public final class ContextName {
      * Creates an instance from a context name, display name, base name,
      * directory name, WAR name or context.xml name.
      *
-     * @param name  The name to use as the basis for this object
-     * @param stripFileExtension    If a .war or .xml file extension is present
-     *                              at the end of the provided name should it be
-     *                              removed?
+     * @param name               The name to use as the basis for this object
+     * @param stripFileExtension If a .war or .xml file extension is present
+     *                           at the end of the provided name should it be
+     *                           removed?
      */
     public ContextName(String name, boolean stripFileExtension) {
 
@@ -65,7 +65,7 @@ public final class ContextName {
         if (stripFileExtension &&
                 (tmp1.toLowerCase(Locale.ENGLISH).endsWith(".war") ||
                         tmp1.toLowerCase(Locale.ENGLISH).endsWith(".xml"))) {
-            tmp1 = tmp1.substring(0, tmp1.length() -4);
+            tmp1 = tmp1.substring(0, tmp1.length() - 4);
         }
 
         baseName = tmp1;
@@ -76,20 +76,23 @@ public final class ContextName {
         if (versionIndex > -1) {
             version = baseName.substring(versionIndex + 2);
             tmp2 = baseName.substring(0, versionIndex);
-        } else {
+        }
+        else {
             version = "";
             tmp2 = baseName;
         }
 
         if (ROOT_NAME.equals(tmp2)) {
             path = "";
-        } else {
+        }
+        else {
             path = "/" + tmp2.replace(FWD_SLASH_REPLACEMENT, '/');
         }
 
         if (versionIndex > -1) {
             this.name = path + VERSION_MARKER + version;
-        } else {
+        }
+        else {
             this.name = path;
         }
     }
@@ -97,28 +100,31 @@ public final class ContextName {
     /**
      * Construct an instance from a path and version.
      *
-     * @param path      Context path to use
-     * @param version   Context version to use
+     * @param path    Context path to use
+     * @param version Context version to use
      */
     public ContextName(String path, String version) {
         // Path should never be null, '/' or '/ROOT'
         if (path == null || "/".equals(path) || "/ROOT".equals(path)) {
             this.path = "";
-        } else {
+        }
+        else {
             this.path = path;
         }
 
         // Version should never be null
         if (version == null) {
             this.version = "";
-        } else {
+        }
+        else {
             this.version = version;
         }
 
         // Name is path + version
         if (this.version.isEmpty()) {
             name = this.path;
-        } else {
+        }
+        else {
             name = this.path + VERSION_MARKER + this.version;
         }
 
@@ -126,7 +132,8 @@ public final class ContextName {
         StringBuilder tmp = new StringBuilder();
         if (this.path.isEmpty()) {
             tmp.append(ROOT_NAME);
-        } else {
+        }
+        else {
             tmp.append(this.path.substring(1).replace('/',
                     FWD_SLASH_REPLACEMENT));
         }
@@ -135,6 +142,29 @@ public final class ContextName {
             tmp.append(this.version);
         }
         this.baseName = tmp.toString();
+    }
+
+    /**
+     * Extract the final component of the given path which is assumed to be a
+     * base name and generate a {@link ContextName} from that base name.
+     *
+     * @param path The path that ends in a base name
+     * @return the {@link ContextName} generated from the given base name
+     */
+    public static ContextName extractFromPath(String path) {
+        // Convert '\' to '/'
+        path = path.replaceAll("\\\\", "/");
+        // Remove trailing '/'. Use while just in case a value ends in ///
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        int lastSegment = path.lastIndexOf('/');
+        if (lastSegment > 0) {
+            path = path.substring(lastSegment + 1);
+        }
+
+        return new ContextName(path, true);
     }
 
     public String getBaseName() {
@@ -157,7 +187,8 @@ public final class ContextName {
         StringBuilder tmp = new StringBuilder();
         if ("".equals(path)) {
             tmp.append('/');
-        } else {
+        }
+        else {
             tmp.append(path);
         }
 
@@ -172,30 +203,5 @@ public final class ContextName {
     @Override
     public String toString() {
         return getDisplayName();
-    }
-
-
-    /**
-     * Extract the final component of the given path which is assumed to be a
-     * base name and generate a {@link ContextName} from that base name.
-     *
-     * @param path The path that ends in a base name
-     *
-     * @return the {@link ContextName} generated from the given base name
-     */
-    public static ContextName extractFromPath(String path) {
-        // Convert '\' to '/'
-        path = path.replaceAll("\\\\", "/");
-        // Remove trailing '/'. Use while just in case a value ends in ///
-        while (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-
-        int lastSegment = path.lastIndexOf('/');
-        if (lastSegment > 0) {
-            path = path.substring(lastSegment + 1);
-        }
-
-        return new ContextName(path, true);
     }
 }

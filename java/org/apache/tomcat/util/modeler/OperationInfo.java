@@ -16,13 +16,12 @@
  */
 package org.apache.tomcat.util.modeler;
 
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
 
 /**
  * <p>Internal configuration information for an <code>Operation</code>
@@ -35,7 +34,13 @@ public class OperationInfo extends FeatureInfo {
     private static final long serialVersionUID = 4418342922072614875L;
 
     // ----------------------------------------------------------- Constructors
+    protected final ReadWriteLock parametersLock = new ReentrantReadWriteLock();
 
+
+    // ----------------------------------------------------- Instance Variables
+    protected String impact = "UNKNOWN";
+    protected String role = "operation";
+    protected ParameterInfo[] parameters = new ParameterInfo[0];
     /**
      * Standard zero-arguments constructor.
      */
@@ -44,20 +49,12 @@ public class OperationInfo extends FeatureInfo {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-    protected String impact = "UNKNOWN";
-    protected String role = "operation";
-    protected final ReadWriteLock parametersLock = new ReentrantReadWriteLock();
-    protected ParameterInfo parameters[] = new ParameterInfo[0];
-
-
     // ------------------------------------------------------------- Properties
 
     /**
      * @return the "impact" of this operation, which should be
-     *  a (case-insensitive) string value "ACTION", "ACTION_INFO",
-     *  "INFO", or "UNKNOWN".
+     * a (case-insensitive) string value "ACTION", "ACTION_INFO",
+     * "INFO", or "UNKNOWN".
      */
     public String getImpact() {
         return this.impact;
@@ -66,7 +63,8 @@ public class OperationInfo extends FeatureInfo {
     public void setImpact(String impact) {
         if (impact == null) {
             this.impact = null;
-        } else {
+        }
+        else {
             this.impact = impact.toUpperCase(Locale.ENGLISH);
         }
     }
@@ -90,7 +88,7 @@ public class OperationInfo extends FeatureInfo {
      * operation.
      */
     public String getReturnType() {
-        if(type == null) {
+        if (type == null) {
             type = "void";
         }
         return type;
@@ -126,7 +124,7 @@ public class OperationInfo extends FeatureInfo {
         Lock writeLock = parametersLock.writeLock();
         writeLock.lock();
         try {
-            ParameterInfo results[] = new ParameterInfo[parameters.length + 1];
+            ParameterInfo[] results = new ParameterInfo[parameters.length + 1];
             System.arraycopy(parameters, 0, results, 0, parameters.length);
             results[parameters.length] = parameter;
             parameters = results;
@@ -140,6 +138,7 @@ public class OperationInfo extends FeatureInfo {
     /**
      * Create and return a <code>ModelMBeanOperationInfo</code> object that
      * corresponds to the attribute described by this instance.
+     *
      * @return the operation info
      */
     MBeanOperationInfo createOperationInfo() {
@@ -150,23 +149,25 @@ public class OperationInfo extends FeatureInfo {
             int impact = MBeanOperationInfo.UNKNOWN;
             if ("ACTION".equals(getImpact())) {
                 impact = MBeanOperationInfo.ACTION;
-            } else if ("ACTION_INFO".equals(getImpact())) {
+            }
+            else if ("ACTION_INFO".equals(getImpact())) {
                 impact = MBeanOperationInfo.ACTION_INFO;
-            } else if ("INFO".equals(getImpact())) {
+            }
+            else if ("INFO".equals(getImpact())) {
                 impact = MBeanOperationInfo.INFO;
             }
 
             info = new MBeanOperationInfo(getName(), getDescription(),
-                                          getMBeanParameterInfo(),
-                                          getReturnType(), impact);
+                    getMBeanParameterInfo(),
+                    getReturnType(), impact);
         }
-        return (MBeanOperationInfo)info;
+        return (MBeanOperationInfo) info;
     }
 
     protected MBeanParameterInfo[] getMBeanParameterInfo() {
-        ParameterInfo params[] = getSignature();
-        MBeanParameterInfo parameters[] =
-            new MBeanParameterInfo[params.length];
+        ParameterInfo[] params = getSignature();
+        MBeanParameterInfo[] parameters =
+                new MBeanParameterInfo[params.length];
         for (int i = 0; i < params.length; i++) {
             parameters[i] = params[i].createParameterInfo();
         }

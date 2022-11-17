@@ -1,19 +1,19 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package jakarta.servlet;
 
 import java.util.Collection;
@@ -38,10 +38,10 @@ public interface FilterRegistration extends Registration {
      *                        processed by this filter
      * @throws IllegalArgumentException if the list of servlet names is empty
      *                                  or null
-     * @throws IllegalStateException if the associated ServletContext has
-     *                               already been initialised
+     * @throws IllegalStateException    if the associated ServletContext has
+     *                                  already been initialised
      */
-    public void addMappingForServletNames(
+    void addMappingForServletNames(
             EnumSet<DispatcherType> dispatcherTypes,
             boolean isMatchAfter, String... servletNames);
 
@@ -51,7 +51,7 @@ public interface FilterRegistration extends Registration {
      *
      * @return a Collection of the Servlet name mappings
      */
-    public Collection<String> getServletNameMappings();
+    Collection<String> getServletNameMappings();
 
     /**
      * Add a mapping for this filter to one or more URL patterns.
@@ -65,10 +65,10 @@ public interface FilterRegistration extends Registration {
      *                        applied
      * @throws IllegalArgumentException if the list of URL patterns is empty or
      *                                  null
-     * @throws IllegalStateException if the associated ServletContext has
-     *                               already been initialised
+     * @throws IllegalStateException    if the associated ServletContext has
+     *                                  already been initialised
      */
-    public void addMappingForUrlPatterns(
+    void addMappingForUrlPatterns(
             EnumSet<DispatcherType> dispatcherTypes,
             boolean isMatchAfter, String... urlPatterns);
 
@@ -78,13 +78,13 @@ public interface FilterRegistration extends Registration {
      *
      * @return a Collection of the URL pattern mappings
      */
-    public Collection<String> getUrlPatternMappings();
+    Collection<String> getUrlPatternMappings();
 
     /**
      * Interface through which a Filter registered via one of the addFilter
      * methods on ServletContext may be further configured.
      */
-    public static interface Dynamic extends FilterRegistration, Registration.Dynamic {
+    interface Dynamic extends FilterRegistration, Registration.Dynamic {
         // No additional methods
     }
 }

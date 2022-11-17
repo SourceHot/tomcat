@@ -29,7 +29,6 @@ import java.util.Deque;
  * </p>
  *
  * @param <T> the type of object in the pool
- *
  * @since 2.0
  */
 public interface PooledObject<T> extends Comparable<PooledObject<T>> {
@@ -44,9 +43,9 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
     /**
      * Orders instances based on idle time - i.e. the length of time since the
      * instance was returned to the pool. Used by the GKOP idle object evictor.
-     *<p>
+     * <p>
      * Note: This class has a natural ordering that is inconsistent with
-     *       equals if distinct objects have the same identity hash code.
+     * equals if distinct objects have the same identity hash code.
      * </p>
      * <p>
      * {@inheritDoc}
@@ -68,8 +67,7 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
      *
      * @param idleQueue The queue of idle objects to which the object should be
      *                  returned.
-     *
-     * @return  Currently not used.
+     * @return Currently not used.
      */
     boolean endEvictionTest(Deque<PooledObject<T>> idleQueue);
 
@@ -268,6 +266,7 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
 
     /**
      * Gets the state of this object.
+     *
      * @return state
      */
     PooledObjectState getState();
@@ -295,7 +294,7 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
      * the stack trace of the last code to use this object (if available) to
      * the supplied writer.
      *
-     * @param   writer  The destination for the debug output.
+     * @param writer The destination for the debug output.
      */
     void printStackTrace(PrintWriter writer);
 
@@ -304,8 +303,8 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
      * implementation will need to record the stack trace of the last caller to
      * borrow this object.
      *
-     * @param   logAbandoned    The new configuration setting for abandoned
-     *                          object tracking.
+     * @param logAbandoned The new configuration setting for abandoned
+     *                     object tracking.
      */
     void setLogAbandoned(boolean logAbandoned);
 
@@ -326,15 +325,15 @@ public interface PooledObject<T> extends Comparable<PooledObject<T>> {
      * {@link PooledObjectState#EVICTION} state.
      *
      * @return {@code true} if the object was placed in the
-     *         {@link PooledObjectState#EVICTION} state otherwise
-     *         {@code false}.
+     * {@link PooledObjectState#EVICTION} state otherwise
+     * {@code false}.
      */
     boolean startEvictionTest();
 
     /**
      * Gets a String form of the wrapper for debug purposes. The format is
      * not fixed and may change at any time.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override

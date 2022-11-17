@@ -16,11 +16,11 @@
  */
 package org.apache.catalina.webresources;
 
-import java.util.jar.JarEntry;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.UriUtil;
+
+import java.util.jar.JarEntry;
 
 /**
  * Represents a single resource (file or directory) that is located within a
@@ -32,7 +32,7 @@ public class WarResource extends AbstractSingleArchiveResource {
 
 
     public WarResource(AbstractArchiveResourceSet archiveResourceSet, String webAppPath,
-            String baseUrl, JarEntry jarEntry) {
+                       String baseUrl, JarEntry jarEntry) {
         super(archiveResourceSet, webAppPath, "war:" + baseUrl + UriUtil.getWarSeparator(),
                 jarEntry, baseUrl);
     }

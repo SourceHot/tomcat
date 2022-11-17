@@ -16,12 +16,12 @@
  */
 package org.apache.coyote.http2;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.apache.tomcat.util.res.StringManager;
 
 public class HPackHuffman {
 
@@ -335,7 +335,8 @@ public class HPackHuffman {
                     }
                 }
                 newVal = LOW_TERMINAL_BIT | i;
-            } else {
+            }
+            else {
                 int highPos = allocated++;
                 currentCode[highPos] = high;
                 newVal = highPos;
@@ -351,7 +352,8 @@ public class HPackHuffman {
                     }
                 }
                 newVal |= LOW_TERMINAL_BIT | i;
-            } else {
+            }
+            else {
                 int lowPos = allocated++;
                 currentCode[lowPos] = low;
                 newVal |= lowPos;
@@ -369,7 +371,6 @@ public class HPackHuffman {
      * @param data   The byte buffer
      * @param length The length of data from the buffer to decode
      * @param target The target for the decompressed data
-     *
      * @throws HpackException If the Huffman encoded value in HPACK headers did
      *                        not end with EOS padding
      */
@@ -390,19 +391,22 @@ public class HPackHuffman {
                         treePos = val & LOW_MASK;
                         eosBits = false;
                         eosBitCount = 0;
-                    } else {
+                    }
+                    else {
                         target.append((char) (val & LOW_MASK));
                         treePos = 0;
                         eosBits = true;
                     }
-                } else {
+                }
+                else {
                     if (eosBits) {
                         eosBitCount++;
                     }
                     //bit not set, we want the lower part of the tree
                     if ((val & HIGH_TERMINAL_BIT) == 0) {
                         treePos = (val >> 16) & LOW_MASK;
-                    } else {
+                    }
+                    else {
                         if (eosBitCount != 0) {
                             // This must be the EOS symbol which MUST be treated
                             // as an error
@@ -432,8 +436,8 @@ public class HPackHuffman {
      * the buffer, or the encoded version is bigger than the original it will
      * return false and not modify the buffers position.
      *
-     * @param buffer   The buffer to encode into
-     * @param toEncode The string to encode
+     * @param buffer         The buffer to encode into
+     * @param toEncode       The string to encode
      * @param forceLowercase If the string should be encoded in lower case
      * @return true if encoding succeeded
      */
@@ -452,7 +456,7 @@ public class HPackHuffman {
                 throw new IllegalArgumentException(sm.getString("hpack.invalidCharacter",
                         Character.toString(c), Integer.valueOf(c)));
             }
-            if(forceLowercase) {
+            if (forceLowercase) {
                 c = Hpack.toLower(c);
             }
             HuffmanCode code = HUFFMAN_CODES[c];
@@ -468,7 +472,7 @@ public class HPackHuffman {
         byte currentBufferByte = 0;
         for (int i = 0; i < toEncode.length(); ++i) {
             char c = toEncode.charAt(i);
-            if(forceLowercase) {
+            if (forceLowercase) {
                 c = Hpack.toLower(c);
             }
             HuffmanCode code = HUFFMAN_CODES[c];
@@ -476,7 +480,8 @@ public class HPackHuffman {
                 //it fits in the current byte
                 currentBufferByte |= ((code.value & 0xFF) << 8 - (code.length + bytePos));
                 bytePos += code.length;
-            } else {
+            }
+            else {
                 //it does not fit, it may need up to 4 bytes
                 int val = code.value;
                 int rem = code.length;
@@ -488,14 +493,16 @@ public class HPackHuffman {
                     int remainingInByte = 8 - bytePos;
                     if (rem > remainingInByte) {
                         currentBufferByte |= (val >> (rem - remainingInByte));
-                    } else {
+                    }
+                    else {
                         currentBufferByte |= (val << (remainingInByte - rem));
                     }
                     if (rem > remainingInByte) {
                         buffer.put(currentBufferByte);
                         currentBufferByte = 0;
                         bytePos = 0;
-                    } else {
+                    }
+                    else {
                         bytePos = rem;
                     }
                     rem -= remainingInByte;
@@ -567,11 +574,7 @@ public class HPackHuffman {
             if (length != that.length) {
                 return false;
             }
-            if (value != that.value) {
-                return false;
-            }
-
-            return true;
+            return value == that.value;
         }
 
         @Override

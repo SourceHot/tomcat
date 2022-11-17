@@ -16,19 +16,9 @@
  */
 package org.apache.catalina.core;
 
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.catalina.*;
 
-import org.apache.catalina.Container;
-import org.apache.catalina.ContainerEvent;
-import org.apache.catalina.ContainerListener;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Host;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This listener must be declared in server.xml as a Server listener, possibly optional.
@@ -42,6 +32,7 @@ public abstract class FrameworkListener implements LifecycleListener, ContainerL
 
     /**
      * Create a lifecycle listener which will then be added to the specified context.
+     *
      * @param context the associated Context
      * @return the lifecycle listener
      */
@@ -62,7 +53,8 @@ public abstract class FrameworkListener implements LifecycleListener, ContainerL
         String type = event.getType();
         if (Container.ADD_CHILD_EVENT.equals(type)) {
             processContainerAddChild((Container) event.getData());
-        } else if (Container.REMOVE_CHILD_EVENT.equals(type)) {
+        }
+        else if (Container.REMOVE_CHILD_EVENT.equals(type)) {
             processContainerRemoveChild((Container) event.getData());
         }
     }
@@ -101,9 +93,11 @@ public abstract class FrameworkListener implements LifecycleListener, ContainerL
     protected void processContainerAddChild(Container child) {
         if (child instanceof Context) {
             registerContextListener((Context) child);
-        } else if (child instanceof Engine) {
+        }
+        else if (child instanceof Engine) {
             registerListenersForEngine((Engine) child);
-        } else if (child instanceof Host) {
+        }
+        else if (child instanceof Host) {
             registerListenersForHost((Host) child);
         }
     }
@@ -114,7 +108,8 @@ public abstract class FrameworkListener implements LifecycleListener, ContainerL
             if (listener != null) {
                 child.removeLifecycleListener(listener);
             }
-        } else if (child instanceof Host || child instanceof Engine) {
+        }
+        else if (child instanceof Host || child instanceof Engine) {
             child.removeContainerListener(this);
         }
     }

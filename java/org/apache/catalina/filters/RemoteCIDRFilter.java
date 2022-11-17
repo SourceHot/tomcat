@@ -16,6 +16,15 @@
  */
 package org.apache.catalina.filters;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.catalina.util.NetMask;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -24,16 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.catalina.util.NetMask;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 public final class RemoteCIDRFilter extends FilterBase {
 
@@ -63,7 +62,7 @@ public final class RemoteCIDRFilter extends FilterBase {
      * Return a string representation of the {@link NetMask} list in #allow.
      *
      * @return the #allow list as a string, without the leading '[' and trailing
-     *         ']'
+     * ']'
      */
     public String getAllow() {
         return allow.toString().replace("[", "").replace("]", "");
@@ -96,7 +95,7 @@ public final class RemoteCIDRFilter extends FilterBase {
      * Return a string representation of the {@link NetMask} list in #deny.
      *
      * @return the #deny list as string, without the leading '[' and trailing
-     *         ']'
+     * ']'
      */
     public String getDeny() {
         return deny.toString().replace("[", "").replace("]", "");
@@ -123,7 +122,6 @@ public final class RemoteCIDRFilter extends FilterBase {
 
         throw new IllegalArgumentException(sm.getString("remoteCidrFilter.invalid", "deny"));
     }
-
 
 
     @Override
@@ -189,12 +187,9 @@ public final class RemoteCIDRFilter extends FilterBase {
         }
 
         // Allow if deny is specified but allow isn't
-        if (!deny.isEmpty() && allow.isEmpty()) {
-            return true;
-        }
+        return !deny.isEmpty() && allow.isEmpty();
 
         // Deny this request
-        return false;
     }
 
 
@@ -210,7 +205,7 @@ public final class RemoteCIDRFilter extends FilterBase {
      * Fill a {@link NetMask} list from a string input containing a
      * comma-separated list of (hopefully valid) {@link NetMask}s.
      *
-     * @param input The input string
+     * @param input  The input string
      * @param target The list to fill
      * @return a string list of processing errors (empty when no errors)
      */

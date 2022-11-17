@@ -16,32 +16,18 @@
  */
 package org.apache.el.lang;
 
+import jakarta.el.*;
+import org.apache.el.MethodExpressionImpl;
+import org.apache.el.MethodExpressionLiteral;
+import org.apache.el.ValueExpressionImpl;
+import org.apache.el.parser.*;
+import org.apache.el.util.ConcurrentCache;
+import org.apache.el.util.MessageFactory;
+
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELException;
-import jakarta.el.FunctionMapper;
-import jakarta.el.MethodExpression;
-import jakarta.el.ValueExpression;
-import jakarta.el.VariableMapper;
-
-import org.apache.el.MethodExpressionImpl;
-import org.apache.el.MethodExpressionLiteral;
-import org.apache.el.ValueExpressionImpl;
-import org.apache.el.parser.AstDeferredExpression;
-import org.apache.el.parser.AstDynamicExpression;
-import org.apache.el.parser.AstFunction;
-import org.apache.el.parser.AstIdentifier;
-import org.apache.el.parser.AstLiteralExpression;
-import org.apache.el.parser.AstValue;
-import org.apache.el.parser.ELParser;
-import org.apache.el.parser.Node;
-import org.apache.el.parser.NodeVisitor;
-import org.apache.el.util.ConcurrentCache;
-import org.apache.el.util.MessageFactory;
 
 /**
  * @author Jacob Hookom [jacob@hookom.net]
@@ -52,27 +38,25 @@ public final class ExpressionBuilder implements NodeVisitor {
 
     private static final int CACHE_SIZE;
     private static final String CACHE_SIZE_PROP =
-        "org.apache.el.ExpressionBuilder.CACHE_SIZE";
+            "org.apache.el.ExpressionBuilder.CACHE_SIZE";
+    private static final ConcurrentCache<String, Node> expressionCache =
+            new ConcurrentCache<>(CACHE_SIZE);
 
     static {
         String cacheSizeStr;
         if (System.getSecurityManager() == null) {
             cacheSizeStr = System.getProperty(CACHE_SIZE_PROP, "5000");
-        } else {
+        }
+        else {
             cacheSizeStr = AccessController.doPrivileged(
                     (PrivilegedAction<String>) () -> System.getProperty(CACHE_SIZE_PROP, "5000"));
         }
         CACHE_SIZE = Integer.parseInt(cacheSizeStr);
     }
 
-    private static final ConcurrentCache<String, Node> expressionCache =
-            new ConcurrentCache<>(CACHE_SIZE);
-
-    private FunctionMapper fnMapper;
-
-    private VariableMapper varMapper;
-
     private final String expression;
+    private FunctionMapper fnMapper;
+    private VariableMapper varMapper;
 
     public ExpressionBuilder(String expression, ELContext ctx)
             throws ELException {
@@ -89,12 +73,12 @@ public final class ExpressionBuilder implements NodeVisitor {
         }
     }
 
-    public static final Node createNode(String expr) throws ELException {
+    public static Node createNode(String expr) throws ELException {
         Node n = createNodeInternal(expr);
         return n;
     }
 
-    private static final Node createNodeInternal(String expr)
+    private static Node createNodeInternal(String expr)
             throws ELException {
         if (expr == null) {
             throw new ELException(MessageFactory.get("error.null"));
@@ -106,7 +90,8 @@ public final class ExpressionBuilder implements NodeVisitor {
             try {
                 if (parser == null) {
                     parser = new ELParser(new StringReader(expr));
-                } else {
+                }
+                else {
                     parser.ReInit(new StringReader(expr));
                 }
                 n = parser.CompositeExpression();
@@ -115,7 +100,8 @@ public final class ExpressionBuilder implements NodeVisitor {
                 int numChildren = n.jjtGetNumChildren();
                 if (numChildren == 1) {
                     n = n.jjtGetChild(0);
-                } else {
+                }
+                else {
                     Class<?> type = null;
                     Node child = null;
                     for (int i = 0; i < numChildren; i++) {
@@ -125,7 +111,8 @@ public final class ExpressionBuilder implements NodeVisitor {
                         }
                         if (type == null) {
                             type = child.getClass();
-                        } else {
+                        }
+                        else {
                             if (!type.equals(child.getClass())) {
                                 throw new ELException(MessageFactory.get(
                                         "error.mixed", expr));
@@ -157,7 +144,8 @@ public final class ExpressionBuilder implements NodeVisitor {
         } catch (Exception e) {
             if (e instanceof ELException) {
                 throw (ELException) e;
-            } else {
+            }
+            else {
                 throw (new ELException(e));
             }
         }
@@ -224,7 +212,8 @@ public final class ExpressionBuilder implements NodeVisitor {
                         "error.fnMapper.paramcount", funcNode.getOutputName(),
                         "" + methodParameterCount, "" + node.jjtGetChild(0).jjtGetNumChildren()));
             }
-        } else if (node instanceof AstIdentifier && this.varMapper != null) {
+        }
+        else if (node instanceof AstIdentifier && this.varMapper != null) {
             String variable = node.getImage();
 
             // simply capture it
@@ -240,7 +229,7 @@ public final class ExpressionBuilder implements NodeVisitor {
     }
 
     public MethodExpression createMethodExpression(Class<?> expectedReturnType,
-            Class<?>[] expectedParamTypes) throws ELException {
+                                                   Class<?>[] expectedParamTypes) throws ELException {
         Node n = this.build();
         if (!n.isParametersProvided() && expectedParamTypes == null) {
             throw new NullPointerException(MessageFactory
@@ -249,10 +238,12 @@ public final class ExpressionBuilder implements NodeVisitor {
         if (n instanceof AstValue || n instanceof AstIdentifier) {
             return new MethodExpressionImpl(expression, n, this.fnMapper,
                     this.varMapper, expectedReturnType, expectedParamTypes);
-        } else if (n instanceof AstLiteralExpression) {
+        }
+        else if (n instanceof AstLiteralExpression) {
             return new MethodExpressionLiteral(expression, expectedReturnType,
                     expectedParamTypes);
-        } else {
+        }
+        else {
             throw new ELException(MessageFactory.get("error.invalidMethodExpression", expression));
         }
     }
@@ -266,10 +257,8 @@ public final class ExpressionBuilder implements NodeVisitor {
 
         public static final int DEFAULT_SIZE = 128;
         private static final int DEFAULT_LIMIT = -1;
-
-        private int size;
         private final int limit;
-
+        private int size;
         /*
          * Points to the next available object in the stack
          */
@@ -294,7 +283,8 @@ public final class ExpressionBuilder implements NodeVisitor {
             if (index == size) {
                 if (limit == -1 || size < limit) {
                     expand();
-                } else {
+                }
+                else {
                     index--;
                     return false;
                 }

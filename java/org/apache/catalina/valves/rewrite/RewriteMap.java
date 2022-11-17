@@ -29,7 +29,7 @@ import org.apache.tomcat.util.res.StringManager;
  *
  * RewriteRule ^/(.*)$ ${uc:$1}
  * </pre>
- *
+ * <p>
  * One parameter can be optionally appended to the {@code RewriteMap} directive.
  * This could be used &ndash; for example &ndash; to specify a name of a file, that
  * contains a lookup table used by the implementation of the map.
@@ -43,7 +43,7 @@ public interface RewriteMap {
      * @param params the optional parameter
      * @return value is currently ignored
      */
-    public String setParameters(String params);
+    String setParameters(String params);
 
     /**
      * Optional parameters that can be defined through the {@code RewriteMap}
@@ -72,5 +72,5 @@ public interface RewriteMap {
      * @param key used by the actual implementation to generate a mapped value
      * @return mapped value or {@code null}
      */
-    public String lookup(String key);
+    String lookup(String key);
 }

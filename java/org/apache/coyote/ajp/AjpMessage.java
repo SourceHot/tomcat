@@ -16,14 +16,14 @@
  */
 package org.apache.coyote.ajp;
 
-import java.nio.ByteBuffer;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.ByteBuffer;
 
 /**
  * A single packet for communication between the web server and the
@@ -41,37 +41,25 @@ import org.apache.tomcat.util.res.StringManager;
 public class AjpMessage {
 
 
-    private static final Log log = LogFactory.getLog(AjpMessage.class);
-
     /**
      * The string manager for this package.
      */
     protected static final StringManager sm = StringManager.getManager(AjpMessage.class);
+    private static final Log log = LogFactory.getLog(AjpMessage.class);
 
 
     // ------------------------------------------------------------ Constructor
-
-
-    public AjpMessage(int packetSize) {
-        buf = new byte[packetSize];
-    }
-
-
-    // ----------------------------------------------------- Instance Variables
-
-
     /**
      * Fixed size buffer.
      */
-    protected final byte buf[];
+    protected final byte[] buf;
 
 
+    // ----------------------------------------------------- Instance Variables
     /**
      * The current read or write position in the buffer.
      */
     protected int pos;
-
-
     /**
      * This actually means different things depending on whether the
      * packet is read or write.  For read, it's the length of the
@@ -81,8 +69,42 @@ public class AjpMessage {
     protected int len;
 
 
+    public AjpMessage(int packetSize) {
+        buf = new byte[packetSize];
+    }
+
+
     // --------------------------------------------------------- Public Methods
 
+    protected static String hexLine(byte[] buf, int start, int len) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = start; i < start + 16; i++) {
+            if (i < len + 4) {
+                sb.append(hex(buf[i]) + " ");
+            }
+            else {
+                sb.append("   ");
+            }
+        }
+        sb.append(" | ");
+        for (int i = start; i < start + 16 && i < len + 4; i++) {
+            if (!Character.isISOControl((char) buf[i])) {
+                sb.append(Character.valueOf((char) buf[i]));
+            }
+            else {
+                sb.append('.');
+            }
+        }
+        return sb.toString();
+    }
+
+    protected static String hex(int x) {
+        String h = Integer.toHexString(x);
+        if (h.length() == 1) {
+            h = "0" + h;
+        }
+        return h.substring(h.length() - 2);
+    }
 
     /**
      * Prepare this packet for accumulating a message from the container to
@@ -93,7 +115,6 @@ public class AjpMessage {
         len = 4;
         pos = 4;
     }
-
 
     /**
      * For a packet to be sent to the web server, finish the process of
@@ -106,10 +127,9 @@ public class AjpMessage {
 
         buf[0] = (byte) 0x41;
         buf[1] = (byte) 0x42;
-        buf[2] = (byte) ((dLen>>>8) & 0xFF);
+        buf[2] = (byte) ((dLen >>> 8) & 0xFF);
         buf[3] = (byte) (dLen & 0xFF);
     }
-
 
     /**
      * Return the underlying byte buffer.
@@ -119,7 +139,6 @@ public class AjpMessage {
     public byte[] getBuffer() {
         return buf;
     }
-
 
     /**
      * Return the current message length.
@@ -132,7 +151,6 @@ public class AjpMessage {
         return len;
     }
 
-
     /**
      * Add a short integer (2 bytes) to the message.
      *
@@ -143,7 +161,6 @@ public class AjpMessage {
         buf[pos++] = (byte) (val & 0xFF);
     }
 
-
     /**
      * Append a byte (1 byte) to the message.
      *
@@ -152,7 +169,6 @@ public class AjpMessage {
     public void appendByte(int val) {
         buf[pos++] = (byte) val;
     }
-
 
     /**
      * Write a MessageBytes out at the current write position. A null
@@ -190,7 +206,6 @@ public class AjpMessage {
         appendByteChunk(mb.getByteChunk());
     }
 
-
     /**
      * Write a ByteChunk out at the current write position. A null ByteChunk is
      * encoded as a string with length 0.
@@ -208,7 +223,6 @@ public class AjpMessage {
         appendBytes(bc.getBytes(), bc.getStart(), bc.getLength());
     }
 
-
     /**
      * Copy a chunk of bytes into the packet, starting at the current
      * write position.  The chunk of bytes is encoded with the length
@@ -216,8 +230,8 @@ public class AjpMessage {
      * terminating \0 (which is <B>not</B> included in the encoded
      * length).
      *
-     * @param b The array from which to copy bytes.
-     * @param off The offset into the array at which to start copying
+     * @param b        The array from which to copy bytes.
+     * @param off      The offset into the array at which to start copying
      * @param numBytes The number of bytes to copy.
      */
     public void appendBytes(byte[] b, int off, int numBytes) {
@@ -229,7 +243,6 @@ public class AjpMessage {
         pos += numBytes;
         appendByte(0);
     }
-
 
     /**
      * Copy a chunk of bytes into the packet, starting at the current
@@ -251,7 +264,6 @@ public class AjpMessage {
         appendByte(0);
     }
 
-
     private boolean checkOverflow(int numBytes) {
         if (pos + numBytes + 3 > buf.length) {
             log.error(sm.getString("ajpmessage.overflow", "" + numBytes, "" + pos),
@@ -263,7 +275,6 @@ public class AjpMessage {
         }
         return false;
     }
-
 
     /**
      * Read an integer from packet, and advance the read position past
@@ -277,24 +288,21 @@ public class AjpMessage {
         int b1 = buf[pos++] & 0xFF;
         int b2 = buf[pos++] & 0xFF;
         validatePos(pos);
-        return (b1<<8) + b2;
+        return (b1 << 8) + b2;
     }
-
 
     public int peekInt() {
         validatePos(pos + 2);
         int b1 = buf[pos] & 0xFF;
-        int b2 = buf[pos+1] & 0xFF;
-        return (b1<<8) + b2;
+        int b2 = buf[pos + 1] & 0xFF;
+        return (b1 << 8) + b2;
     }
-
 
     public byte getByte() {
         byte res = buf[pos++];
         validatePos(pos);
         return res;
     }
-
 
     public void getBytes(MessageBytes mb) {
         doGetBytes(mb, true);
@@ -312,7 +320,8 @@ public class AjpMessage {
         }
         if (terminated) {
             validatePos(pos + length + 1);
-        } else {
+        }
+        else {
             validatePos(pos + length);
         }
         mb.setBytes(buf, pos, length);
@@ -322,7 +331,6 @@ public class AjpMessage {
             pos++; // Skip the terminating \0
         }
     }
-
 
     /**
      * Read a 32 bits integer from packet, and advance the read position past
@@ -338,12 +346,11 @@ public class AjpMessage {
         b1 |= (buf[pos++] & 0xFF);
         b1 <<= 8;
         b1 |= (buf[pos++] & 0xFF);
-        b1 <<=8;
+        b1 <<= 8;
         b1 |= (buf[pos++] & 0xFF);
         validatePos(pos);
-        return  b1;
+        return b1;
     }
-
 
     public int processHeader(boolean toContainer) {
         pos = 0;
@@ -358,20 +365,20 @@ public class AjpMessage {
             }
             return -1;
         }
-        if (log.isDebugEnabled())  {
+        if (log.isDebugEnabled()) {
             log.debug("Received " + len + " " + buf[0]);
         }
         return len;
     }
-
+    // ------------------------------------------------------ Protected Methods
 
     private void dump(String prefix) {
         if (log.isDebugEnabled()) {
-            log.debug(prefix + ": " + HexUtils.toHexString(buf) + " " + pos +"/" + (len + 4));
+            log.debug(prefix + ": " + HexUtils.toHexString(buf) + " " + pos + "/" + (len + 4));
         }
         int max = pos;
         if (len + 4 > pos) {
-            max = len+4;
+            max = len + 4;
         }
         if (max > 1000) {
             max = 1000;
@@ -383,44 +390,12 @@ public class AjpMessage {
         }
     }
 
-
     private void validatePos(int posToTest) {
         if (posToTest > len + 4) {
             // Trying to read data beyond the end of the AJP message
             throw new ArrayIndexOutOfBoundsException(sm.getString(
                     "ajpMessage.invalidPos", Integer.valueOf(posToTest)));
         }
-    }
-    // ------------------------------------------------------ Protected Methods
-
-
-    protected static String hexLine(byte buf[], int start, int len) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = start; i < start + 16 ; i++) {
-            if (i < len + 4) {
-                sb.append(hex(buf[i]) + " ");
-            } else {
-                sb.append("   ");
-            }
-        }
-        sb.append(" | ");
-        for (int i = start; i < start + 16 && i < len + 4; i++) {
-            if (!Character.isISOControl((char) buf[i])) {
-                sb.append(Character.valueOf((char) buf[i]));
-            } else {
-                sb.append('.');
-            }
-        }
-        return sb.toString();
-    }
-
-
-    protected static String hex(int x) {
-        String h = Integer.toHexString(x);
-        if (h.length() == 1) {
-            h = "0" + h;
-        }
-        return h.substring(h.length() - 2);
     }
 
 

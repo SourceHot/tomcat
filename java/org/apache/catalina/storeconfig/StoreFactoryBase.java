@@ -16,34 +16,30 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * StoreFactory saves special elements.
  * Output was generate with StoreAppenders.
  */
 public class StoreFactoryBase implements IStoreFactory {
-    private static Log log = LogFactory.getLog(StoreFactoryBase.class);
-
-    private StoreRegistry registry;
-
-    private StoreAppender storeAppender = new StoreAppender();
-
     /**
      * The string manager for this package.
      */
     protected static final StringManager sm = StringManager
             .getManager(Constants.Package);
-
     /**
      * The descriptive information string for this implementation.
      */
     private static final String info = "org.apache.catalina.config.StoreFactoryBase/1.0";
+    private static final Log log = LogFactory.getLog(StoreFactoryBase.class);
+    private StoreRegistry registry;
+    private StoreAppender storeAppender = new StoreAppender();
 
     /**
      * @return descriptive information about this Factory implementation and the
@@ -63,23 +59,11 @@ public class StoreFactoryBase implements IStoreFactory {
     }
 
     /**
-     * @param storeAppender
-     *            The storeAppender to set.
+     * @param storeAppender The storeAppender to set.
      */
     @Override
     public void setStoreAppender(StoreAppender storeAppender) {
         this.storeAppender = storeAppender;
-    }
-
-    /**
-     * Set Registry
-     *
-     * @see org.apache.catalina.storeconfig.IStoreFactory#setRegistry(org.apache.catalina.storeconfig.StoreRegistry)
-     */
-    @Override
-    public void setRegistry(StoreRegistry aRegistry) {
-        registry = aRegistry;
-
     }
 
     /**
@@ -91,6 +75,17 @@ public class StoreFactoryBase implements IStoreFactory {
     public StoreRegistry getRegistry() {
 
         return registry;
+    }
+
+    /**
+     * Set Registry
+     *
+     * @see org.apache.catalina.storeconfig.IStoreFactory#setRegistry(org.apache.catalina.storeconfig.StoreRegistry)
+     */
+    @Override
+    public void setRegistry(StoreRegistry aRegistry) {
+        registry = aRegistry;
+
     }
 
     @Override
@@ -105,7 +100,7 @@ public class StoreFactoryBase implements IStoreFactory {
      * Store a server.xml element with attributes and children
      *
      * @see org.apache.catalina.storeconfig.IStoreFactory#store(java.io.PrintWriter,
-     *      int, java.lang.Object)
+     * int, java.lang.Object)
      */
     @Override
     public void store(PrintWriter aWriter, int indent, Object aElement)
@@ -123,14 +118,16 @@ public class StoreFactoryBase implements IStoreFactory {
             if (!elementDesc.isChildren()) {
                 getStoreAppender().printTag(aWriter, indent, aElement,
                         elementDesc);
-            } else {
+            }
+            else {
                 getStoreAppender().printOpenTag(aWriter, indent + 2, aElement,
                         elementDesc);
                 storeChildren(aWriter, indent + 2, aElement, elementDesc);
                 getStoreAppender().printIndent(aWriter, indent + 2);
                 getStoreAppender().printCloseTag(aWriter, elementDesc);
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("factory.storeNoDescriptor", aElement
                     .getClass()));
         }
@@ -139,27 +136,27 @@ public class StoreFactoryBase implements IStoreFactory {
     /**
      * Must Implement at subclass for custom store children handling.
      *
-     * @param aWriter Current output writer
-     * @param indent Indentation level
-     * @param aElement Current element
+     * @param aWriter     Current output writer
+     * @param indent      Indentation level
+     * @param aElement    Current element
      * @param elementDesc The element description
      * @throws Exception Configuration storing error
      */
     public void storeChildren(PrintWriter aWriter, int indent, Object aElement,
-            StoreDescription elementDesc) throws Exception {
+                              StoreDescription elementDesc) throws Exception {
     }
 
     /**
      * Store only elements from storeChildren methods that are not a transient
      * child.
      *
-     * @param aWriter Current output writer
-     * @param indent Indentation level
+     * @param aWriter     Current output writer
+     * @param indent      Indentation level
      * @param aTagElement Current element
      * @throws Exception Configuration storing error
      */
     protected void storeElement(PrintWriter aWriter, int indent,
-            Object aTagElement) throws Exception {
+                                Object aTagElement) throws Exception {
         if (aTagElement != null) {
             IStoreFactory elementFactory = getRegistry().findStoreFactory(
                     aTagElement.getClass());
@@ -170,7 +167,8 @@ public class StoreFactoryBase implements IStoreFactory {
                 if (!desc.isTransientChild(aTagElement.getClass().getName())) {
                     elementFactory.store(aWriter, indent, aTagElement);
                 }
-            } else {
+            }
+            else {
                 log.warn(sm.getString("factory.storeNoDescriptor", aTagElement
                         .getClass()));
             }
@@ -179,13 +177,14 @@ public class StoreFactoryBase implements IStoreFactory {
 
     /**
      * Save an array of elements.
-     * @param aWriter Current output writer
-     * @param indent Indentation level
+     *
+     * @param aWriter  Current output writer
+     * @param indent   Indentation level
      * @param elements Array of elements
      * @throws Exception Configuration storing error
      */
     protected void storeElementArray(PrintWriter aWriter, int indent,
-            Object[] elements) throws Exception {
+                                     Object[] elements) throws Exception {
         if (elements != null) {
             for (Object element : elements) {
                 try {

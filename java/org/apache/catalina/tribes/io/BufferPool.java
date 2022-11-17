@@ -17,22 +17,26 @@
 package org.apache.catalina.tribes.io;
 
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class BufferPool {
-    private static final Log log = LogFactory.getLog(BufferPool.class);
-
     public static final int DEFAULT_POOL_SIZE =
-            Integer.getInteger("org.apache.catalina.tribes.io.BufferPool.DEFAULT_POOL_SIZE", 100*1024*1024).intValue(); //100MB
-
+            Integer.getInteger("org.apache.catalina.tribes.io.BufferPool.DEFAULT_POOL_SIZE", 100 * 1024 * 1024).intValue(); //100MB
     protected static final StringManager sm = StringManager.getManager(BufferPool.class);
-
+    private static final Log log = LogFactory.getLog(BufferPool.class);
     protected static volatile BufferPool instance = null;
+    protected final AtomicInteger size = new AtomicInteger(0);
+    protected final ConcurrentLinkedQueue<XByteBuffer> queue =
+            new ConcurrentLinkedQueue<>();
+    protected int maxSize;
+
+    private BufferPool() {
+    }
 
     public static BufferPool getBufferPool() {
         if (instance == null) {
@@ -50,17 +54,15 @@ public class BufferPool {
         return instance;
     }
 
-    private BufferPool() {
-    }
-
     public XByteBuffer getBuffer(int minSize, boolean discard) {
         XByteBuffer buffer = queue.poll();
-        if ( buffer != null ) {
+        if (buffer != null) {
             size.addAndGet(-buffer.getCapacity());
         }
-        if ( buffer == null ) {
-            buffer = new XByteBuffer(minSize,discard);
-        } else if ( buffer.getCapacity() <= minSize ) {
+        if (buffer == null) {
+            buffer = new XByteBuffer(minSize, discard);
+        }
+        else if (buffer.getCapacity() <= minSize) {
             buffer.expand(minSize);
         }
         buffer.setDiscard(discard);
@@ -69,7 +71,7 @@ public class BufferPool {
     }
 
     public void returnBuffer(XByteBuffer buffer) {
-        if ( (size.get() + buffer.getCapacity()) <= maxSize ) {
+        if ((size.get() + buffer.getCapacity()) <= maxSize) {
             size.addAndGet(buffer.getCapacity());
             queue.offer(buffer);
         }
@@ -80,17 +82,12 @@ public class BufferPool {
         size.set(0);
     }
 
-    protected int maxSize;
-    protected final AtomicInteger size = new AtomicInteger(0);
-    protected final ConcurrentLinkedQueue<XByteBuffer> queue =
-            new ConcurrentLinkedQueue<>();
+    public int getMaxSize() {
+        return maxSize;
+    }
 
     public void setMaxSize(int bytes) {
         this.maxSize = bytes;
-    }
-
-    public int getMaxSize() {
-        return maxSize;
     }
 
 }

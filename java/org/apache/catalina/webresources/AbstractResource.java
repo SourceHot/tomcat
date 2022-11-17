@@ -16,13 +16,13 @@
  */
 package org.apache.catalina.webresources;
 
-import java.io.InputStream;
-
 import org.apache.catalina.WebResource;
 import org.apache.catalina.WebResourceRoot;
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.InputStream;
 
 public abstract class AbstractResource implements WebResource {
 
@@ -68,7 +68,7 @@ public abstract class AbstractResource implements WebResource {
                     long lastModified = getLastModified();
                     if ((contentLength >= 0) || (lastModified >= 0)) {
                         weakETag = "W/\"" + contentLength + "-" +
-                                   lastModified + "\"";
+                                lastModified + "\"";
                     }
                 }
             }
@@ -77,16 +77,14 @@ public abstract class AbstractResource implements WebResource {
     }
 
     @Override
-    public final void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
-    }
-
-
-    @Override
     public final String getMimeType() {
         return mimeType;
     }
 
+    @Override
+    public final void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
+    }
 
     @Override
     public final InputStream getInputStream() {

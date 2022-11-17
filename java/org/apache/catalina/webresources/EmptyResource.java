@@ -16,15 +16,15 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.WebResource;
+import org.apache.catalina.WebResourceRoot;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.cert.Certificate;
 import java.util.jar.Manifest;
-
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
 
 public class EmptyResource implements WebResource {
 
@@ -82,7 +82,8 @@ public class EmptyResource implements WebResource {
         int index = webAppPath.lastIndexOf('/');
         if (index == -1) {
             return webAppPath;
-        } else {
+        }
+        else {
             return webAppPath.substring(index + 1);
         }
     }
@@ -96,7 +97,8 @@ public class EmptyResource implements WebResource {
     public String getCanonicalPath() {
         if (file == null) {
             return null;
-        } else {
+        }
+        else {
             try {
                 return file.getCanonicalPath();
             } catch (IOException e) {
@@ -121,13 +123,13 @@ public class EmptyResource implements WebResource {
     }
 
     @Override
-    public void setMimeType(String mimeType) {
-        // NOOP
+    public String getMimeType() {
+        return null;
     }
 
     @Override
-    public String getMimeType() {
-        return null;
+    public void setMimeType(String mimeType) {
+        // NOOP
     }
 
     @Override

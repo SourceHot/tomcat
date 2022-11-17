@@ -34,28 +34,7 @@ public class Upgrade {
         this.protocolVersion = protocolVersion;
     }
 
-
-    public String getProtocolName() {
-        return protocolName;
-    }
-
-
-    public String getProtocolVersion() {
-        return protocolVersion;
-    }
-
-
-    @Override
-    public String toString() {
-        if (protocolVersion == null) {
-            return protocolName;
-        } else {
-            return protocolName + "/" + protocolVersion;
-        }
-    }
-
-
-    public static List<Upgrade> parse (Enumeration<String> headerValues) {
+    public static List<Upgrade> parse(Enumeration<String> headerValues) {
         try {
             List<Upgrade> result = new ArrayList<>();
 
@@ -101,6 +80,24 @@ public class Upgrade {
         } catch (IOException ioe) {
             // Should never happen with Strings
             return null;
+        }
+    }
+
+    public String getProtocolName() {
+        return protocolName;
+    }
+
+    public String getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    @Override
+    public String toString() {
+        if (protocolVersion == null) {
+            return protocolName;
+        }
+        else {
+            return protocolName + "/" + protocolVersion;
         }
     }
 }

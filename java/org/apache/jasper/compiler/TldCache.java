@@ -16,15 +16,7 @@
  */
 package org.apache.jasper.compiler;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import jakarta.servlet.ServletContext;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.tomcat.Jar;
@@ -32,6 +24,13 @@ import org.apache.tomcat.util.descriptor.tld.TaglibXml;
 import org.apache.tomcat.util.descriptor.tld.TldParser;
 import org.apache.tomcat.util.descriptor.tld.TldResourcePath;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * This class caches parsed instances of TLD files to remove the need for the
@@ -45,29 +44,20 @@ public class TldCache {
             TldCache.class.getName();
 
     private final ServletContext servletContext;
-    private final Map<String,TldResourcePath> uriTldResourcePathMap = new HashMap<>();
-    private final Map<TldResourcePath,TaglibXmlCacheEntry> tldResourcePathTaglibXmlMap =
+    private final Map<String, TldResourcePath> uriTldResourcePathMap = new HashMap<>();
+    private final Map<TldResourcePath, TaglibXmlCacheEntry> tldResourcePathTaglibXmlMap =
             new HashMap<>();
     private final TldParser tldParser;
 
 
-    public static TldCache getInstance(ServletContext servletContext) {
-        if (servletContext == null) {
-            throw new IllegalArgumentException(Localizer.getMessage(
-                    "org.apache.jasper.compiler.TldCache.servletContextNull"));
-        }
-        return (TldCache) servletContext.getAttribute(SERVLET_CONTEXT_ATTRIBUTE_NAME);
-    }
-
-
     public TldCache(ServletContext servletContext,
-            Map<String, TldResourcePath> uriTldResourcePathMap,
-            Map<TldResourcePath, TaglibXml> tldResourcePathTaglibXmlMap) {
+                    Map<String, TldResourcePath> uriTldResourcePathMap,
+                    Map<TldResourcePath, TaglibXml> tldResourcePathTaglibXmlMap) {
         this.servletContext = servletContext;
         this.uriTldResourcePathMap.putAll(uriTldResourcePathMap);
         for (Entry<TldResourcePath, TaglibXml> entry : tldResourcePathTaglibXmlMap.entrySet()) {
             TldResourcePath tldResourcePath = entry.getKey();
-            long lastModified[] = getLastModified(tldResourcePath);
+            long[] lastModified = getLastModified(tldResourcePath);
             TaglibXmlCacheEntry cacheEntry = new TaglibXmlCacheEntry(
                     entry.getValue(), lastModified[0], lastModified[1]);
             this.tldResourcePathTaglibXmlMap.put(tldResourcePath, cacheEntry);
@@ -79,12 +69,20 @@ public class TldCache {
         boolean blockExternal;
         if (blockExternalString == null) {
             blockExternal = true;
-        } else {
+        }
+        else {
             blockExternal = Boolean.parseBoolean(blockExternalString);
         }
         tldParser = new TldParser(true, validate, blockExternal);
     }
 
+    public static TldCache getInstance(ServletContext servletContext) {
+        if (servletContext == null) {
+            throw new IllegalArgumentException(Localizer.getMessage(
+                    "org.apache.jasper.compiler.TldCache.servletContextNull"));
+        }
+        return (TldCache) servletContext.getAttribute(SERVLET_CONTEXT_ATTRIBUTE_NAME);
+    }
 
     public TldResourcePath getTldResourcePath(String uri) {
         return uriTldResourcePathMap.get(uri);
@@ -96,7 +94,7 @@ public class TldCache {
         if (cacheEntry == null) {
             return null;
         }
-        long lastModified[] = getLastModified(tldResourcePath);
+        long[] lastModified = getLastModified(tldResourcePath);
         if (lastModified[0] != cacheEntry.getWebAppPathLastModified() ||
                 lastModified[1] != cacheEntry.getEntryLastModified()) {
             synchronized (cacheEntry) {
@@ -155,7 +153,7 @@ public class TldCache {
         private volatile long entryLastModified;
 
         public TaglibXmlCacheEntry(TaglibXml taglibXml, long webAppPathLastModified,
-                long entryLastModified) {
+                                   long entryLastModified) {
             this.taglibXml = taglibXml;
             this.webAppPathLastModified = webAppPathLastModified;
             this.entryLastModified = entryLastModified;

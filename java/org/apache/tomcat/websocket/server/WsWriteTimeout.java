@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.websocket.server;
 
+import org.apache.tomcat.websocket.BackgroundProcess;
+import org.apache.tomcat.websocket.BackgroundProcessManager;
+
 import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.tomcat.websocket.BackgroundProcess;
-import org.apache.tomcat.websocket.BackgroundProcessManager;
 
 /**
  * Provides timeouts for asynchronous web socket writes. On the server side we
@@ -41,7 +41,7 @@ public class WsWriteTimeout implements BackgroundProcess {
     @Override
     public void backgroundProcess() {
         // This method gets called once a second.
-        backgroundProcessCount ++;
+        backgroundProcessCount++;
 
         if (backgroundProcessCount >= processPeriod) {
             backgroundProcessCount = 0;
@@ -52,7 +52,8 @@ public class WsWriteTimeout implements BackgroundProcess {
                     // Background thread, not the thread that triggered the
                     // write so no need to use a dispatch
                     endpoint.onTimeout(false);
-                } else {
+                }
+                else {
                     // Endpoints are ordered by timeout expiry so if this point
                     // is reached there is no need to check the remaining
                     // endpoints
@@ -62,16 +63,9 @@ public class WsWriteTimeout implements BackgroundProcess {
         }
     }
 
-
-    @Override
-    public void setProcessPeriod(int period) {
-        this.processPeriod = period;
-    }
-
-
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * The default value is 1 which means asynchronous write timeouts are
      * processed every 1 second.
      */
@@ -80,6 +74,10 @@ public class WsWriteTimeout implements BackgroundProcess {
         return processPeriod;
     }
 
+    @Override
+    public void setProcessPeriod(int period) {
+        this.processPeriod = period;
+    }
 
     public void register(WsRemoteEndpointImplServer endpoint) {
         boolean result = endpoints.add(endpoint);
@@ -111,16 +109,18 @@ public class WsWriteTimeout implements BackgroundProcess {
 
         @Override
         public int compare(WsRemoteEndpointImplServer o1,
-                WsRemoteEndpointImplServer o2) {
+                           WsRemoteEndpointImplServer o2) {
 
             long t1 = o1.getTimeoutExpiry();
             long t2 = o2.getTimeoutExpiry();
 
             if (t1 < t2) {
                 return -1;
-            } else if (t1 == t2) {
+            }
+            else if (t1 == t2) {
                 return 0;
-            } else {
+            }
+            else {
                 return 1;
             }
         }

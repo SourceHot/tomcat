@@ -16,11 +16,7 @@
  */
 package jakarta.servlet.annotation;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * The annotation used to declare an initialization parameter on a
@@ -28,7 +24,7 @@ import java.lang.annotation.Target;
  * {@link jakarta.servlet.annotation.WebFilter} or
  * {@link jakarta.servlet.annotation.WebServlet} annotation.<br>
  * <br>
- *
+ * <p>
  * E.g.
  * <code>&amp;#064;WebServlet(name="TestServlet", urlPatterns={"/test"},initParams={&amp;#064;WebInitParam(name="test", value="true")})
  * public class TestServlet extends HttpServlet { ... </code><br>

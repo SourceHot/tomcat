@@ -23,7 +23,7 @@ import java.io.PrintWriter;
  * and therefore from the runtime JSP. The duplicates typically happen because
  * the compiler has multiple branches that write them, but they operate
  * independently and don't realize that the previous output was identical.
- *
+ * <p>
  * Removing these lines makes the JSP more efficient by executing fewer
  * operations during runtime.
  */
@@ -43,10 +43,12 @@ public class NewlineReductionServletWriter extends ServletWriter {
             if (lastWriteWasNewline) {
                 // do nothing
                 return;
-            } else {
+            }
+            else {
                 lastWriteWasNewline = true;
             }
-        } else {
+        }
+        else {
             lastWriteWasNewline = false;
         }
         super.printil(s);

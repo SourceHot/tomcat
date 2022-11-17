@@ -23,18 +23,18 @@ import org.apache.catalina.tribes.Member;
  */
 public class SendMessageData {
 
-    private Object message ;
-    private Member destination ;
-    private Exception exception ;
+    private final Object message;
+    private final Member destination;
+    private final Exception exception;
 
 
     /**
-     * @param message The message to send
+     * @param message     The message to send
      * @param destination Member destination
-     * @param exception Associated error
+     * @param exception   Associated error
      */
     public SendMessageData(Object message, Member destination,
-            Exception exception) {
+                           Exception exception) {
         super();
         this.message = message;
         this.destination = destination;
@@ -47,12 +47,14 @@ public class SendMessageData {
     public Member getDestination() {
         return destination;
     }
+
     /**
      * @return the exception.
      */
     public Exception getException() {
         return exception;
     }
+
     /**
      * @return the message.
      */

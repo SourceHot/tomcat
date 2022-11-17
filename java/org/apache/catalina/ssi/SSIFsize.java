@@ -17,11 +17,12 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 
-import org.apache.tomcat.util.res.StringManager;
 /**
  * Implements the Server-side #fsize command
  *
@@ -31,17 +32,16 @@ import org.apache.tomcat.util.res.StringManager;
  * @author David Becker
  */
 public final class SSIFsize implements SSICommand {
-    private static final StringManager sm = StringManager.getManager(SSIFsize.class);
     static final int ONE_KILOBYTE = 1024;
     static final int ONE_MEGABYTE = 1024 * 1024;
-
+    private static final StringManager sm = StringManager.getManager(SSIFsize.class);
 
     /**
      * @see SSICommand
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer) {
+                        String[] paramNames, String[] paramValues, PrintWriter writer) {
         long lastModified = 0;
         String configErrMsg = ssiMediator.getConfigErrMsg();
         for (int i = 0; i < paramNames.length; i++) {
@@ -59,7 +59,8 @@ public final class SSIFsize implements SSICommand {
                             virtual);
                     String configSizeFmt = ssiMediator.getConfigSizeFmt();
                     writer.write(formatSize(size, configSizeFmt));
-                } else {
+                }
+                else {
                     ssiMediator.log(sm.getString("ssiCommand.invalidAttribute", paramName));
                     writer.write(configErrMsg);
                 }
@@ -96,25 +97,31 @@ public final class SSIFsize implements SSICommand {
 
     //We try to mimic Apache here, as we do everywhere
     //All the 'magic' numbers are from the util_script.c Apache source file.
-    protected String formatSize(long size, String format) {
+    private String formatSize(long size, String format) {
         String retString = "";
         if (format.equalsIgnoreCase("bytes")) {
             DecimalFormat decimalFormat = new DecimalFormat("#,##0");
             retString = decimalFormat.format(size);
-        } else {
+        }
+        else {
             if (size < 0) {
                 retString = "-";
-            } else if (size == 0) {
+            }
+            else if (size == 0) {
                 retString = "0k";
-            } else if (size < ONE_KILOBYTE) {
+            }
+            else if (size < ONE_KILOBYTE) {
                 retString = "1k";
-            } else if (size < ONE_MEGABYTE) {
+            }
+            else if (size < ONE_MEGABYTE) {
                 retString = Long.toString((size + 512) / ONE_KILOBYTE);
                 retString += "k";
-            } else if (size < 99 * ONE_MEGABYTE) {
+            }
+            else if (size < 99 * ONE_MEGABYTE) {
                 DecimalFormat decimalFormat = new DecimalFormat("0.0M");
-                retString = decimalFormat.format(size / (double)ONE_MEGABYTE);
-            } else {
+                retString = decimalFormat.format(size / (double) ONE_MEGABYTE);
+            }
+            else {
                 retString = Long.toString((size + (529 * ONE_KILOBYTE))
                         / ONE_MEGABYTE);
                 retString += "M";

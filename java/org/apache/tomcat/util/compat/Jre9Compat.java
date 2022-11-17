@@ -16,6 +16,10 @@
  */
 package org.apache.tomcat.util.compat;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AccessibleObject;
@@ -30,10 +34,6 @@ import java.util.Deque;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.res.StringManager;
 
 class Jre9Compat extends JreCompat {
 
@@ -103,7 +103,7 @@ class Jre9Compat extends JreCompat {
             m13 = JarFile.class.getMethod("isMultiRelease");
             o14 = runtimeVersionMethod.invoke(null);
             o15 = majorMethod.invoke(o14);
-            m16 = AccessibleObject.class.getMethod("canAccess", new Class<?>[] { Object.class });
+            m16 = AccessibleObject.class.getMethod("canAccess", Object.class);
             m17 = Class.class.getMethod("getModule");
             Class<?> moduleClass = Class.forName("java.lang.Module");
             m18 = moduleClass.getMethod("isExported", String.class);
@@ -113,7 +113,8 @@ class Jre9Compat extends JreCompat {
             if (c1 == null) {
                 // Must be pre-Java 9
                 log.debug(sm.getString("jre9Compat.javaPre9"), e);
-            } else {
+            }
+            else {
                 // Should never happen - signature error in lookup?
                 log.error(sm.getString("jre9Compat.unexpected"), e);
             }
@@ -137,7 +138,8 @@ class Jre9Compat extends JreCompat {
         RUNTIME_VERSION = o14;
         if (o15 != null) {
             RUNTIME_MAJOR_VERSION = ((Integer) o15).intValue();
-        } else {
+        }
+        else {
             // Must be Java 8
             RUNTIME_MAJOR_VERSION = 8;
         }

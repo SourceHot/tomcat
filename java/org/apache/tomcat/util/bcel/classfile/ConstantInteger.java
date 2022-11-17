@@ -17,16 +17,16 @@
  */
 package org.apache.tomcat.util.bcel.classfile;
 
+import org.apache.tomcat.util.bcel.Const;
+
 import java.io.DataInput;
 import java.io.IOException;
-
-import org.apache.tomcat.util.bcel.Const;
 
 /**
  * This class is derived from the abstract {@link Constant}
  * and represents a reference to an int object.
  *
- * @see     Constant
+ * @see Constant
  */
 public final class ConstantInteger extends Constant {
 
@@ -38,7 +38,7 @@ public final class ConstantInteger extends Constant {
      *
      * @param file Input stream
      * @throws IOException If an I/O occurs reading from the provided
-     *         InoutStream
+     *                     InoutStream
      */
     ConstantInteger(final DataInput file) throws IOException {
         super(Const.CONSTANT_Integer);

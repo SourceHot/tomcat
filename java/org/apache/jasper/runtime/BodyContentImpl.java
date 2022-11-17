@@ -16,21 +16,20 @@
  */
 package org.apache.jasper.runtime;
 
+import jakarta.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.tagext.BodyContent;
+import org.apache.jasper.compiler.Localizer;
+
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 
-import jakarta.servlet.jsp.JspWriter;
-import jakarta.servlet.jsp.tagext.BodyContent;
-
-import org.apache.jasper.compiler.Localizer;
-
 /**
  * Write text to a character-output stream, buffering characters so as
  * to provide for the efficient writing of single characters, arrays,
  * and strings.
- *
+ * <p>
  * Provide support for discarding for the output that has been buffered.
  *
  * @author Rajiv Mordani
@@ -52,9 +51,10 @@ public class BodyContentImpl extends BodyContent {
 
     /**
      * Constructor.
+     *
      * @param enclosingWriter The wrapped writer
-     * @param limitBuffer <code>true</code> to discard large buffers
-     * @param tagBufferSize the buffer size
+     * @param limitBuffer     <code>true</code> to discard large buffers
+     * @param tagBufferSize   the buffer size
      */
     public BodyContentImpl(JspWriter enclosingWriter, boolean limitBuffer, int tagBufferSize) {
         super(enclosingWriter);
@@ -68,6 +68,7 @@ public class BodyContentImpl extends BodyContent {
 
     /**
      * Write a single character.
+     *
      * @param c The char to write
      * @throws IOException Error writing to wrapped writer
      */
@@ -75,10 +76,11 @@ public class BodyContentImpl extends BodyContent {
     public void write(int c) throws IOException {
         if (writer != null) {
             writer.write(c);
-        } else {
+        }
+        else {
             ensureOpen();
             if (nextChar >= bufferSize) {
-                reAllocBuff (1);
+                reAllocBuff(1);
             }
             cb[nextChar++] = (char) c;
         }
@@ -96,36 +98,39 @@ public class BodyContentImpl extends BodyContent {
      * unnecessarily.
      *
      * @param cbuf A character array
-     * @param off Offset from which to start reading characters
-     * @param len Number of characters to write
+     * @param off  Offset from which to start reading characters
+     * @param len  Number of characters to write
      * @throws IOException Error writing to wrapped writer
      */
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         if (writer != null) {
             writer.write(cbuf, off, len);
-        } else {
+        }
+        else {
             ensureOpen();
 
             if ((off < 0) || (off > cbuf.length) || (len < 0) ||
                     ((off + len) > cbuf.length) || ((off + len) < 0)) {
                 throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
+            }
+            else if (len == 0) {
                 return;
             }
 
             if (len >= bufferSize - nextChar) {
-                reAllocBuff (len);
+                reAllocBuff(len);
             }
 
             System.arraycopy(cbuf, off, cb, nextChar, len);
-            nextChar+=len;
+            nextChar += len;
         }
     }
 
     /**
      * Write an array of characters.  This method cannot be inherited from the
      * Writer class because it must suppress I/O exceptions.
+     *
      * @param buf Content to write
      * @throws IOException Error writing to wrapped writer
      */
@@ -133,7 +138,8 @@ public class BodyContentImpl extends BodyContent {
     public void write(char[] buf) throws IOException {
         if (writer != null) {
             writer.write(buf);
-        } else {
+        }
+        else {
             write(buf, 0, buf.length);
         }
     }
@@ -141,7 +147,7 @@ public class BodyContentImpl extends BodyContent {
     /**
      * Write a portion of a String.
      *
-     * @param s String to be written
+     * @param s   String to be written
      * @param off Offset from which to start reading characters
      * @param len Number of characters to be written
      * @throws IOException Error writing to wrapped writer
@@ -150,7 +156,8 @@ public class BodyContentImpl extends BodyContent {
     public void write(String s, int off, int len) throws IOException {
         if (writer != null) {
             writer.write(s, off, len);
-        } else {
+        }
+        else {
             ensureOpen();
             if (len >= bufferSize - nextChar) {
                 reAllocBuff(len);
@@ -164,6 +171,7 @@ public class BodyContentImpl extends BodyContent {
     /**
      * Write a string.  This method cannot be inherited from the Writer class
      * because it must suppress I/O exceptions.
+     *
      * @param s String to be written
      * @throws IOException Error writing to wrapped writer
      */
@@ -171,7 +179,8 @@ public class BodyContentImpl extends BodyContent {
     public void write(String s) throws IOException {
         if (writer != null) {
             writer.write(s);
-        } else {
+        }
+        else {
             write(s, 0, s.length());
         }
     }
@@ -187,7 +196,8 @@ public class BodyContentImpl extends BodyContent {
     public void newLine() throws IOException {
         if (writer != null) {
             writer.write(System.lineSeparator());
-        } else {
+        }
+        else {
             write(System.lineSeparator());
         }
     }
@@ -206,7 +216,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(boolean b) throws IOException {
         if (writer != null) {
             writer.write(b ? "true" : "false");
-        } else {
+        }
+        else {
             write(b ? "true" : "false");
         }
     }
@@ -224,7 +235,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(char c) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(c));
-        } else {
+        }
+        else {
             write(String.valueOf(c));
         }
     }
@@ -243,7 +255,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(int i) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(i));
-        } else {
+        }
+        else {
             write(String.valueOf(i));
         }
     }
@@ -262,7 +275,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(long l) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(l));
-        } else {
+        }
+        else {
             write(String.valueOf(l));
         }
     }
@@ -281,7 +295,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(float f) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(f));
-        } else {
+        }
+        else {
             write(String.valueOf(f));
         }
     }
@@ -300,7 +315,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(double d) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(d));
-        } else {
+        }
+        else {
             write(String.valueOf(d));
         }
     }
@@ -312,15 +328,15 @@ public class BodyContentImpl extends BodyContent {
      * <code>{@link #write(int)}</code> method.
      *
      * @param s The array of chars to be printed
-     *
      * @throws NullPointerException If <code>s</code> is <code>null</code>
-     * @throws IOException Error writing to wrapped writer
+     * @throws IOException          Error writing to wrapped writer
      */
     @Override
     public void print(char[] s) throws IOException {
         if (writer != null) {
             writer.write(s);
-        } else {
+        }
+        else {
             write(s);
         }
     }
@@ -342,7 +358,8 @@ public class BodyContentImpl extends BodyContent {
         }
         if (writer != null) {
             writer.write(s);
-        } else {
+        }
+        else {
             write(s);
         }
     }
@@ -361,7 +378,8 @@ public class BodyContentImpl extends BodyContent {
     public void print(Object obj) throws IOException {
         if (writer != null) {
             writer.write(String.valueOf(obj));
-        } else {
+        }
+        else {
             write(String.valueOf(obj));
         }
     }
@@ -458,7 +476,7 @@ public class BodyContentImpl extends BodyContent {
      * @throws IOException Error writing to wrapped writer
      */
     @Override
-    public void println(double x) throws IOException{
+    public void println(double x) throws IOException {
         print(x);
         println();
     }
@@ -472,7 +490,7 @@ public class BodyContentImpl extends BodyContent {
      * @throws IOException Error writing to wrapped writer
      */
     @Override
-    public void println(char x[]) throws IOException {
+    public void println(char[] x) throws IOException {
         print(x);
         println();
     }
@@ -517,7 +535,8 @@ public class BodyContentImpl extends BodyContent {
     public void clear() throws IOException {
         if (writer != null) {
             throw new IOException();
-        } else {
+        }
+        else {
             nextChar = 0;
             if (limitBuffer && (cb.length > tagBufferSize)) {
                 cb = new char[tagBufferSize];
@@ -552,7 +571,8 @@ public class BodyContentImpl extends BodyContent {
     public void close() throws IOException {
         if (writer != null) {
             writer.close();
-        } else {
+        }
+        else {
             closed = true;
         }
     }
@@ -576,7 +596,7 @@ public class BodyContentImpl extends BodyContent {
      */
     @Override
     public int getRemaining() {
-        return (writer == null) ? bufferSize-nextChar : 0;
+        return (writer == null) ? bufferSize - nextChar : 0;
     }
 
     /**
@@ -588,7 +608,7 @@ public class BodyContentImpl extends BodyContent {
      */
     @Override
     public Reader getReader() {
-        return (writer == null) ? new CharArrayReader (cb, 0, nextChar) : null;
+        return (writer == null) ? new CharArrayReader(cb, 0, nextChar) : null;
     }
 
     /**
@@ -609,7 +629,7 @@ public class BodyContentImpl extends BodyContent {
      * implementation so some things are extra efficient.
      *
      * @param out The writer into which to place the contents of this body
-     * evaluation
+     *            evaluation
      * @throws IOException Error writing to writer
      */
     @Override

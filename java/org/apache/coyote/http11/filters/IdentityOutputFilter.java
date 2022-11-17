@@ -16,12 +16,12 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.coyote.Response;
 import org.apache.coyote.http11.HttpOutputBuffer;
 import org.apache.coyote.http11.OutputFilter;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Identity output filter.
@@ -67,18 +67,21 @@ public class IdentityOutputFilter implements OutputFilter {
                     chunk.limit(chunk.position() + (int) remaining);
                     result = (int) remaining;
                     remaining = 0;
-                } else {
+                }
+                else {
                     remaining = remaining - result;
                 }
                 buffer.doWrite(chunk);
-            } else {
+            }
+            else {
                 // No more bytes left to be written : return -1 and clear the
                 // buffer
                 chunk.position(0);
                 chunk.limit(0);
                 result = -1;
             }
-        } else {
+        }
+        else {
             // If no content length was set, just write the bytes
             result = chunk.remaining();
             buffer.doWrite(chunk);

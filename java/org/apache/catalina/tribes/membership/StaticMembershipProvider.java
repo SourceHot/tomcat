@@ -16,21 +16,8 @@
  */
 package org.apache.catalina.tribes.membership;
 
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.catalina.tribes.Channel;
-import org.apache.catalina.tribes.ChannelException;
+import org.apache.catalina.tribes.*;
 import org.apache.catalina.tribes.ChannelException.FaultyMember;
-import org.apache.catalina.tribes.ChannelListener;
-import org.apache.catalina.tribes.Heartbeat;
-import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.group.Response;
 import org.apache.catalina.tribes.group.RpcCallback;
 import org.apache.catalina.tribes.group.RpcChannel;
@@ -40,6 +27,15 @@ import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
 public class StaticMembershipProvider extends MembershipProviderBase implements RpcCallback, ChannelListener, Heartbeat {
 
     protected static final StringManager sm = StringManager.getManager(StaticMembershipProvider.class);
@@ -47,8 +43,6 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
 
     protected Channel channel;
     protected RpcChannel rpcChannel;
-    private String membershipName = null;
-    private byte[] membershipId = null;
     protected ArrayList<StaticMember> staticMembers;
     protected int sendOptions = Channel.SEND_OPTIONS_ASYNCHRONOUS;
     protected long expirationTime = 5000;
@@ -60,6 +54,8 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
     protected long pingInterval = 1000;
     protected volatile boolean running = true;
     protected PingThread thread = null;
+    private String membershipName = null;
+    private byte[] membershipId = null;
 
     @Override
     public void init(Properties properties) throws Exception {
@@ -82,20 +78,20 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
 
     @Override
     public void start(int level) throws Exception {
-        if (Channel.MBR_RX_SEQ==(level & Channel.MBR_RX_SEQ)) {
+        if (Channel.MBR_RX_SEQ == (level & Channel.MBR_RX_SEQ)) {
             //no-op
         }
-        if (Channel.MBR_TX_SEQ==(level & Channel.MBR_TX_SEQ)) {
+        if (Channel.MBR_TX_SEQ == (level & Channel.MBR_TX_SEQ)) {
             //no-op
         }
         startLevel = (startLevel | level);
         if (startLevel == (Channel.MBR_RX_SEQ | Channel.MBR_TX_SEQ)) {
             startMembership(getAliveMembers(staticMembers.toArray(new Member[0])));
             running = true;
-            if ( thread == null && useThread) {
+            if (thread == null && useThread) {
                 thread = new PingThread();
                 thread.setDaemon(true);
-                thread.setName("StaticMembership.PingThread[" + this.channel.getName() +"]");
+                thread.setName("StaticMembership.PingThread[" + this.channel.getName() + "]");
                 thread.start();
             }
         }
@@ -103,14 +99,14 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
 
     @Override
     public boolean stop(int level) throws Exception {
-        if (Channel.MBR_RX_SEQ==(level & Channel.MBR_RX_SEQ)) {
+        if (Channel.MBR_RX_SEQ == (level & Channel.MBR_RX_SEQ)) {
             // no-op
         }
-        if (Channel.MBR_TX_SEQ==(level & Channel.MBR_TX_SEQ)) {
+        if (Channel.MBR_TX_SEQ == (level & Channel.MBR_TX_SEQ)) {
             // no-op
         }
         startLevel = (startLevel & (~level));
-        if ( startLevel == 0 ) {
+        if (startLevel == 0) {
             running = false;
             if (thread != null) {
                 thread.interrupt();
@@ -145,7 +141,8 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
             for (Response response : resp) {
                 messageReceived(response.getMessage(), response.getSource());
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("staticMembershipProvider.startMembership.noReplies"));
         }
     }
@@ -157,7 +154,7 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
 
     protected void memberAdded(Member member) {
         Member mbr = setupMember(member);
-        if(membership.memberAlive(mbr)) {
+        if (membership.memberAlive(mbr)) {
             Runnable r = () -> {
                 String name = Thread.currentThread().getName();
                 try {
@@ -193,7 +190,7 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
     }
 
     protected void stopMembership(Member[] members) {
-        if (members.length == 0 ) {
+        if (members.length == 0) {
             return;
         }
         Member localmember = service.getLocalMember(false);
@@ -212,9 +209,11 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
         Member member = memMsg.getMember();
         if (memMsg.getMsgtype() == MemberMessage.MSG_START) {
             memberAdded(member);
-        } else if (memMsg.getMsgtype() == MemberMessage.MSG_STOP) {
+        }
+        else if (memMsg.getMsgtype() == MemberMessage.MSG_STOP) {
             memberDisappeared(member);
-        } else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
+        }
+        else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
             memberAlive(member);
         }
     }
@@ -238,11 +237,13 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
             messageReceived(memMsg, sender);
             memMsg.setMember(service.getLocalMember(true));
             return memMsg;
-        } else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
+        }
+        else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
             messageReceived(memMsg, sender);
             memMsg.setMember(service.getLocalMember(true));
             return memMsg;
-        } else {
+        }
+        else {
             // other messages are ignored.
             if (log.isInfoEnabled()) {
                 log.info(sm.getString("staticMembershipProvider.replyRequest.ignored",
@@ -260,9 +261,11 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
         MemberMessage memMsg = (MemberMessage) msg;
         if (memMsg.getMsgtype() == MemberMessage.MSG_START) {
             messageReceived(memMsg, sender);
-        } else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
+        }
+        else if (memMsg.getMsgtype() == MemberMessage.MSG_PING) {
             messageReceived(memMsg, sender);
-        } else {
+        }
+        else {
             // other messages are ignored.
             if (log.isInfoEnabled()) {
                 log.info(sm.getString("staticMembershipProvider.leftOver.ignored",
@@ -340,10 +343,10 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
     // member message to send to and from other memberships
     // ------------------------------------------------------------------------------
     public static class MemberMessage implements Serializable {
-        private static final long serialVersionUID = 1L;
         public static final int MSG_START = 1;
         public static final int MSG_STOP = 2;
         public static final int MSG_PING = 3;
+        private static final long serialVersionUID = 1L;
         private final int msgtype;
         private final byte[] membershipId;
         private Member member;
@@ -372,27 +375,26 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
 
         @Override
         public String toString() {
-            StringBuilder buf = new StringBuilder("MemberMessage[");
-            buf.append("name=");
-            buf.append(new String(membershipId));
-            buf.append("; type=");
-            buf.append(getTypeDesc());
-            buf.append("; member=");
-            buf.append(member);
-            buf.append(']');
-            return buf.toString();
+            String buf = "MemberMessage[" + "name=" +
+                    new String(membershipId) +
+                    "; type=" +
+                    getTypeDesc() +
+                    "; member=" +
+                    member +
+                    ']';
+            return buf;
         }
 
         protected String getTypeDesc() {
             switch (msgtype) {
-            case MSG_START:
-                return "MSG_START";
-            case MSG_STOP:
-                return "MSG_STOP";
-            case MSG_PING:
-                return "MSG_PING";
-            default:
-                return "UNKNOWN";
+                case MSG_START:
+                    return "MSG_START";
+                case MSG_STOP:
+                    return "MSG_STOP";
+                case MSG_PING:
+                    return "MSG_PING";
+                default:
+                    return "UNKNOWN";
             }
         }
     }
@@ -404,9 +406,9 @@ public class StaticMembershipProvider extends MembershipProviderBase implements 
                 try {
                     sleep(pingInterval);
                     ping();
-                }catch (InterruptedException ix) {
-                }catch (Exception x) {
-                    log.warn(sm.getString("staticMembershipProvider.pingThread.failed"),x);
+                } catch (InterruptedException ix) {
+                } catch (Exception x) {
+                    log.warn(sm.getString("staticMembershipProvider.pingThread.failed"), x);
                 }
             }
         }

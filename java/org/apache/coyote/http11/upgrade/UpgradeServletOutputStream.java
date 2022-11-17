@@ -16,11 +16,8 @@
  */
 package org.apache.coyote.http11.upgrade;
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
-
 import org.apache.coyote.Request;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -28,6 +25,8 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.net.DispatchType;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
 
 public class UpgradeServletOutputStream extends ServletOutputStream {
 
@@ -61,9 +60,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
     private boolean registered = false;
 
 
-
     public UpgradeServletOutputStream(UpgradeProcessorBase processor, SocketWrapperBase<?> socketWrapper,
-            UpgradeInfo upgradeInfo) {
+                                      UpgradeInfo upgradeInfo) {
         this.processor = processor;
         this.socketWrapper = socketWrapper;
         this.upgradeInfo = upgradeInfo;
@@ -88,11 +86,13 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
                 // for write and multiple registrations will cause problems.
                 registered = true;
                 return false;
-            } else if (registered){
+            }
+            else if (registered) {
                 // The socket is already registered for write and multiple
                 // registrations will cause problems.
                 return false;
-            } else {
+            }
+            else {
                 boolean result = socketWrapper.isReadyForWrite();
                 registered = !result;
                 return result;
@@ -122,7 +122,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
             Request request = processor.getRequest();
             if (request != null && request.isRequestThread()) {
                 processor.addDispatch(DispatchType.NON_BLOCKING_WRITE);
-            } else {
+            }
+            else {
                 socketWrapper.registerWriteInterest();
             }
         }
@@ -139,7 +140,7 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
     public void write(int b) throws IOException {
         synchronized (writeLock) {
             preWriteChecks();
-            writeInternal(new byte[] { (byte) b }, 0, 1);
+            writeInternal(new byte[]{(byte) b}, 0, 1);
         }
     }
 
@@ -168,7 +169,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
                     if (flushing) {
                         socketWrapper.registerWriteInterest();
                     }
-                } else {
+                }
+                else {
                     socketWrapper.flush(block);
                 }
             }
@@ -177,7 +179,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
             onError(t);
             if (t instanceof IOException) {
                 throw (IOException) t;
-            } else {
+            }
+            else {
                 throw new IOException(t);
             }
         }
@@ -207,12 +210,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
      * Must hold writeLock to call this method.
      */
     private void writeInternal(byte[] b, int off, int len) throws IOException {
-        if (listener == null) {
-            // Simple case - blocking IO
-            socketWrapper.write(true, b, off, len);
-        } else {
-            socketWrapper.write(false, b, off, len);
-        }
+        // Simple case - blocking IO
+        socketWrapper.write(listener == null, b, off, len);
         upgradeInfo.addBytesSent(len);
     }
 
@@ -224,7 +223,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
                 if (flushing) {
                     return;
                 }
-            } else {
+            }
+            else {
                 // This may fill the write buffer in which case the
                 // isReadyForWrite() call below will re-register the socket for
                 // write
@@ -243,7 +243,8 @@ public class UpgradeServletOutputStream extends ServletOutputStream {
             if (socketWrapper.isReadyForWrite()) {
                 registered = false;
                 fire = true;
-            } else {
+            }
+            else {
                 registered = true;
             }
         }

@@ -16,14 +16,10 @@
  */
 package org.apache.jasper.servlet;
 
-import java.io.IOException;
-import java.util.Set;
-
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.jsp.JspFactory;
-
 import org.apache.jasper.Constants;
 import org.apache.jasper.compiler.Localizer;
 import org.apache.jasper.compiler.TldCache;
@@ -35,13 +31,15 @@ import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.SimpleInstanceManager;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.util.Set;
+
 /**
  * Initializer for the Jasper JSP Engine.
  */
 public class JasperInitializer implements ServletContainerInitializer {
 
     private static final String MSG = "org.apache.jasper.servlet.JasperInitializer";
-    private final Log log = LogFactory.getLog(JasperInitializer.class); // must not be static
 
     /**
      * Preload classes required at runtime by a JSP servlet so that
@@ -55,6 +53,8 @@ public class JasperInitializer implements ServletContainerInitializer {
         }
     }
 
+    private final Log log = LogFactory.getLog(JasperInitializer.class); // must not be static
+
     @Override
     public void onStartup(Set<Class<?>> types, ServletContext context) throws ServletException {
         if (log.isDebugEnabled()) {
@@ -62,7 +62,7 @@ public class JasperInitializer implements ServletContainerInitializer {
         }
 
         // Setup a simple default Instance Manager
-        if (context.getAttribute(InstanceManager.class.getName())==null) {
+        if (context.getAttribute(InstanceManager.class.getName()) == null) {
             context.setAttribute(InstanceManager.class.getName(), new SimpleInstanceManager());
         }
 
@@ -73,7 +73,8 @@ public class JasperInitializer implements ServletContainerInitializer {
         boolean blockExternal;
         if (blockExternalString == null) {
             blockExternal = true;
-        } else {
+        }
+        else {
             blockExternal = Boolean.parseBoolean(blockExternalString);
         }
 
@@ -111,7 +112,7 @@ public class JasperInitializer implements ServletContainerInitializer {
     }
 
     protected TldScanner newTldScanner(ServletContext context, boolean namespaceAware,
-            boolean validate, boolean blockExternal) {
+                                       boolean validate, boolean blockExternal) {
         return new TldScanner(context, namespaceAware, validate, blockExternal);
     }
 }

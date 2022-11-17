@@ -37,6 +37,54 @@ import java.util.stream.Stream;
  */
 public class SecurityManagerCallStack implements CallStack {
 
+    private final String messageFormat;
+    //@GuardedBy("dateFormat")
+    private final DateFormat dateFormat;
+    private final PrivateSecurityManager securityManager;
+    private volatile Snapshot snapshot;
+
+    /**
+     * Creates a new instance.
+     *
+     * @param messageFormat message format
+     * @param useTimestamp  whether to format the dates in the output message or not
+     */
+    public SecurityManagerCallStack(final String messageFormat, final boolean useTimestamp) {
+        this.messageFormat = messageFormat;
+        this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
+        this.securityManager = AccessController.doPrivileged((PrivilegedAction<PrivateSecurityManager>) PrivateSecurityManager::new);
+    }
+
+    @Override
+    public void clear() {
+        snapshot = null;
+    }
+
+    @Override
+    public void fillInStackTrace() {
+        snapshot = new Snapshot(securityManager.getCallStack());
+    }
+
+    @Override
+    public boolean printStackTrace(final PrintWriter writer) {
+        final Snapshot snapshotRef = this.snapshot;
+        if (snapshotRef == null) {
+            return false;
+        }
+        final String message;
+        if (dateFormat == null) {
+            message = messageFormat;
+        }
+        else {
+            synchronized (dateFormat) {
+                message = dateFormat.format(Long.valueOf(snapshotRef.timestampMillis));
+            }
+        }
+        writer.println(message);
+        snapshotRef.stack.forEach(reference -> writer.println(reference.get()));
+        return true;
+    }
+
     /**
      * A custom security manager.
      */
@@ -68,55 +116,5 @@ public class SecurityManagerCallStack implements CallStack {
         private Snapshot(final List<WeakReference<Class<?>>> stack) {
             this.stack = stack;
         }
-    }
-
-    private final String messageFormat;
-
-    //@GuardedBy("dateFormat")
-    private final DateFormat dateFormat;
-
-    private final PrivateSecurityManager securityManager;
-
-    private volatile Snapshot snapshot;
-
-    /**
-     * Creates a new instance.
-     *
-     * @param messageFormat message format
-     * @param useTimestamp whether to format the dates in the output message or not
-     */
-    public SecurityManagerCallStack(final String messageFormat, final boolean useTimestamp) {
-        this.messageFormat = messageFormat;
-        this.dateFormat = useTimestamp ? new SimpleDateFormat(messageFormat) : null;
-        this.securityManager = AccessController.doPrivileged((PrivilegedAction<PrivateSecurityManager>) PrivateSecurityManager::new);
-    }
-
-    @Override
-    public void clear() {
-        snapshot = null;
-    }
-
-    @Override
-    public void fillInStackTrace() {
-        snapshot = new Snapshot(securityManager.getCallStack());
-    }
-
-    @Override
-    public boolean printStackTrace(final PrintWriter writer) {
-        final Snapshot snapshotRef = this.snapshot;
-        if (snapshotRef == null) {
-            return false;
-        }
-        final String message;
-        if (dateFormat == null) {
-            message = messageFormat;
-        } else {
-            synchronized (dateFormat) {
-                message = dateFormat.format(Long.valueOf(snapshotRef.timestampMillis));
-            }
-        }
-        writer.println(message);
-        snapshotRef.stack.forEach(reference -> writer.println(reference.get()));
-        return true;
     }
 }

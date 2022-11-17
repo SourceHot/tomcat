@@ -16,15 +16,11 @@
  */
 package org.apache.catalina.util;
 
+import org.apache.tomcat.util.security.Escape;
+import org.w3c.dom.*;
+
 import java.io.PrintWriter;
 import java.io.Writer;
-
-import org.apache.tomcat.util.security.Escape;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * A DOM writer optimised for use by WebDAV.
@@ -41,6 +37,7 @@ public class DOMWriter {
 
     /**
      * Prints the specified node, recursively.
+     *
      * @param node The node to output
      */
     public void print(Node node) {
@@ -62,7 +59,7 @@ public class DOMWriter {
             case Node.ELEMENT_NODE:
                 out.print('<');
                 out.print(node.getLocalName());
-                Attr attrs[] = sortAttributes(node.getAttributes());
+                Attr[] attrs = sortAttributes(node.getAttributes());
                 for (Attr attr : attrs) {
                     out.print(' ');
                     out.print(attr.getLocalName());
@@ -102,7 +99,7 @@ public class DOMWriter {
                 }
                 out.print("?>");
                 break;
-            }
+        }
 
         if (type == Node.ELEMENT_NODE) {
             out.print("</");
@@ -128,6 +125,7 @@ public class DOMWriter {
 
     /**
      * Returns a sorted list of attributes.
+     *
      * @param attrs The map to sort
      * @return a sorted attribute array
      */
@@ -137,7 +135,7 @@ public class DOMWriter {
         }
 
         int len = attrs.getLength();
-        Attr array[] = new Attr[len];
+        Attr[] array = new Attr[len];
         for (int i = 0; i < len; i++) {
             array[i] = (Attr) attrs.item(i);
         }

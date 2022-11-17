@@ -24,16 +24,18 @@ package org.apache.catalina.tribes;
 public interface MembershipListener {
     /**
      * A member was added to the group
+     *
      * @param member Member - the member that was added
      */
-    public void memberAdded(Member member);
+    void memberAdded(Member member);
 
     /**
      * A member was removed from the group<br>
      * If the member left voluntarily, the Member.getCommand will contain the Member.SHUTDOWN_PAYLOAD data
+     *
      * @param member Member
      * @see Member#SHUTDOWN_PAYLOAD
      */
-    public void memberDisappeared(Member member);
+    void memberDisappeared(Member member);
 
 }

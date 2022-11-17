@@ -16,23 +16,18 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.descriptor.web.ContextEjb;
-import org.apache.tomcat.util.descriptor.web.ContextEnvironment;
-import org.apache.tomcat.util.descriptor.web.ContextLocalEjb;
-import org.apache.tomcat.util.descriptor.web.ContextResource;
-import org.apache.tomcat.util.descriptor.web.ContextResourceEnvRef;
-import org.apache.tomcat.util.descriptor.web.ContextResourceLink;
+import org.apache.tomcat.util.descriptor.web.*;
+
+import java.io.PrintWriter;
 
 /**
  * Store server.xml elements Resources at context and GlobalNamingResources
  */
 public class NamingResourcesSF extends StoreFactoryBase {
-    private static Log log = LogFactory.getLog(NamingResourcesSF.class);
+    private static final Log log = LogFactory.getLog(NamingResourcesSF.class);
 
     /**
      * Store the only the NamingResources elements
@@ -50,7 +45,8 @@ public class NamingResourcesSF extends StoreFactoryBase {
                         + " )");
             }
             storeChildren(aWriter, indent, aElement, elementDesc);
-        } else {
+        }
+        else {
             log.warn(sm.getString("storeFactory.noDescriptor", aElement.getClass(), "NamingResources"));
         }
     }
@@ -58,24 +54,17 @@ public class NamingResourcesSF extends StoreFactoryBase {
     /**
      * Store the specified NamingResources properties.
      *
-     * @param aWriter
-     *            PrintWriter to which we are storing
-     * @param indent
-     *            Number of spaces to indent this element
-     * @param aElement
-     *            Object whose properties are being stored
-     * @param elementDesc
-     *            element descriptor
-     *
-     * @exception Exception
-     *                if an exception occurs while storing
-     *
+     * @param aWriter     PrintWriter to which we are storing
+     * @param indent      Number of spaces to indent this element
+     * @param aElement    Object whose properties are being stored
+     * @param elementDesc element descriptor
+     * @throws Exception if an exception occurs while storing
      * @see org.apache.catalina.storeconfig.StoreFactoryBase#storeChildren(java.io.PrintWriter,
-     *      int, java.lang.Object, StoreDescription)
+     * int, java.lang.Object, StoreDescription)
      */
     @Override
     public void storeChildren(PrintWriter aWriter, int indent, Object aElement,
-            StoreDescription elementDesc) throws Exception {
+                              StoreDescription elementDesc) throws Exception {
 
         if (aElement instanceof NamingResourcesImpl) {
             NamingResourcesImpl resources = (NamingResourcesImpl) aElement;

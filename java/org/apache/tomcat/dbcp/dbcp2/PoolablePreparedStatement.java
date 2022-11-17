@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.dbcp.dbcp2;
 
+import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
 
 /**
  * A {@link DelegatingPreparedStatement} that cooperates with {@link PoolingConnection} to implement a pool of
@@ -31,9 +31,7 @@ import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
  * My {@link #close} method returns me to my containing pool. (See {@link PoolingConnection}.)
  * </p>
  *
- * @param <K>
- *            the key type
- *
+ * @param <K> the key type
  * @see PoolingConnection
  * @since 2.0
  */
@@ -54,17 +52,13 @@ public class PoolablePreparedStatement<K> extends DelegatingPreparedStatement {
     /**
      * Constructor.
      *
-     * @param stmt
-     *            my underlying {@link PreparedStatement}
-     * @param key
-     *            my key" as used by {@link KeyedObjectPool}
-     * @param pool
-     *            the {@link KeyedObjectPool} from which I was obtained.
-     * @param conn
-     *            the {@link java.sql.Connection Connection} from which I was created
+     * @param stmt my underlying {@link PreparedStatement}
+     * @param key  my key" as used by {@link KeyedObjectPool}
+     * @param pool the {@link KeyedObjectPool} from which I was obtained.
+     * @param conn the {@link java.sql.Connection Connection} from which I was created
      */
     public PoolablePreparedStatement(final PreparedStatement stmt, final K key,
-            final KeyedObjectPool<K, PoolablePreparedStatement<K>> pool, final DelegatingConnection<?> conn) {
+                                     final KeyedObjectPool<K, PoolablePreparedStatement<K>> pool, final DelegatingConnection<?> conn) {
         super(conn, stmt);
         this.pool = pool;
         this.key = key;

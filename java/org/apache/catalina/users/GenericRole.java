@@ -25,7 +25,6 @@ import org.apache.catalina.UserDatabase;
  * {@link UserDatabase}.</p>
  *
  * @param <UD> The specific type of UserDase with which this role is associated
- *
  * @author Craig R. McClanahan
  */
 public class GenericRole<UD extends UserDatabase> extends AbstractRole {
@@ -35,15 +34,24 @@ public class GenericRole<UD extends UserDatabase> extends AbstractRole {
 
 
     /**
+     * The {@link UserDatabase} that owns this role.
+     */
+    protected final UserDatabase database;
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
      * Package-private constructor used by the factory method in
      * {@link UserDatabase}.
      *
-     * @param database The {@link UserDatabase} that owns this role
-     * @param rolename Role name of this role
+     * @param database    The {@link UserDatabase} that owns this role
+     * @param rolename    Role name of this role
      * @param description Description of this role
      */
     GenericRole(UD database,
-               String rolename, String description) {
+                String rolename, String description) {
 
         super();
         this.database = database;
@@ -53,17 +61,7 @@ public class GenericRole<UD extends UserDatabase> extends AbstractRole {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The {@link UserDatabase} that owns this role.
-     */
-    protected final UserDatabase database;
-
-
     // ------------------------------------------------------------- Properties
-
 
     /**
      * Return the {@link UserDatabase} within which this role is defined.

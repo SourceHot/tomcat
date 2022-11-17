@@ -16,6 +16,14 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.WebResource;
+import org.apache.catalina.WebResourceRoot;
+import org.apache.catalina.WebResourceRoot.ResourceSetType;
+import org.apache.catalina.util.ResourceSet;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,14 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.jar.Manifest;
-
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.WebResourceRoot.ResourceSetType;
-import org.apache.catalina.util.ResourceSet;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 /**
  * Represents a {@link org.apache.catalina.WebResourceSet} based on a directory.
@@ -51,22 +51,22 @@ public class DirResourceSet extends AbstractFileResourceSet {
      * Creates a new {@link org.apache.catalina.WebResourceSet} based on a
      * directory.
      *
-     * @param root          The {@link WebResourceRoot} this new
-     *                          {@link org.apache.catalina.WebResourceSet} will
-     *                          be added to.
-     * @param webAppMount   The path within the web application at which this
-     *                          {@link org.apache.catalina.WebResourceSet} will
-     *                          be mounted. For example, to add a directory of
-     *                          JARs to a web application, the directory would
-     *                          be mounted at "/WEB-INF/lib/"
-     * @param base          The absolute path to the directory on the file
-     *                          system from which the resources will be served.
-     * @param internalPath  The path within this new {@link
-     *                          org.apache.catalina.WebResourceSet} where
-     *                          resources will be served from.
+     * @param root         The {@link WebResourceRoot} this new
+     *                     {@link org.apache.catalina.WebResourceSet} will
+     *                     be added to.
+     * @param webAppMount  The path within the web application at which this
+     *                     {@link org.apache.catalina.WebResourceSet} will
+     *                     be mounted. For example, to add a directory of
+     *                     JARs to a web application, the directory would
+     *                     be mounted at "/WEB-INF/lib/"
+     * @param base         The absolute path to the directory on the file
+     *                     system from which the resources will be served.
+     * @param internalPath The path within this new {@link
+     *                     org.apache.catalina.WebResourceSet} where
+     *                     resources will be served from.
      */
     public DirResourceSet(WebResourceRoot root, String webAppMount, String base,
-            String internalPath) {
+                          String internalPath) {
         super(internalPath);
         setRoot(root);
         setWebAppMount(webAppMount);
@@ -78,7 +78,7 @@ public class DirResourceSet extends AbstractFileResourceSet {
 
             if (f.isDirectory()) {
                 root.createWebResourceSet(ResourceSetType.RESOURCE_JAR, "/",
-                         f.getAbsolutePath(), null, "/");
+                        f.getAbsolutePath(), null, "/");
             }
         }
 
@@ -109,7 +109,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
                 path = path + '/';
             }
             return new FileResource(root, path, f, isReadOnly(), getManifest());
-        } else {
+        }
+        else {
             return new EmptyResource(root, path);
         }
     }
@@ -126,19 +127,22 @@ public class DirResourceSet extends AbstractFileResourceSet {
             String[] result = f.list();
             if (result == null) {
                 return EMPTY_STRING_ARRAY;
-            } else {
+            }
+            else {
                 return result;
             }
-        } else {
+        }
+        else {
             if (!path.endsWith("/")) {
                 path = path + "/";
             }
             if (webAppMount.startsWith(path)) {
                 int i = webAppMount.indexOf('/', path.length());
                 if (i == -1) {
-                    return new String[] {webAppMount.substring(path.length())};
-                } else {
-                    return new String[] {
+                    return new String[]{webAppMount.substring(path.length())};
+                }
+                else {
+                    return new String[]{
                             webAppMount.substring(path.length(), i)};
                 }
             }
@@ -199,7 +203,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
                     }
                 }
             }
-        } else {
+        }
+        else {
             if (!path.endsWith("/")) {
                 path = path + "/";
             }
@@ -207,7 +212,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
                 int i = webAppMount.indexOf('/', path.length());
                 if (i == -1) {
                     result.add(webAppMount + "/");
-                } else {
+                }
+                else {
                     result.add(webAppMount.substring(0, i + 1));
                 }
             }
@@ -229,7 +235,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
                 return false;
             }
             return f.mkdir();
-        } else {
+        }
+        else {
             return false;
         }
     }
@@ -260,7 +267,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
             if (dest == null) {
                 return false;
             }
-        } else {
+        }
+        else {
             return false;
         }
 
@@ -271,7 +279,8 @@ public class DirResourceSet extends AbstractFileResourceSet {
         try {
             if (overwrite) {
                 Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } else {
+            }
+            else {
                 Files.copy(is, dest.toPath());
             }
         } catch (IOException ioe) {
@@ -283,7 +292,7 @@ public class DirResourceSet extends AbstractFileResourceSet {
 
     @Override
     protected void checkType(File file) {
-        if (file.isDirectory() == false) {
+        if (!file.isDirectory()) {
             throw new IllegalArgumentException(sm.getString("dirResourceSet.notDirectory",
                     getBase(), File.separator, getInternalPath()));
         }

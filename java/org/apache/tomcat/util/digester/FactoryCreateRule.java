@@ -34,43 +34,45 @@ public class FactoryCreateRule extends Rule {
 
     // ----------------------------------------------------------- Fields
 
-    /** Should exceptions thrown by the factory be ignored? */
-    private boolean ignoreCreateExceptions;
-    /** Stock to manage */
-    private ArrayStack<Boolean> exceptionIgnoredStack;
-
-
-    // ----------------------------------------------------------- Constructors
-
-    /**
-     * Construct a factory create rule using the given, already instantiated,
-     * {@link ObjectCreationFactory}.
-     *
-     * @param creationFactory called on to create the object.
-     * @param ignoreCreateExceptions if true, exceptions thrown by the object
-     *  creation factory will be ignored.
-     */
-    public FactoryCreateRule(
-                            ObjectCreationFactory creationFactory,
-                            boolean ignoreCreateExceptions) {
-
-        this.creationFactory = creationFactory;
-        this.ignoreCreateExceptions = ignoreCreateExceptions;
-    }
-
-
-    // ----------------------------------------------------- Instance Variables
-
     /**
      * The object creation factory we will use to instantiate objects
      * as required based on the attributes specified in the matched XML
      * element.
      */
     protected ObjectCreationFactory creationFactory = null;
+    /**
+     * Should exceptions thrown by the factory be ignored?
+     */
+    private final boolean ignoreCreateExceptions;
+
+
+    // ----------------------------------------------------------- Constructors
+    /**
+     * Stock to manage
+     */
+    private ArrayStack<Boolean> exceptionIgnoredStack;
+
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * Construct a factory create rule using the given, already instantiated,
+     * {@link ObjectCreationFactory}.
+     *
+     * @param creationFactory        called on to create the object.
+     * @param ignoreCreateExceptions if true, exceptions thrown by the object
+     *                               creation factory will be ignored.
+     */
+    public FactoryCreateRule(
+            ObjectCreationFactory creationFactory,
+            boolean ignoreCreateExceptions) {
+
+        this.creationFactory = creationFactory;
+        this.ignoreCreateExceptions = ignoreCreateExceptions;
+    }
 
 
     // --------------------------------------------------------- Public Methods
-
 
     /**
      * Process the beginning of this element.
@@ -100,7 +102,7 @@ public class FactoryCreateRule extends Rule {
                 // log message and error
                 if (digester.log.isInfoEnabled()) {
                     digester.log.info(sm.getString("rule.createError",
-                        ((e.getMessage() == null) ? e.getClass().getName() : e.getMessage())));
+                            ((e.getMessage() == null) ? e.getClass().getName() : e.getMessage())));
                     if (digester.log.isDebugEnabled()) {
                         digester.log.debug("[FactoryCreateRule] Ignored exception:", e);
                     }
@@ -108,7 +110,8 @@ public class FactoryCreateRule extends Rule {
                 exceptionIgnoredStack.push(Boolean.TRUE);
             }
 
-        } else {
+        }
+        else {
             Object instance = creationFactory.createObject(attributes);
 
             if (digester.log.isDebugEnabled()) {
@@ -130,8 +133,8 @@ public class FactoryCreateRule extends Rule {
         // this only happens if an exception was thrown and we're ignoring them
         if (
                 ignoreCreateExceptions &&
-                exceptionIgnoredStack != null &&
-                !(exceptionIgnoredStack.empty())) {
+                        exceptionIgnoredStack != null &&
+                        !(exceptionIgnoredStack.empty())) {
 
             if ((exceptionIgnoredStack.pop()).booleanValue()) {
                 // creation exception was ignored

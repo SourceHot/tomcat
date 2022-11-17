@@ -16,15 +16,15 @@
  */
 package org.apache.tomcat.util.buf;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.compat.JreCompat;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 
 public class ByteBufferUtils {
 
@@ -51,13 +51,14 @@ public class ByteBufferUtils {
                 invokeCleanerMethodLocal = clazz.getMethod("invokeCleaner", ByteBuffer.class);
                 invokeCleanerMethodLocal.invoke(unsafeLocal, tempBuffer);
             } catch (IllegalAccessException | IllegalArgumentException
-                    | InvocationTargetException | NoSuchMethodException | SecurityException
-                    | ClassNotFoundException | NoSuchFieldException e) {
+                     | InvocationTargetException | NoSuchMethodException | SecurityException
+                     | ClassNotFoundException | NoSuchFieldException e) {
                 log.warn(sm.getString("byteBufferUtils.cleaner"), e);
                 unsafeLocal = null;
                 invokeCleanerMethodLocal = null;
             }
-        } else {
+        }
+        else {
             try {
                 cleanerMethodLocal = tempBuffer.getClass().getMethod("cleaner");
                 cleanerMethodLocal.setAccessible(true);
@@ -65,7 +66,7 @@ public class ByteBufferUtils {
                 cleanMethodLocal = cleanerObject.getClass().getMethod("clean");
                 cleanMethodLocal.invoke(cleanerObject);
             } catch (NoSuchMethodException | SecurityException | IllegalAccessException |
-                    IllegalArgumentException | InvocationTargetException e) {
+                     IllegalArgumentException | InvocationTargetException e) {
                 log.warn(sm.getString("byteBufferUtils.cleaner"), e);
                 cleanerMethodLocal = null;
                 cleanMethodLocal = null;
@@ -87,11 +88,11 @@ public class ByteBufferUtils {
      * Buffers are assumed to be in 'write to' mode since there would be no need
      * to expand a buffer while it was in 'read from' mode.
      *
-     * @param in        Buffer to expand
-     * @param newSize   The size t which the buffer should be expanded
-     * @return          The expanded buffer with any data from the input buffer
-     *                  copied in to it or the original buffer if there was no
-     *                  need for expansion
+     * @param in      Buffer to expand
+     * @param newSize The size t which the buffer should be expanded
+     * @return The expanded buffer with any data from the input buffer
+     * copied in to it or the original buffer if there was no
+     * need for expansion
      */
     public static ByteBuffer expand(ByteBuffer in, int newSize) {
         if (in.capacity() >= newSize) {
@@ -103,7 +104,8 @@ public class ByteBufferUtils {
         if (in.isDirect()) {
             out = ByteBuffer.allocateDirect(newSize);
             direct = true;
-        } else {
+        }
+        else {
             out = ByteBuffer.allocate(newSize);
         }
 
@@ -123,16 +125,17 @@ public class ByteBufferUtils {
             try {
                 cleanMethod.invoke(cleanerMethod.invoke(buf));
             } catch (IllegalAccessException | IllegalArgumentException
-                    | InvocationTargetException | SecurityException e) {
+                     | InvocationTargetException | SecurityException e) {
                 if (log.isDebugEnabled()) {
                     log.debug(sm.getString("byteBufferUtils.cleaner"), e);
                 }
             }
-        } else if (invokeCleanerMethod != null) {
+        }
+        else if (invokeCleanerMethod != null) {
             try {
                 invokeCleanerMethod.invoke(unsafe, buf);
             } catch (IllegalAccessException | IllegalArgumentException
-                    | InvocationTargetException | SecurityException e) {
+                     | InvocationTargetException | SecurityException e) {
                 if (log.isDebugEnabled()) {
                     log.debug(sm.getString("byteBufferUtils.cleaner"), e);
                 }

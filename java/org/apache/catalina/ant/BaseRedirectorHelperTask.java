@@ -16,16 +16,16 @@
  */
 package org.apache.catalina.ant;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Redirector;
 import org.apache.tools.ant.types.RedirectorElement;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 
 /**
  * Abstract base class to add output redirection support for Catalina Ant tasks.
@@ -40,30 +40,30 @@ import org.apache.tools.ant.types.RedirectorElement;
  * output of the last run, unless you set append="true", in which case each run
  * will append it's output to the file.
  *
- *
  * @author Gabriele Garuglieri
  * @since 5.5
  */
 public abstract class BaseRedirectorHelperTask extends Task {
 
-    /** Redirector helper */
+    /**
+     * Redirector helper
+     */
     protected final Redirector redirector = new Redirector(this);
 
-    /** Redirector element for this task */
+    /**
+     * Redirector element for this task
+     */
     protected RedirectorElement redirectorElement = null;
 
-    /** The stream for info output */
+    /**
+     * The stream for info output
+     */
     protected OutputStream redirectOutStream = null;
 
-    /** The stream for error output */
+    /**
+     * The stream for error output
+     */
     protected OutputStream redirectErrStream = null;
-
-    /** The print stream for info output */
-    PrintStream redirectOutPrintStream = null;
-
-    /** The print stream for error output */
-    PrintStream redirectErrPrintStream = null;
-
     /**
      * Whether to fail (with a BuildException) if ManagerServlet returns an
      * error. The default behavior is to do so. <b> This flag does not control
@@ -72,26 +72,30 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * of this flag. </b>
      */
     protected boolean failOnError = true;
-
     /**
      * <code>true</code> true when output redirection is requested for this task.
      * Default is to log on Ant log.
      */
     protected boolean redirectOutput = false;
-
     /**
      * will be set to <code>true</code> when the configuration of the Redirector
      * is complete.
      */
     protected boolean redirectorConfigured = false;
-
     /**
      * Flag which indicates that, if redirected, output should also be always
      * sent to the log. Default is that output is sent only to redirected
      * streams.
      */
     protected boolean alwaysLog = false;
-
+    /**
+     * The print stream for info output
+     */
+    PrintStream redirectOutPrintStream = null;
+    /**
+     * The print stream for error output
+     */
+    PrintStream redirectErrPrintStream = null;
 
     /**
      * Whether to fail (with a BuildException) if ManagerServlet returns an
@@ -108,7 +112,7 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Returns the value of the failOnError property.
      *
      * @return <code>true</code> if the task should will if an error occurs,
-     *         otherwise <code>false</code>
+     * otherwise <code>false</code>
      */
     public boolean isFailOnError() {
         return failOnError;
@@ -130,7 +134,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * File the error output of the task is redirected to.
      *
      * @param error name of the error file
-     *
      */
     public void setError(File error) {
         redirector.setError(error);
@@ -143,7 +146,7 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * is being redirected and error output is desired in the Ant log
      *
      * @param logError if true the standard error is sent to the Ant log system
-     *            and not sent to output stream.
+     *                 and not sent to output stream.
      */
     public void setLogError(boolean logError) {
         redirector.setLogError(logError);
@@ -155,7 +158,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Property name whose value should be set to the output of the task.
      *
      * @param outputProperty property name
-     *
      */
     public void setOutputproperty(String outputProperty) {
         redirector.setOutputProperty(outputProperty);
@@ -167,7 +169,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Property name whose value should be set to the error of the task.
      *
      * @param errorProperty property name
-     *
      */
     public void setErrorProperty(String errorProperty) {
         redirector.setErrorProperty(errorProperty);
@@ -179,7 +180,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * If true, append output to existing file.
      *
      * @param append if true, append output to existing file
-     *
      */
     public void setAppend(boolean append) {
         redirector.setAppend(append);
@@ -223,7 +223,8 @@ public abstract class BaseRedirectorHelperTask extends Task {
     public void addConfiguredRedirector(RedirectorElement redirectorElement) {
         if (this.redirectorElement != null) {
             throw new BuildException("Cannot have > 1 nested <redirector>s");
-        } else {
+        }
+        else {
             this.redirectorElement = redirectorElement;
         }
     }
@@ -303,7 +304,8 @@ public abstract class BaseRedirectorHelperTask extends Task {
             if (alwaysLog) {
                 log(output, Project.MSG_INFO);
             }
-        } else {
+        }
+        else {
             log(output, Project.MSG_INFO);
         }
     }
@@ -313,7 +315,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Handles output with the INFO priority and flushes the stream.
      *
      * @param output The output to log. Should not be <code>null</code>.
-     *
      */
     @Override
     protected void handleFlush(String output) {
@@ -337,7 +338,8 @@ public abstract class BaseRedirectorHelperTask extends Task {
             if (alwaysLog) {
                 log(output, Project.MSG_ERR);
             }
-        } else {
+        }
+        else {
             log(output, Project.MSG_ERR);
         }
     }
@@ -347,7 +349,6 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Handles error output with the ERR priority and flushes the stream.
      *
      * @param output The error output to log. Should not be <code>null</code>.
-     *
      */
     @Override
     protected void handleErrorFlush(String output) {
@@ -360,13 +361,14 @@ public abstract class BaseRedirectorHelperTask extends Task {
      * Handles output with ERR priority to error stream and all other priorities
      * to output stream.
      *
-     * @param output The output to log. Should not be <code>null</code>.
+     * @param output   The output to log. Should not be <code>null</code>.
      * @param priority The priority level that should be used
      */
     protected void handleOutput(String output, int priority) {
         if (priority == Project.MSG_ERR) {
             handleErrorOutput(output);
-        } else {
+        }
+        else {
             handleOutput(output);
         }
     }

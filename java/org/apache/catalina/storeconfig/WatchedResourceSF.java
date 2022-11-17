@@ -16,14 +16,14 @@
  */
 package org.apache.catalina.storeconfig;
 
-import java.io.PrintWriter;
-
 import org.apache.catalina.core.StandardContext;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.PrintWriter;
+
 public class WatchedResourceSF extends StoreFactoryBase {
-    private static Log log = LogFactory.getLog(WatchedResourceSF.class);
+    private static final Log log = LogFactory.getLog(WatchedResourceSF.class);
 
     /*
      * Store nested Element Value Arrays WatchedResource
@@ -47,7 +47,8 @@ public class WatchedResourceSF extends StoreFactoryBase {
                 getStoreAppender().printTagArray(aWriter, "WatchedResource",
                         indent, resources);
             }
-        } else {
+        }
+        else {
             log.warn(sm.getString("storeFactory.noDescriptor", aElement.getClass(), "WatchedResource"));
         }
     }

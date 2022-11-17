@@ -33,9 +33,11 @@ public final class If implements TagPlugin {
                 String scopeStr = ctxt.getConstantAttribute("scope");
                 if ("request".equals(scopeStr)) {
                     scope = "PageContext.REQUEST_SCOPE";
-                } else if ("session".equals(scopeStr)) {
+                }
+                else if ("session".equals(scopeStr)) {
                     scope = "PageContext.SESSION_SCOPE";
-                } else if ("application".equals(scopeStr)) {
+                }
+                else if ("application".equals(scopeStr)) {
                     scope = "PageContext.APPLICATION_SCOPE";
                 }
             }

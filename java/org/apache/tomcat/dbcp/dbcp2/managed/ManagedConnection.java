@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.managed;
 
+import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.apache.tomcat.dbcp.pool2.ObjectPool;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.apache.tomcat.dbcp.pool2.ObjectPool;
 
 /**
  * ManagedConnection is responsible for managing a database connection in a transactional environment (typically called
@@ -38,48 +38,28 @@ import org.apache.tomcat.dbcp.pool2.ObjectPool;
  * SQLException. This is necessary to assure that the transaction completes as a single unit.
  * </p>
  *
- * @param <C>
- *            the Connection type
- *
+ * @param <C> the Connection type
  * @since 2.0
  */
 public class ManagedConnection<C extends Connection> extends DelegatingConnection<C> {
 
-    /**
-     * Delegates to {@link ManagedConnection#transactionComplete()} for transaction completion events.
-     *
-     * @since 2.0
-     */
-    protected class CompletionListener implements TransactionContextListener {
-        @Override
-        public void afterCompletion(final TransactionContext completedContext, final boolean committed) {
-            if (completedContext == transactionContext) {
-                transactionComplete();
-            }
-        }
-    }
     private final ObjectPool<C> pool;
     private final TransactionRegistry transactionRegistry;
     private final boolean accessToUnderlyingConnectionAllowed;
+    private final Lock lock;
     private TransactionContext transactionContext;
     private boolean isSharedConnection;
-
-    private final Lock lock;
 
     /**
      * Constructs a new instance responsible for managing a database connection in a transactional environment.
      *
-     * @param pool
-     *            The connection pool.
-     * @param transactionRegistry
-     *            The transaction registry.
-     * @param accessToUnderlyingConnectionAllowed
-     *            Whether or not to allow access to the underlying Connection.
-     * @throws SQLException
-     *             Thrown when there is problem managing transactions.
+     * @param pool                                The connection pool.
+     * @param transactionRegistry                 The transaction registry.
+     * @param accessToUnderlyingConnectionAllowed Whether or not to allow access to the underlying Connection.
+     * @throws SQLException Thrown when there is problem managing transactions.
      */
     public ManagedConnection(final ObjectPool<C> pool, final TransactionRegistry transactionRegistry,
-            final boolean accessToUnderlyingConnectionAllowed) throws SQLException {
+                             final boolean accessToUnderlyingConnectionAllowed) throws SQLException {
         super(null);
         this.pool = pool;
         this.transactionRegistry = transactionRegistry;
@@ -135,10 +115,6 @@ public class ManagedConnection<C extends Connection> extends DelegatingConnectio
         return null;
     }
 
-    //
-    // The following methods can't be used while enlisted in a transaction
-    //
-
     @Override
     public Connection getInnermostDelegate() {
         if (isAccessToUnderlyingConnectionAllowed()) {
@@ -146,6 +122,10 @@ public class ManagedConnection<C extends Connection> extends DelegatingConnectio
         }
         return null;
     }
+
+    //
+    // The following methods can't be used while enlisted in a transaction
+    //
 
     /**
      * @return The transaction context.
@@ -280,14 +260,14 @@ public class ManagedConnection<C extends Connection> extends DelegatingConnectio
             // Set our delegate to the shared connection. Note that this will
             // always be of type C since it has been shared by another
             // connection from the same pool.
-            @SuppressWarnings("unchecked")
-            final C shared = (C) transactionContext.getSharedConnection();
+            @SuppressWarnings("unchecked") final C shared = (C) transactionContext.getSharedConnection();
             setDelegate(shared);
 
             // remember that we are using a shared connection so it can be cleared after the
             // transaction completes
             isSharedConnection = true;
-        } else {
+        }
+        else {
             C connection = getDelegateInternal();
             // if our delegate is null, create one
             if (connection == null) {
@@ -323,5 +303,19 @@ public class ManagedConnection<C extends Connection> extends DelegatingConnectio
         // autoCommit may have been changed directly on the underlying
         // connection
         clearCachedState();
+    }
+
+    /**
+     * Delegates to {@link ManagedConnection#transactionComplete()} for transaction completion events.
+     *
+     * @since 2.0
+     */
+    protected class CompletionListener implements TransactionContextListener {
+        @Override
+        public void afterCompletion(final TransactionContext completedContext, final boolean committed) {
+            if (completedContext == transactionContext) {
+                transactionComplete();
+            }
+        }
     }
 }

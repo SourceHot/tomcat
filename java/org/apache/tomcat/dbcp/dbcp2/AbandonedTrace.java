@@ -16,14 +16,14 @@
  */
 package org.apache.tomcat.dbcp.dbcp2;
 
+import org.apache.tomcat.dbcp.pool2.TrackedUse;
+
 import java.lang.ref.WeakReference;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import org.apache.tomcat.dbcp.pool2.TrackedUse;
 
 /**
  * Tracks connection usage for recovering and reporting abandoned connections.
@@ -35,10 +35,14 @@ import org.apache.tomcat.dbcp.pool2.TrackedUse;
  */
 public class AbandonedTrace implements TrackedUse {
 
-    /** A list of objects created by children of this object. */
+    /**
+     * A list of objects created by children of this object.
+     */
     private final List<WeakReference<AbandonedTrace>> traceList = new ArrayList<>();
 
-    /** Last time this connection was used. */
+    /**
+     * Last time this connection was used.
+     */
     private volatile Instant lastUsedInstant = Instant.EPOCH;
 
     /**
@@ -51,8 +55,7 @@ public class AbandonedTrace implements TrackedUse {
     /**
      * Constructs a new AbandonedTrace with a parent object.
      *
-     * @param parent
-     *            AbandonedTrace parent object.
+     * @param parent AbandonedTrace parent object.
      */
     public AbandonedTrace(final AbandonedTrace parent) {
         init(parent);
@@ -61,8 +64,7 @@ public class AbandonedTrace implements TrackedUse {
     /**
      * Adds an object to the list of objects being traced.
      *
-     * @param trace
-     *            AbandonedTrace object to add.
+     * @param trace AbandonedTrace object to add.
      */
     protected void addTrace(final AbandonedTrace trace) {
         synchronized (this.traceList) {
@@ -91,6 +93,27 @@ public class AbandonedTrace implements TrackedUse {
         return lastUsedInstant.toEpochMilli();
     }
 
+    /**
+     * Sets the instant this object was last used.
+     *
+     * @param lastUsedInstant instant.
+     * @since 2.10.0
+     */
+    protected void setLastUsed(final Instant lastUsedInstant) {
+        this.lastUsedInstant = lastUsedInstant;
+    }
+
+    /**
+     * Sets the time in milliseconds this object was last used.
+     *
+     * @param lastUsedMillis time in milliseconds.
+     * @deprecated Use {@link #setLastUsed(Instant)}
+     */
+    @Deprecated
+    protected void setLastUsed(final long lastUsedMillis) {
+        this.lastUsedInstant = Instant.ofEpochMilli(lastUsedMillis);
+    }
+
     @Override
     public Instant getLastUsedInstant() {
         return lastUsedInstant;
@@ -114,7 +137,8 @@ public class AbandonedTrace implements TrackedUse {
                 if (trace == null) {
                     // Clean-up since we are here anyway
                     iter.remove();
-                } else {
+                }
+                else {
                     result.add(trace);
                 }
             }
@@ -125,8 +149,7 @@ public class AbandonedTrace implements TrackedUse {
     /**
      * Initializes abandoned tracing for this object.
      *
-     * @param parent
-     *            AbandonedTrace parent object.
+     * @param parent AbandonedTrace parent object.
      */
     private void init(final AbandonedTrace parent) {
         if (parent != null) {
@@ -142,15 +165,14 @@ public class AbandonedTrace implements TrackedUse {
      */
     protected void removeThisTrace(final Object source) {
         if (source instanceof AbandonedTrace) {
-            AbandonedTrace.class.cast(source).removeTrace(this);
+            ((AbandonedTrace) source).removeTrace(this);
         }
     }
 
     /**
      * Removes a child object this object is tracing.
      *
-     * @param trace
-     *            AbandonedTrace object to remove.
+     * @param trace AbandonedTrace object to remove.
      */
     protected void removeTrace(final AbandonedTrace trace) {
         synchronized (this.traceList) {
@@ -174,28 +196,5 @@ public class AbandonedTrace implements TrackedUse {
      */
     protected void setLastUsed() {
         lastUsedInstant = Instant.now();
-    }
-
-    /**
-     * Sets the instant this object was last used.
-     *
-     * @param lastUsedInstant
-     *            instant.
-     * @since 2.10.0
-     */
-    protected void setLastUsed(final Instant lastUsedInstant) {
-        this.lastUsedInstant = lastUsedInstant;
-    }
-
-    /**
-     * Sets the time in milliseconds this object was last used.
-     *
-     * @param lastUsedMillis
-     *            time in milliseconds.
-     * @deprecated Use {@link #setLastUsed(Instant)}
-     */
-    @Deprecated
-    protected void setLastUsed(final long lastUsedMillis) {
-        this.lastUsedInstant = Instant.ofEpochMilli(lastUsedMillis);
     }
 }

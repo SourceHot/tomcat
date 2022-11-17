@@ -47,18 +47,30 @@ public class ByteArrayOutputStream extends OutputStream {
 
     static final int DEFAULT_SIZE = 1024;
 
-    /** A singleton empty byte array. */
+    /**
+     * A singleton empty byte array.
+     */
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    /** The list of buffers, which grows and never reduces. */
+    /**
+     * The list of buffers, which grows and never reduces.
+     */
     private final List<byte[]> buffers = new ArrayList<>();
-    /** The index of the current buffer. */
+    /**
+     * The index of the current buffer.
+     */
     private int currentBufferIndex;
-    /** The total count of bytes in all the filled buffers. */
+    /**
+     * The total count of bytes in all the filled buffers.
+     */
     private int filledBufferSum;
-    /** The current buffer. */
+    /**
+     * The current buffer.
+     */
     private byte[] currentBuffer;
-    /** The total count of bytes written. */
+    /**
+     * The total count of bytes written.
+     */
     private int count;
 
     /**
@@ -73,13 +85,13 @@ public class ByteArrayOutputStream extends OutputStream {
      * Creates a new byte array output stream, with a buffer capacity of
      * the specified size, in bytes.
      *
-     * @param size  the initial size
+     * @param size the initial size
      * @throws IllegalArgumentException if size is negative
      */
     public ByteArrayOutputStream(final int size) {
         if (size < 0) {
             throw new IllegalArgumentException(
-                "Negative initial size: " + size);
+                    "Negative initial size: " + size);
         }
         synchronized (this) {
             needNewBuffer(size);
@@ -90,7 +102,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * Makes a new buffer available either by allocating
      * a new one or re-cycling an existing one.
      *
-     * @param newcount  the size of the buffer if one is created
+     * @param newcount the size of the buffer if one is created
      */
     private void needNewBuffer(final int newcount) {
         if (currentBufferIndex < buffers.size() - 1) {
@@ -99,16 +111,18 @@ public class ByteArrayOutputStream extends OutputStream {
 
             currentBufferIndex++;
             currentBuffer = buffers.get(currentBufferIndex);
-        } else {
+        }
+        else {
             //Creating new buffer
             int newBufferSize;
             if (currentBuffer == null) {
                 newBufferSize = newcount;
                 filledBufferSum = 0;
-            } else {
+            }
+            else {
                 newBufferSize = Math.max(
-                    currentBuffer.length << 1,
-                    newcount - filledBufferSum);
+                        currentBuffer.length << 1,
+                        newcount - filledBufferSum);
                 filledBufferSum += currentBuffer.length;
             }
 
@@ -120,7 +134,8 @@ public class ByteArrayOutputStream extends OutputStream {
 
     /**
      * Write the bytes to byte array.
-     * @param b the bytes to write
+     *
+     * @param b   the bytes to write
      * @param off The start offset
      * @param len The number of bytes to write
      */
@@ -132,7 +147,8 @@ public class ByteArrayOutputStream extends OutputStream {
                 || ((off + len) > b.length)
                 || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        else if (len == 0) {
             return;
         }
         synchronized (this) {
@@ -154,6 +170,7 @@ public class ByteArrayOutputStream extends OutputStream {
 
     /**
      * Write a byte to byte array.
+     *
      * @param b the byte to write
      */
     @Override
@@ -174,7 +191,7 @@ public class ByteArrayOutputStream extends OutputStream {
      *
      * @param in the input stream to read from
      * @return total number of bytes read from the input stream
-     *         (and written to this stream)
+     * (and written to this stream)
      * @throws IOException if an I/O error occurs while reading the input stream
      * @since 1.4
      */
@@ -201,7 +218,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * generating an {@code IOException}.
      *
      * @throws IOException never (this method should not declare this exception
-     * but it has to now due to backwards compatibility)
+     *                     but it has to now due to backwards compatibility)
      */
     @Override
     public void close() throws IOException {
@@ -212,7 +229,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * Writes the entire contents of this byte stream to the
      * specified output stream.
      *
-     * @param out  the output stream to write to
+     * @param out the output stream to write to
      * @throws IOException if an I/O error occurs, such as if the stream is closed
      * @see java.io.ByteArrayOutputStream#writeTo(OutputStream)
      */
@@ -240,7 +257,7 @@ public class ByteArrayOutputStream extends OutputStream {
         if (remaining == 0) {
             return EMPTY_BYTE_ARRAY;
         }
-        final byte newbuf[] = new byte[remaining];
+        final byte[] newbuf = new byte[remaining];
         int pos = 0;
         for (final byte[] buf : buffers) {
             final int c = Math.min(buf.length, remaining);

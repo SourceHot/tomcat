@@ -16,19 +16,24 @@
  */
 package org.apache.coyote.http2;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.coyote.Response;
 import org.apache.coyote.http11.HttpOutputBuffer;
 import org.apache.coyote.http11.OutputFilter;
 import org.apache.coyote.http2.Stream.StreamOutputBuffer;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class Http2OutputBuffer implements HttpOutputBuffer {
 
     private final Response coyoteResponse;
     private HttpOutputBuffer next;
 
+
+    public Http2OutputBuffer(Response coyoteResponse, StreamOutputBuffer streamOutputBuffer) {
+        this.coyoteResponse = coyoteResponse;
+        this.next = streamOutputBuffer;
+    }
 
     /**
      * Add a filter at the start of the existing processing chain. Subsequent
@@ -37,19 +42,12 @@ public class Http2OutputBuffer implements HttpOutputBuffer {
      * method on the next HttpOutputBuffer in the chain until the call reaches
      * the StreamOutputBuffer.
      *
-     * @param filter    The filter to add to the start of the processing chain
+     * @param filter The filter to add to the start of the processing chain
      */
     public void addFilter(OutputFilter filter) {
         filter.setBuffer(next);
         next = filter;
     }
-
-
-    public Http2OutputBuffer(Response coyoteResponse, StreamOutputBuffer streamOutputBuffer) {
-        this.coyoteResponse = coyoteResponse;
-        this.next = streamOutputBuffer;
-    }
-
 
     @Override
     public int doWrite(ByteBuffer chunk) throws IOException {

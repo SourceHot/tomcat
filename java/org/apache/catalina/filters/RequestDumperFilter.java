@@ -16,23 +16,18 @@
  */
 package org.apache.catalina.filters;
 
+import jakarta.servlet.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.GenericFilter;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 
 /**
@@ -53,9 +48,9 @@ public class RequestDumperFilter extends GenericFilter {
     private static final long serialVersionUID = 1L;
 
     private static final String NON_HTTP_REQ_MSG =
-        "Not available. Non-http request.";
+            "Not available. Non-http request.";
     private static final String NON_HTTP_RES_MSG =
-        "Not available. Non-http response.";
+            "Not available. Non-http response.";
 
     private static final ThreadLocal<Timestamp> timestamp = ThreadLocal.withInitial(Timestamp::new);
 
@@ -71,14 +66,13 @@ public class RequestDumperFilter extends GenericFilter {
      * @param request  The servlet request to be processed
      * @param response The servlet response to be created
      * @param chain    The filter chain being processed
-     *
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet error occurs
+     * @throws IOException      if an input/output error occurs
+     * @throws ServletException if a servlet error occurs
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain)
-        throws IOException, ServletException {
+                         FilterChain chain)
+            throws IOException, ServletException {
 
         HttpServletRequest hRequest = null;
         HttpServletResponse hResponse = null;
@@ -96,7 +90,8 @@ public class RequestDumperFilter extends GenericFilter {
         if (hRequest == null) {
             doLog("        requestURI", NON_HTTP_REQ_MSG);
             doLog("          authType", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("        requestURI", hRequest.getRequestURI());
             doLog("          authType", hRequest.getAuthType());
         }
@@ -110,9 +105,10 @@ public class RequestDumperFilter extends GenericFilter {
             doLog("       contextPath", NON_HTTP_REQ_MSG);
             doLog("            cookie", NON_HTTP_REQ_MSG);
             doLog("            header", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("       contextPath", hRequest.getContextPath());
-            Cookie cookies[] = hRequest.getCookies();
+            Cookie[] cookies = hRequest.getCookies();
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
                     doLog("            cookie", cookie.getName() +
@@ -134,14 +130,15 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hRequest == null) {
             doLog("            method", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("            method", hRequest.getMethod());
         }
 
         Enumeration<String> pnames = request.getParameterNames();
         while (pnames.hasMoreElements()) {
             String pname = pnames.nextElement();
-            String pvalues[] = request.getParameterValues(pname);
+            String[] pvalues = request.getParameterValues(pname);
             StringBuilder result = new StringBuilder(pname);
             result.append('=');
             for (int i = 0; i < pvalues.length; i++) {
@@ -155,7 +152,8 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hRequest == null) {
             doLog("          pathInfo", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("          pathInfo", hRequest.getPathInfo());
         }
 
@@ -163,7 +161,8 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hRequest == null) {
             doLog("       queryString", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("       queryString", hRequest.getQueryString());
         }
 
@@ -173,7 +172,8 @@ public class RequestDumperFilter extends GenericFilter {
         if (hRequest == null) {
             doLog("        remoteUser", NON_HTTP_REQ_MSG);
             doLog("requestedSessionId", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("        remoteUser", hRequest.getRemoteUser());
             doLog("requestedSessionId", hRequest.getRequestedSessionId());
         }
@@ -185,7 +185,8 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hRequest == null) {
             doLog("       servletPath", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("       servletPath", hRequest.getServletPath());
         }
 
@@ -202,7 +203,8 @@ public class RequestDumperFilter extends GenericFilter {
                 "--------------------------------------------");
         if (hRequest == null) {
             doLog("          authType", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("          authType", hRequest.getAuthType());
         }
 
@@ -210,7 +212,8 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hResponse == null) {
             doLog("            header", NON_HTTP_RES_MSG);
-        } else {
+        }
+        else {
             Iterable<String> rhnames = hResponse.getHeaderNames();
             for (String rhname : rhnames) {
                 Iterable<String> rhvalues = hResponse.getHeaders(rhname);
@@ -222,13 +225,15 @@ public class RequestDumperFilter extends GenericFilter {
 
         if (hRequest == null) {
             doLog("        remoteUser", NON_HTTP_REQ_MSG);
-        } else {
+        }
+        else {
             doLog("        remoteUser", hRequest.getRemoteUser());
         }
 
         if (hResponse == null) {
             doLog("            status", NON_HTTP_RES_MSG);
-        } else {
+        }
+        else {
             doLog("            status",
                     Integer.toString(hResponse.getStatus()));
         }
@@ -239,13 +244,12 @@ public class RequestDumperFilter extends GenericFilter {
     }
 
     private void doLog(String attribute, String value) {
-        StringBuilder sb = new StringBuilder(80);
-        sb.append(Thread.currentThread().getName());
-        sb.append(' ');
-        sb.append(attribute);
-        sb.append('=');
-        sb.append(value);
-        log.info(sb.toString());
+        String sb = Thread.currentThread().getName() +
+                ' ' +
+                attribute +
+                '=' +
+                value;
+        log.info(sb);
     }
 
     private String getTimestamp() {
@@ -274,8 +278,9 @@ public class RequestDumperFilter extends GenericFilter {
     private static final class Timestamp {
         private final Date date = new Date(0);
         private final SimpleDateFormat format =
-            new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+                new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
         private String dateString = format.format(date);
+
         private void update() {
             dateString = format.format(date);
         }

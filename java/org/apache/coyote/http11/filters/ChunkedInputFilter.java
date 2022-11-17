@@ -16,14 +16,6 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.http11.Constants;
@@ -33,6 +25,14 @@ import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Chunked input filter. Parses chunked data according to
  * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.6.1">http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.6.1</a><br>
@@ -41,14 +41,13 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler {
 
-    private static final StringManager sm = StringManager.getManager(
-            ChunkedInputFilter.class.getPackage().getName());
+    protected static final String ENCODING_NAME = "chunked";
 
 
     // -------------------------------------------------------------- Constants
-
-    protected static final String ENCODING_NAME = "chunked";
     protected static final ByteChunk ENCODING = new ByteChunk();
+    private static final StringManager sm = StringManager.getManager(
+            ChunkedInputFilter.class.getPackage().getName());
 
 
     // ----------------------------------------------------- Static Initializer
@@ -62,81 +61,57 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
     // ----------------------------------------------------- Instance Variables
 
     /**
+     * Byte chunk used to store trailing headers.
+     */
+    protected final ByteChunk trailingHeaders = new ByteChunk();
+    /**
+     * Limit for extension size.
+     */
+    private final long maxExtensionSize;
+    /**
+     * Limit for trailer size.
+     */
+    private final int maxTrailerSize;
+    private final int maxSwallowSize;
+    private final Set<String> allowedTrailerHeaders;
+    /**
      * Next buffer in the pipeline.
      */
     protected InputBuffer buffer;
-
-
     /**
      * Number of bytes remaining in the current chunk.
      */
     protected int remaining = 0;
-
-
     /**
      * Byte chunk used to read bytes.
      */
     protected ByteBuffer readChunk;
-
-
     /**
      * Flag set to true when the end chunk has been read.
      */
     protected boolean endChunk = false;
-
-
-    /**
-     * Byte chunk used to store trailing headers.
-     */
-    protected final ByteChunk trailingHeaders = new ByteChunk();
-
-
     /**
      * Flag set to true if the next call to doRead() must parse a CRLF pair
      * before doing anything else.
      */
     protected boolean needCRLFParse = false;
-
-
     /**
      * Request being parsed.
      */
     private Request request;
-
-
-    /**
-     * Limit for extension size.
-     */
-    private final long maxExtensionSize;
-
-
-    /**
-     * Limit for trailer size.
-     */
-    private final int maxTrailerSize;
-
-
     /**
      * Size of extensions processed for this request.
      */
     private long extensionSize;
-
-
-    private final int maxSwallowSize;
-
-
     /**
      * Flag that indicates if an error has occurred.
      */
     private boolean error;
 
-
-    private final Set<String> allowedTrailerHeaders;
-
     // ----------------------------------------------------------- Constructors
 
     public ChunkedInputFilter(int maxTrailerSize, Set<String> allowedTrailerHeaders,
-            int maxExtensionSize, int maxSwallowSize) {
+                              int maxExtensionSize, int maxSwallowSize) {
         this.trailingHeaders.setLimit(maxTrailerSize);
         this.allowedTrailerHeaders = allowedTrailerHeaders;
         this.maxExtensionSize = maxExtensionSize;
@@ -155,7 +130,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
         checkError();
 
-        if(needCRLFParse) {
+        if (needCRLFParse) {
             needCRLFParse = false;
             parseCRLF(false);
         }
@@ -185,7 +160,8 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
                 handler.setByteBuffer(readChunk.duplicate());
             }
             readChunk.position(readChunk.limit());
-        } else {
+        }
+        else {
             result = remaining;
             if (readChunk != handler.getByteBuffer()) {
                 handler.setByteBuffer(readChunk.duplicate());
@@ -198,7 +174,8 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
                 //if we call parseCRLF we overrun the buffer here
                 //so we defer it to the next call BZ 11117
                 needCRLFParse = true;
-            } else {
+            }
+            else {
                 parseCRLF(false); //parse the CRLF immediately
             }
         }
@@ -250,7 +227,8 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
         if (available == 0) {
             // No data buffered here. Try the next filter in the chain.
             return buffer.available();
-        } else {
+        }
+        else {
             return available;
         }
     }
@@ -303,6 +281,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
     /**
      * Read bytes from the previous buffer.
+     *
      * @return The byte count which has been read
      * @throws IOException Read error
      */
@@ -321,8 +300,9 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
      * The letters before CRLF or ';' (whatever comes first) must be valid hex
      * digits. We should not parse F23IAMGONNAMESSTHISUP34CRLF as a valid
      * header according to the spec.
+     *
      * @return <code>true</code> if the chunk header has been
-     *  successfully parsed
+     * successfully parsed
      * @throws IOException Read error
      */
     protected boolean parseChunkHeader() throws IOException {
@@ -344,24 +324,28 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
             if (chr == Constants.CR || chr == Constants.LF) {
                 parseCRLF(false);
                 eol = true;
-            } else if (chr == Constants.SEMI_COLON && !extension) {
+            }
+            else if (chr == Constants.SEMI_COLON && !extension) {
                 // First semi-colon marks the start of the extension. Further
                 // semi-colons may appear to separate multiple chunk-extensions.
                 // These need to be processed as part of parsing the extensions.
                 extension = true;
                 extensionSize++;
-            } else if (!extension) {
+            }
+            else if (!extension) {
                 //don't read data after the trailer
                 int charValue = HexUtils.getDec(chr);
                 if (charValue != -1 && readDigit < 8) {
                     readDigit++;
                     result = (result << 4) | charValue;
-                } else {
+                }
+                else {
                     //we shouldn't allow invalid, non hex characters
                     //in the chunked header
                     return false;
                 }
-            } else {
+            }
+            else {
                 // Extension 'parsing'
                 // Note that the chunk-extension is neither parsed nor
                 // validated. Currently it is simply ignored.
@@ -393,9 +377,9 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
     /**
      * Parse CRLF at end of chunk.
      *
-     * @param   tolerant    Should tolerant parsing (LF and CRLF) be used? This
-     *                      is recommended (RFC2616, section 19.3) for message
-     *                      headers.
+     * @param tolerant Should tolerant parsing (LF and CRLF) be used? This
+     *                 is recommended (RFC2616, section 19.3) for message
+     *                 headers.
      * @throws IOException An error occurred parsing CRLF
      */
     protected void parseCRLF(boolean tolerant) throws IOException {
@@ -416,12 +400,14 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
                     throwIOException(sm.getString("chunkedInputFilter.invalidCrlfCRCR"));
                 }
                 crfound = true;
-            } else if (chr == Constants.LF) {
+            }
+            else if (chr == Constants.LF) {
                 if (!tolerant && !crfound) {
                     throwIOException(sm.getString("chunkedInputFilter.invalidCrlfNoCR"));
                 }
                 eol = true;
-            } else {
+            }
+            else {
                 throwIOException(sm.getString("chunkedInputFilter.invalidCrlf"));
             }
 
@@ -432,6 +418,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
     /**
      * Parse end chunk data.
+     *
      * @throws IOException Error propagation
      */
     protected void parseEndChunk() throws IOException {
@@ -444,14 +431,14 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
     private boolean parseHeader() throws IOException {
 
-        Map<String,String> headers = request.getTrailerFields();
+        Map<String, String> headers = request.getTrailerFields();
 
         byte chr = 0;
 
         // Read new bytes if needed
         if (readChunk == null || readChunk.position() >= readChunk.limit()) {
-            if (readBytes() <0) {
-               throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
+            if (readBytes() < 0) {
+                throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
             }
         }
 
@@ -477,7 +464,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
             // Read new bytes if needed
             if (readChunk == null || readChunk.position() >= readChunk.limit()) {
-                if (readBytes() <0) {
+                if (readBytes() < 0) {
                     throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
                 }
             }
@@ -490,7 +477,8 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
             if (chr == Constants.COLON) {
                 colon = true;
-            } else {
+            }
+            else {
                 trailingHeaders.append(chr);
             }
 
@@ -516,7 +504,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
                 // Read new bytes if needed
                 if (readChunk == null || readChunk.position() >= readChunk.limit()) {
-                    if (readBytes() <0) {
+                    if (readBytes() < 0) {
                         throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
                     }
                 }
@@ -526,12 +514,13 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
                     readChunk.position(readChunk.position() + 1);
                     // If we swallow whitespace, make sure it counts towards the
                     // limit placed on trailing header size
-                    int newlimit = trailingHeaders.getLimit() -1;
+                    int newlimit = trailingHeaders.getLimit() - 1;
                     if (trailingHeaders.getEnd() > newlimit) {
                         throwIOException(sm.getString("chunkedInputFilter.maxTrailer"));
                     }
                     trailingHeaders.setLimit(newlimit);
-                } else {
+                }
+                else {
                     space = false;
                 }
 
@@ -542,7 +531,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
                 // Read new bytes if needed
                 if (readChunk == null || readChunk.position() >= readChunk.limit()) {
-                    if (readBytes() <0) {
+                    if (readBytes() < 0) {
                         throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
                     }
                 }
@@ -551,9 +540,11 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
                 if (chr == Constants.CR || chr == Constants.LF) {
                     parseCRLF(true);
                     eol = true;
-                } else if (chr == Constants.SP) {
+                }
+                else if (chr == Constants.SP) {
                     trailingHeaders.append(chr);
-                } else {
+                }
+                else {
                     trailingHeaders.append(chr);
                     lastSignificantChar = trailingHeaders.getEnd();
                 }
@@ -568,7 +559,7 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
 
             // Read new bytes if needed
             if (readChunk == null || readChunk.position() >= readChunk.limit()) {
-                if (readBytes() <0) {
+                if (readBytes() < 0) {
                     throwEOFException(sm.getString("chunkedInputFilter.eosTrailer"));
                 }
             }
@@ -576,7 +567,8 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
             chr = readChunk.get(readChunk.position());
             if ((chr != Constants.SP) && (chr != Constants.HT)) {
                 validLine = false;
-            } else {
+            }
+            else {
                 eol = false;
                 // Copying one extra space in the buffer (since there must
                 // be at least one space inserted between the lines)
@@ -620,18 +612,15 @@ public class ChunkedInputFilter implements InputFilter, ApplicationBufferHandler
         }
     }
 
-
-    @Override
-    public void setByteBuffer(ByteBuffer buffer) {
-        readChunk = buffer;
-    }
-
-
     @Override
     public ByteBuffer getByteBuffer() {
         return readChunk;
     }
 
+    @Override
+    public void setByteBuffer(ByteBuffer buffer) {
+        readChunk = buffer;
+    }
 
     @Override
     public void expand(int size) {

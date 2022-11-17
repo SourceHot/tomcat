@@ -33,6 +33,18 @@ public class ObjectCreateRule extends Rule {
 
 
     /**
+     * The attribute containing an override class name if it is present.
+     */
+    protected String attributeName = null;
+    /**
+     * The Java class name of the object to be created.
+     */
+    protected String className = null;
+
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
      * Construct an object create rule with the specified class name.
      *
      * @param className Java class name of the object to be created
@@ -48,9 +60,9 @@ public class ObjectCreateRule extends Rule {
      * Construct an object create rule with the specified class name and an
      * optional attribute name containing an override.
      *
-     * @param className Java class name of the object to be created
+     * @param className     Java class name of the object to be created
      * @param attributeName Attribute name which, if present, contains an
-     *  override of the class name to create
+     *                      override of the class name to create
      */
     public ObjectCreateRule(String className,
                             String attributeName) {
@@ -61,31 +73,16 @@ public class ObjectCreateRule extends Rule {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-    /**
-     * The attribute containing an override class name if it is present.
-     */
-    protected String attributeName = null;
-
-
-    /**
-     * The Java class name of the object to be created.
-     */
-    protected String className = null;
-
-
     // --------------------------------------------------------- Public Methods
-
 
     /**
      * Process the beginning of this element.
      *
-     * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     * @param namespace  the namespace URI of the matching element, or an
+     *                   empty string if the parser is not namespace aware or the element has
+     *                   no namespace
+     * @param name       the local name if the parser is namespace aware, or just
+     *                   the element name otherwise
      * @param attributes The attribute list for this element
      */
     @Override
@@ -115,6 +112,7 @@ public class ObjectCreateRule extends Rule {
 
     /**
      * Return the actual class name of the class to be instantiated.
+     *
      * @param attributes The attribute list for this element
      * @return the class name
      */
@@ -135,10 +133,10 @@ public class ObjectCreateRule extends Rule {
      * Process the end of this element.
      *
      * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     *                  empty string if the parser is not namespace aware or the element has
+     *                  no namespace
+     * @param name      the local name if the parser is namespace aware, or just
+     *                  the element name otherwise
      */
     @Override
     public void end(String namespace, String name) throws Exception {
@@ -157,13 +155,12 @@ public class ObjectCreateRule extends Rule {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ObjectCreateRule[");
-        sb.append("className=");
-        sb.append(className);
-        sb.append(", attributeName=");
-        sb.append(attributeName);
-        sb.append(']');
-        return sb.toString();
+        String sb = "ObjectCreateRule[" + "className=" +
+                className +
+                ", attributeName=" +
+                attributeName +
+                ']';
+        return sb;
     }
 
 

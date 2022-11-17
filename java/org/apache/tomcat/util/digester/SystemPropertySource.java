@@ -16,11 +16,11 @@
  */
 package org.apache.tomcat.util.digester;
 
-import java.security.Permission;
-import java.util.PropertyPermission;
-
 import org.apache.tomcat.util.IntrospectionUtils;
 import org.apache.tomcat.util.security.PermissionCheck;
+
+import java.security.Permission;
+import java.util.PropertyPermission;
 
 /**
  * A {@link org.apache.tomcat.util.IntrospectionUtils.SecurePropertySource}

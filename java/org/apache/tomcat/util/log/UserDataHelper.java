@@ -31,7 +31,7 @@ import org.apache.juli.logging.Log;
  * <li>INFO_ALL: Log all problems at INFO log level.</li>
  * </ul>
  * By default, INFO_THEN_DEBUG is used with a suppression time of 24 hours.
- *
+ * <p>
  * NOTE: This class is not completely thread-safe. When using INFO_THEN_DEBUG it
  * is possible that several INFO messages will be logged before dropping to
  * DEBUG.
@@ -58,7 +58,8 @@ public class UserDataHelper {
                 "org.apache.juli.logging.UserDataHelper.CONFIG");
         if (configString == null) {
             tempConfig = Config.INFO_THEN_DEBUG;
-        } else {
+        }
+        else {
             try {
                 tempConfig = Config.valueOf(configString);
             } catch (IllegalArgumentException iae) {
@@ -93,15 +94,19 @@ public class UserDataHelper {
     public Mode getNextMode() {
         if (Config.NONE == config) {
             return null;
-        } else if (Config.DEBUG_ALL == config) {
+        }
+        else if (Config.DEBUG_ALL == config) {
             return log.isDebugEnabled() ? Mode.DEBUG : null;
-        } else if (Config.INFO_THEN_DEBUG == config) {
+        }
+        else if (Config.INFO_THEN_DEBUG == config) {
             if (logAtInfo()) {
                 return log.isInfoEnabled() ? Mode.INFO_THEN_DEBUG : null;
-            } else {
+            }
+            else {
                 return log.isDebugEnabled() ? Mode.DEBUG : null;
             }
-        } else if (Config.INFO_ALL == config) {
+        }
+        else if (Config.INFO_ALL == config) {
             return log.isInfoEnabled() ? Mode.INFO : null;
         }
         // Should never happen

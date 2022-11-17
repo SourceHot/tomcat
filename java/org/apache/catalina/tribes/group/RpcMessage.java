@@ -16,13 +16,9 @@
  */
 package org.apache.catalina.tribes.group;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
-
 import org.apache.catalina.tribes.util.Arrays;
+
+import java.io.*;
 
 public class RpcMessage implements Externalizable {
 
@@ -42,7 +38,7 @@ public class RpcMessage implements Externalizable {
     }
 
     @Override
-    public void readExternal(ObjectInput in) throws IOException,ClassNotFoundException {
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         reply = in.readBoolean();
         int length = in.readInt();
         uuid = new byte[length];
@@ -50,7 +46,7 @@ public class RpcMessage implements Externalizable {
         length = in.readInt();
         rpcId = new byte[length];
         in.readFully(rpcId);
-        message = (Serializable)in.readObject();
+        message = (Serializable) in.readObject();
     }
 
     @Override
@@ -65,15 +61,14 @@ public class RpcMessage implements Externalizable {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("RpcMessage[");
-        buf.append(super.toString());
-        buf.append("] rpcId=");
-        buf.append(Arrays.toString(rpcId));
-        buf.append("; uuid=");
-        buf.append(Arrays.toString(uuid));
-        buf.append("; msg=");
-        buf.append(message);
-        return buf.toString();
+        String buf = "RpcMessage[" + super.toString() +
+                "] rpcId=" +
+                Arrays.toString(rpcId) +
+                "; uuid=" +
+                Arrays.toString(uuid) +
+                "; msg=" +
+                message;
+        return buf;
     }
 
     public static class NoRpcChannelReply extends RpcMessage {
@@ -82,7 +77,7 @@ public class RpcMessage implements Externalizable {
         }
 
         public NoRpcChannelReply(byte[] rpcid, byte[] uuid) {
-            super(rpcid,uuid,null);
+            super(rpcid, uuid, null);
             reply = true;
         }
 

@@ -16,9 +16,6 @@
  */
 package org.apache.catalina.tribes.group.interceptors;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.catalina.tribes.ChannelMessage;
 import org.apache.catalina.tribes.Member;
 import org.apache.catalina.tribes.group.ChannelInterceptorBase;
@@ -26,6 +23,9 @@ import org.apache.catalina.tribes.membership.Membership;
 import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>Title: Member domain filter interceptor </p>
@@ -38,8 +38,8 @@ import org.apache.juli.logging.LogFactory;
 public class DomainFilterInterceptor extends ChannelInterceptorBase
         implements DomainFilterInterceptorMBean {
 
-    private static final Log log = LogFactory.getLog(DomainFilterInterceptor.class);
     protected static final StringManager sm = StringManager.getManager(DomainFilterInterceptor.class);
+    private static final Log log = LogFactory.getLog(DomainFilterInterceptor.class);
     protected volatile Membership membership = null;
 
     protected byte[] domain = new byte[0];
@@ -50,7 +50,8 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
     public void messageReceived(ChannelMessage msg) {
         if (Arrays.equals(domain, msg.getAddress().getDomain())) {
             super.messageReceived(msg);
-        } else {
+        }
+        else {
             if (logCounter.incrementAndGet() >= logInterval) {
                 logCounter.set(0);
                 if (log.isWarnEnabled()) {
@@ -63,20 +64,21 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
 
     @Override
     public void memberAdded(Member member) {
-        if ( membership == null ) {
+        if (membership == null) {
             setupMembership();
         }
         boolean notify = false;
         synchronized (membership) {
-            notify = Arrays.equals(domain,member.getDomain());
-            if ( notify ) {
+            notify = Arrays.equals(domain, member.getDomain());
+            if (notify) {
                 notify = membership.memberAlive(member);
             }
         }
-        if ( notify ) {
+        if (notify) {
             super.memberAdded(member);
-        } else {
-            if(log.isInfoEnabled()) {
+        }
+        else {
+            if (log.isInfoEnabled()) {
                 log.info(sm.getString("domainFilterInterceptor.member.refused", member));
             }
         }
@@ -84,24 +86,24 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
 
     @Override
     public void memberDisappeared(Member member) {
-        if ( membership == null ) {
+        if (membership == null) {
             setupMembership();
         }
         boolean notify = false;
         synchronized (membership) {
-            notify = Arrays.equals(domain,member.getDomain());
-            if ( notify ) {
+            notify = Arrays.equals(domain, member.getDomain());
+            if (notify) {
                 membership.removeMember(member);
             }
         }
-        if ( notify ) {
+        if (notify) {
             super.memberDisappeared(member);
         }
     }
 
     @Override
     public boolean hasMembers() {
-        if ( membership == null ) {
+        if (membership == null) {
             setupMembership();
         }
         return membership.hasMembers();
@@ -109,7 +111,7 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
 
     @Override
     public Member[] getMembers() {
-        if ( membership == null ) {
+        if (membership == null) {
             setupMembership();
         }
         return membership.getMembers();
@@ -117,7 +119,7 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
 
     @Override
     public Member getMember(Member mbr) {
-        if ( membership == null ) {
+        if (membership == null) {
             setupMembership();
         }
         return membership.getMember(mbr);
@@ -130,7 +132,7 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
 
 
     protected synchronized void setupMembership() {
-        if ( membership == null ) {
+        if (membership == null) {
             membership = new Membership(super.getLocalMember(true));
         }
 
@@ -146,12 +148,13 @@ public class DomainFilterInterceptor extends ChannelInterceptorBase
     }
 
     public void setDomain(String domain) {
-        if ( domain == null ) {
+        if (domain == null) {
             return;
         }
         if (domain.startsWith("{")) {
             setDomain(org.apache.catalina.tribes.util.Arrays.fromString(domain));
-        } else {
+        }
+        else {
             setDomain(org.apache.catalina.tribes.util.Arrays.convert(domain));
         }
     }

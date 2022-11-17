@@ -35,7 +35,7 @@ public interface UserDatabase {
     /**
      * @return the UserConfig listener with which we are associated.
      */
-    public UserConfig getUserConfig();
+    UserConfig getUserConfig();
 
 
     /**
@@ -43,24 +43,23 @@ public interface UserDatabase {
      *
      * @param userConfig The new UserConfig listener
      */
-    public void setUserConfig(UserConfig userConfig);
+    void setUserConfig(UserConfig userConfig);
 
 
     // ------------------------------------------------------- Public Methods
 
 
     /**
-     * @return an absolute pathname to the home directory for the specified user.
-     *
      * @param user User for which a home directory should be retrieved
+     * @return an absolute pathname to the home directory for the specified user.
      */
-    public String getHome(String user);
+    String getHome(String user);
 
 
     /**
      * @return an enumeration of the usernames defined on this server.
      */
-    public Enumeration<String> getUsers();
+    Enumeration<String> getUsers();
 
 
 }

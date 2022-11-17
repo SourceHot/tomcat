@@ -16,19 +16,9 @@
  */
 package org.apache.catalina.authenticator;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Host;
-import org.apache.catalina.LifecycleException;
+import org.apache.catalina.*;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.connector.Request;
 import org.apache.coyote.ActionCode;
@@ -37,6 +27,10 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.net.Constants;
 import org.apache.tomcat.util.net.SSLHostConfig;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
 
 /**
  * An <b>Authenticator</b> and <b>Valve</b> implementation of authentication
@@ -53,10 +47,9 @@ public class SSLAuthenticator extends AuthenticatorBase {
      * chain, validating it against the trust manager for the connector and then
      * validating the user's identity against the configured Realm.
      *
-     * @param request Request we are processing
+     * @param request  Request we are processing
      * @param response Response we are creating
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     protected boolean doAuthenticate(Request request, HttpServletResponse response)
@@ -79,7 +72,7 @@ public class SSLAuthenticator extends AuthenticatorBase {
             containerLog.debug(" Looking up certificates");
         }
 
-        X509Certificate certs[] = getRequestCertificates(request);
+        X509Certificate[] certs = getRequestCertificates(request);
 
         if ((certs == null) || (certs.length < 1)) {
             if (containerLog.isDebugEnabled()) {
@@ -97,7 +90,7 @@ public class SSLAuthenticator extends AuthenticatorBase {
                 containerLog.debug("  Realm.authenticate() returned false");
             }
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                               sm.getString("authenticator.unauthorized"));
+                    sm.getString("authenticator.unauthorized"));
             return false;
         }
 
@@ -127,15 +120,13 @@ public class SSLAuthenticator extends AuthenticatorBase {
      * <code>jakarta.servlet.request.X509Certificate</code>. If not found, trigger
      * extracting the certificate chain from the Coyote request.
      *
-     * @param request
-     *            Request to be processed
-     *
+     * @param request Request to be processed
      * @return The X509 certificate chain if found, <code>null</code> otherwise.
      */
     protected X509Certificate[] getRequestCertificates(final Request request)
             throws IllegalStateException {
 
-        X509Certificate certs[] =
+        X509Certificate[] certs =
                 (X509Certificate[]) request.getAttribute(Globals.CERTIFICATES_ATTR);
 
         if ((certs == null) || (certs.length < 1)) {

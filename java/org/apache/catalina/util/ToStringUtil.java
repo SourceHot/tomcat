@@ -47,14 +47,15 @@ public class ToStringUtil {
 
 
     private static final String containedToString(Object contained, Object container,
-            String containerTypeName) {
+                                                  String containerTypeName) {
         StringBuilder sb = new StringBuilder(contained.getClass().getSimpleName());
         sb.append('[');
         if (container == null) {
             sb.append(containerTypeName);
             sb.append(" is null");
-        } else {
-            sb.append(container.toString());
+        }
+        else {
+            sb.append(container);
         }
         sb.append(']');
         return sb.toString();

@@ -16,12 +16,7 @@
  */
 package org.apache.catalina.valves;
 
-import org.apache.catalina.Contained;
-import org.apache.catalina.Container;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Valve;
+import org.apache.catalina.*;
 import org.apache.catalina.util.LifecycleMBeanBase;
 import org.apache.catalina.util.ToStringUtil;
 import org.apache.juli.logging.Log;
@@ -42,6 +37,26 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
 
 
     //------------------------------------------------------ Constructor
+    /**
+     * Does this valve support Servlet 3+ async requests?
+     */
+    protected boolean asyncSupported;
+    /**
+     * The Container whose pipeline this Valve is a component of.
+     */
+    protected Container container = null;
+
+
+    //------------------------------------------------------ Instance Variables
+    /**
+     * Container log
+     */
+    protected Log containerLog = null;
+    /**
+     * The next Valve in the pipeline this Valve is a component of.
+     */
+    protected Valve next = null;
+
 
     public ValveBase() {
         this(false);
@@ -51,32 +66,6 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
     public ValveBase(boolean asyncSupported) {
         this.asyncSupported = asyncSupported;
     }
-
-
-    //------------------------------------------------------ Instance Variables
-
-    /**
-     * Does this valve support Servlet 3+ async requests?
-     */
-    protected boolean asyncSupported;
-
-
-    /**
-     * The Container whose pipeline this Valve is a component of.
-     */
-    protected Container container = null;
-
-
-    /**
-     * Container log
-     */
-    protected Log containerLog = null;
-
-
-    /**
-     * The next Valve in the pipeline this Valve is a component of.
-     */
-    protected Valve next = null;
 
 
     //-------------------------------------------------------------- Properties
@@ -157,8 +146,8 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -170,8 +159,8 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
      * Stop this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void stopInternal() throws LifecycleException {
@@ -215,7 +204,7 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
                 if (valve.getClass() == this.getClass()) {
                     // Duplicate valve earlier in pipeline
                     // increment sequence number
-                    seq ++;
+                    seq++;
                 }
             }
         }
@@ -242,7 +231,8 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
         Container c = getContainer();
         if (c == null) {
             return null;
-        } else {
+        }
+        else {
             return c.getDomain();
         }
     }

@@ -16,16 +16,15 @@
  */
 package org.apache.catalina.filters;
 
-import java.security.SecureRandom;
-import java.util.Random;
-
 import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.security.SecureRandom;
+import java.util.Random;
 
 public abstract class CsrfPreventionFilterBase extends FilterBase {
 
@@ -55,8 +54,7 @@ public abstract class CsrfPreventionFilterBase extends FilterBase {
      * Set response status code that is used to reject denied request. If none
      * set, the default value of 403 will be used.
      *
-     * @param denyStatus
-     *            HTTP status code
+     * @param denyStatus HTTP status code
      */
     public void setDenyStatus(int denyStatus) {
         this.denyStatus = denyStatus;
@@ -66,8 +64,7 @@ public abstract class CsrfPreventionFilterBase extends FilterBase {
      * Specify the class to use to generate the nonces. Must be in instance of
      * {@link Random}.
      *
-     * @param randomClass
-     *            The name of the class to use
+     * @param randomClass The name of the class to use
      */
     public void setRandomClass(String randomClass) {
         this.randomClass = randomClass;
@@ -99,9 +96,8 @@ public abstract class CsrfPreventionFilterBase extends FilterBase {
      * requests. The nonce generation is a simplified version of
      * ManagerBase.generateSessionId().
      *
-     * @param request   The request. Unused in this method but present for the
-     *                  the benefit of sub-classes.
-     *
+     * @param request The request. Unused in this method but present for the
+     *                the benefit of sub-classes.
      * @return the generated nonce
      */
     protected String generateNonce(HttpServletRequest request) {
@@ -114,13 +110,12 @@ public abstract class CsrfPreventionFilterBase extends FilterBase {
      * ManagerBase.generateSessionId().
      *
      * @return the generated nonce
-     *
      * @deprecated Use {@link #generateNonce(HttpServletRequest)} instead. This
-     *             method will be removed in Apache Tomcat 10.1.x onwards.
+     * method will be removed in Apache Tomcat 10.1.x onwards.
      */
     @Deprecated
     protected String generateNonce() {
-        byte random[] = new byte[16];
+        byte[] random = new byte[16];
 
         // Render the result as a String of hexadecimal digits
         StringBuilder buffer = new StringBuilder();
@@ -132,12 +127,14 @@ public abstract class CsrfPreventionFilterBase extends FilterBase {
             byte b2 = (byte) (b & 0x0f);
             if (b1 < 10) {
                 buffer.append((char) ('0' + b1));
-            } else {
+            }
+            else {
                 buffer.append((char) ('A' + (b1 - 10)));
             }
             if (b2 < 10) {
                 buffer.append((char) ('0' + b2));
-            } else {
+            }
+            else {
                 buffer.append((char) ('A' + (b2 - 10)));
             }
         }

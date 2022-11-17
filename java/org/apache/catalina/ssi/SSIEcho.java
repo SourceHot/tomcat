@@ -17,9 +17,10 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.PrintWriter;
 
-import org.apache.tomcat.util.res.StringManager;
 /**
  * Return the result associated with the supplied Server Variable.
  *
@@ -29,17 +30,16 @@ import org.apache.tomcat.util.res.StringManager;
  * @author David Becker
  */
 public class SSIEcho implements SSICommand {
-    private static final StringManager sm = StringManager.getManager(SSIEcho.class);
     protected static final String DEFAULT_ENCODING = SSIMediator.ENCODING_ENTITY;
     protected static final String MISSING_VARIABLE_VALUE = "(none)";
-
+    private static final StringManager sm = StringManager.getManager(SSIEcho.class);
 
     /**
      * @see SSICommand
      */
     @Override
     public long process(SSIMediator ssiMediator, String commandName,
-            String[] paramNames, String[] paramValues, PrintWriter writer) {
+                        String[] paramNames, String[] paramValues, PrintWriter writer) {
         String encoding = DEFAULT_ENCODING;
         String originalValue = null;
         String errorMessage = ssiMediator.getConfigErrMsg();
@@ -48,14 +48,17 @@ public class SSIEcho implements SSICommand {
             String paramValue = paramValues[i];
             if (paramName.equalsIgnoreCase("var")) {
                 originalValue = paramValue;
-            } else if (paramName.equalsIgnoreCase("encoding")) {
+            }
+            else if (paramName.equalsIgnoreCase("encoding")) {
                 if (isValidEncoding(paramValue)) {
                     encoding = paramValue;
-                } else {
+                }
+                else {
                     ssiMediator.log(sm.getString("ssiEcho.invalidEncoding", paramValue));
                     writer.write(ssiMediator.encode(errorMessage, SSIMediator.ENCODING_ENTITY));
                 }
-            } else {
+            }
+            else {
                 ssiMediator.log(sm.getString("ssiCommand.invalidAttribute", paramName));
                 writer.write(ssiMediator.encode(errorMessage, SSIMediator.ENCODING_ENTITY));
             }

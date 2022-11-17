@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.util.http.parser;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-
-import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.buf.MessageBytes;
 
 public class Host {
 
@@ -34,12 +34,10 @@ public class Host {
      * Parse the given input as an HTTP Host header value.
      *
      * @param mb The host header value
-     *
      * @return The position of ':' that separates the host from the port or -1
-     *         if it is not present
-     *
+     * if it is not present
      * @throws IllegalArgumentException If the host header value is not
-     *         specification compliant
+     *                                  specification compliant
      */
     public static int parse(MessageBytes mb) {
         return parse(new MessageBytesReader(mb));
@@ -50,12 +48,10 @@ public class Host {
      * Parse the given input as an HTTP Host header value.
      *
      * @param string The host header value
-     *
      * @return The position of ':' that separates the host from the port or -1
-     *         if it is not present
-     *
+     * if it is not present
      * @throws IllegalArgumentException If the host header value is not
-     *         specification compliant
+     *                                  specification compliant
      */
     public static int parse(String string) {
         return parse(new StringReader(string));
@@ -69,11 +65,14 @@ public class Host {
             reader.reset();
             if (HttpParser.isAlpha(first)) {
                 return HttpParser.readHostDomainName(reader);
-            } else if (HttpParser.isNumeric(first)) {
+            }
+            else if (HttpParser.isNumeric(first)) {
                 return HttpParser.readHostIPv4(reader, false);
-            } else if ('[' == first) {
+            }
+            else if ('[' == first) {
                 return HttpParser.readHostIPv6(reader);
-            } else {
+            }
+            else {
                 // Invalid
                 throw new IllegalArgumentException();
             }
@@ -119,7 +118,8 @@ public class Host {
             if (pos < end) {
                 // Want output in range 0 to 255, not -128 to 127
                 return bytes[pos++] & 0xFF;
-            } else {
+            }
+            else {
                 return -1;
             }
         }

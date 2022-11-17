@@ -17,7 +17,6 @@
 package org.apache.tomcat.util.descriptor.web;
 
 
-
 /**
  * Representation of a resource link for a web application, as
  * represented in a <code>&lt;ResourceLink&gt;</code> element in the
@@ -32,7 +31,7 @@ public class ContextResourceLink extends ResourceBase {
 
     // ------------------------------------------------------------- Properties
 
-   /**
+    /**
      * The global name of this resource.
      */
     private String global = null;
@@ -107,16 +106,13 @@ public class ContextResourceLink extends ResourceBase {
             if (other.factory != null) {
                 return false;
             }
-        } else if (!factory.equals(other.factory)) {
+        }
+        else if (!factory.equals(other.factory)) {
             return false;
         }
         if (global == null) {
-            if (other.global != null) {
-                return false;
-            }
-        } else if (!global.equals(other.global)) {
-            return false;
+            return other.global == null;
         }
-        return true;
+        else return global.equals(other.global);
     }
 }

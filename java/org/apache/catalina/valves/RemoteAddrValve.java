@@ -17,14 +17,13 @@
 package org.apache.catalina.valves;
 
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletException;
-
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+
+import java.io.IOException;
 
 
 /**
@@ -46,16 +45,16 @@ public final class RemoteAddrValve extends RequestFilterValve {
         String property;
         if (getUsePeerAddress()) {
             property = request.getPeerAddr();
-        } else {
+        }
+        else {
             property = request.getRequest().getRemoteAddr();
         }
         if (getAddConnectorPort()) {
             property = property + ";" +
-                request.getConnector().getPortWithOffset();
+                    request.getConnector().getPortWithOffset();
         }
         process(property, request, response);
     }
-
 
 
     @Override

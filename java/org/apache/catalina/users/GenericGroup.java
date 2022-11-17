@@ -17,14 +17,14 @@
 package org.apache.catalina.users;
 
 
+import org.apache.catalina.Role;
+import org.apache.catalina.User;
+import org.apache.catalina.UserDatabase;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.apache.catalina.Role;
-import org.apache.catalina.User;
-import org.apache.catalina.UserDatabase;
 
 
 /**
@@ -32,7 +32,6 @@ import org.apache.catalina.UserDatabase;
  * {@link UserDatabase}.</p>
  *
  * @param <UD> The specific type of UserDase with which this group is associated
- *
  * @author Craig R. McClanahan
  */
 public class GenericGroup<UD extends UserDatabase> extends AbstractGroup {
@@ -42,16 +41,29 @@ public class GenericGroup<UD extends UserDatabase> extends AbstractGroup {
 
 
     /**
+     * The {@link UserDatabase} that owns this group.
+     */
+    protected final UD database;
+
+
+    // ----------------------------------------------------- Instance Variables
+    /**
+     * The set of {@link Role}s associated with this group.
+     */
+    protected final CopyOnWriteArrayList<Role> roles = new CopyOnWriteArrayList<>();
+
+
+    /**
      * Package-private constructor used by the factory method in
      * {@link UserDatabase}.
      *
-     * @param database The {@link UserDatabase} that owns this group
-     * @param groupname Group name of this group
+     * @param database    The {@link UserDatabase} that owns this group
+     * @param groupname   Group name of this group
      * @param description Description of this group
-     * @param roles The roles of this group
+     * @param roles       The roles of this group
      */
     GenericGroup(UD database,
-                String groupname, String description, List<Role> roles) {
+                 String groupname, String description, List<Role> roles) {
 
         super();
         this.database = database;
@@ -64,23 +76,7 @@ public class GenericGroup<UD extends UserDatabase> extends AbstractGroup {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The {@link UserDatabase} that owns this group.
-     */
-    protected final UD database;
-
-
-    /**
-     * The set of {@link Role}s associated with this group.
-     */
-    protected final CopyOnWriteArrayList<Role> roles = new CopyOnWriteArrayList<>();
-
-
     // ------------------------------------------------------------- Properties
-
 
     /**
      * Return the set of {@link Role}s assigned specifically to this group.

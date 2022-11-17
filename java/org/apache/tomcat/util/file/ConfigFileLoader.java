@@ -28,9 +28,14 @@ public class ConfigFileLoader {
 
     private static ConfigurationSource source;
 
+    private ConfigFileLoader() {
+        // Hide the constructor
+    }
+
     /**
      * Get the configured configuration source. If none has been configured,
      * a default source based on the calling directory will be used.
+     *
      * @return the configuration source in use
      */
     public static final ConfigurationSource getSource() {
@@ -43,16 +48,13 @@ public class ConfigFileLoader {
     /**
      * Set the configuration source used by Tomcat to locate various
      * configuration resources.
+     *
      * @param source The source
      */
     public static final void setSource(ConfigurationSource source) {
         if (ConfigFileLoader.source == null) {
             ConfigFileLoader.source = source;
         }
-    }
-
-    private ConfigFileLoader() {
-        // Hide the constructor
     }
 
 

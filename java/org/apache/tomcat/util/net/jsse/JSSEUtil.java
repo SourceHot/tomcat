@@ -16,14 +16,6 @@
  */
 package org.apache.tomcat.util.net.jsse;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.compat.JreVendor;
@@ -31,6 +23,10 @@ import org.apache.tomcat.util.net.SSLContext;
 import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.apache.tomcat.util.net.SSLUtilBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 /**
  * SSLUtil implementation for JSSE.
@@ -52,12 +48,12 @@ public class JSSEUtil extends SSLUtilBase {
     private volatile Set<String> implementedCiphers;
 
 
-    public JSSEUtil (SSLHostConfigCertificate certificate) {
+    public JSSEUtil(SSLHostConfigCertificate certificate) {
         this(certificate, true);
     }
 
 
-    public JSSEUtil (SSLHostConfigCertificate certificate, boolean warnOnSkip) {
+    public JSSEUtil(SSLHostConfigCertificate certificate, boolean warnOnSkip) {
         super(certificate, warnOnSkip);
     }
 
@@ -103,7 +99,7 @@ public class JSSEUtil extends SSLUtilBase {
                     SSLContext context;
                     try {
                         context = new JSSESSLContext(sslHostConfig.getSslProtocol());
-                        context.init(null,  null,  null);
+                        context.init(null, null, null);
                     } catch (NoSuchAlgorithmException | KeyManagementException e) {
                         // This is fatal for the connector so throw an exception to prevent
                         // it from starting
@@ -146,7 +142,8 @@ public class JSSEUtil extends SSLUtilBase {
                                 implementedCiphers.add("TLS" + name.substring(3));
                             }
                         }
-                    } else {
+                    }
+                    else {
                         implementedCiphers = new HashSet<>(Arrays.asList(implementedCipherSuiteArray));
                     }
                     initialized = true;

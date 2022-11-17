@@ -39,14 +39,14 @@ public abstract class JspFragmentHelper extends JspFragment {
     protected final PageContext _jspx_page_context;
     protected final JspTag parentTag;
 
-    public JspFragmentHelper( int discriminator, JspContext jspContext,
-        JspTag parentTag )
-    {
+    public JspFragmentHelper(int discriminator, JspContext jspContext,
+                             JspTag parentTag) {
         this.discriminator = discriminator;
         this.jspContext = jspContext;
-        if(jspContext instanceof PageContext) {
-            _jspx_page_context = (PageContext)jspContext;
-        } else {
+        if (jspContext instanceof PageContext) {
+            _jspx_page_context = (PageContext) jspContext;
+        }
+        else {
             _jspx_page_context = null;
         }
         this.parentTag = parentTag;

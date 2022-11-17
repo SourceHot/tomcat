@@ -16,12 +16,12 @@
  */
 package org.apache.catalina.util;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * A class representing a CIDR netmask.
@@ -90,7 +90,7 @@ public final class NetMask {
      *
      * @param input the CIDR netmask
      * @throws IllegalArgumentException if the netmask is not correct (invalid
-     *             address specification, malformed CIDR prefix, etc)
+     *                                  address specification, malformed CIDR prefix, etc)
      */
     public NetMask(final String input) {
 
@@ -103,7 +103,8 @@ public final class NetMask {
             foundPort = false;
             nonPortPart = input;
             portPattern = null;
-        } else {
+        }
+        else {
             foundPort = true;
             nonPortPart = input.substring(0, portIdx);
             try {
@@ -222,7 +223,7 @@ public final class NetMask {
     /**
      * Test if a given address matches this netmask.
      *
-     * @param addr The {@link java.net.InetAddress} to test
+     * @param addr        The {@link java.net.InetAddress} to test
      * @param checkedPort Indicates, whether we already checked the port
      * @return true on match, false otherwise
      */

@@ -21,8 +21,9 @@ package org.apache.tomcat.util.descriptor.web;
  * <p>Representation of a message destination for a web application, as
  * represented in a <code>&lt;message-destination&gt;</code> element
  * in the deployment descriptor.</p>
- *
+ * <p>
  * 消息描述
+ *
  * @author Craig R. McClanahan
  * @since Tomcat 5.0
  */
@@ -37,6 +38,14 @@ public class MessageDestination extends ResourceBase {
      * The display name of this destination.
      */
     private String displayName = null;
+    /**
+     * The large icon of this destination.
+     */
+    private String largeIcon = null;
+    /**
+     * The small icon of this destination.
+     */
+    private String smallIcon = null;
 
     public String getDisplayName() {
         return this.displayName;
@@ -46,12 +55,6 @@ public class MessageDestination extends ResourceBase {
         this.displayName = displayName;
     }
 
-
-    /**
-     * The large icon of this destination.
-     */
-    private String largeIcon = null;
-
     public String getLargeIcon() {
         return this.largeIcon;
     }
@@ -59,12 +62,6 @@ public class MessageDestination extends ResourceBase {
     public void setLargeIcon(String largeIcon) {
         this.largeIcon = largeIcon;
     }
-
-
-    /**
-     * The small icon of this destination.
-     */
-    private String smallIcon = null;
 
     public String getSmallIcon() {
         return this.smallIcon;
@@ -137,23 +134,21 @@ public class MessageDestination extends ResourceBase {
             if (other.displayName != null) {
                 return false;
             }
-        } else if (!displayName.equals(other.displayName)) {
+        }
+        else if (!displayName.equals(other.displayName)) {
             return false;
         }
         if (largeIcon == null) {
             if (other.largeIcon != null) {
                 return false;
             }
-        } else if (!largeIcon.equals(other.largeIcon)) {
+        }
+        else if (!largeIcon.equals(other.largeIcon)) {
             return false;
         }
         if (smallIcon == null) {
-            if (other.smallIcon != null) {
-                return false;
-            }
-        } else if (!smallIcon.equals(other.smallIcon)) {
-            return false;
+            return other.smallIcon == null;
         }
-        return true;
+        else return smallIcon.equals(other.smallIcon);
     }
 }

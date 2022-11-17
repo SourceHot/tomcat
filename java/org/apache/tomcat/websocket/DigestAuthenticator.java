@@ -16,13 +16,13 @@
  */
 package org.apache.tomcat.websocket;
 
+import org.apache.tomcat.util.security.MD5Encoder;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Map;
-
-import org.apache.tomcat.util.security.MD5Encoder;
 
 /**
  * Authenticator supporting the DIGEST auth method.
@@ -37,7 +37,7 @@ public class DigestAuthenticator extends Authenticator {
 
     @Override
     public String getAuthorization(String requestUri, String WWWAuthenticate,
-            Map<String, Object> userProperties) throws AuthenticationException {
+                                   Map<String, Object> userProperties) throws AuthenticationException {
 
         String userName = (String) userProperties.get(Constants.WS_AUTHENTICATION_USER_NAME);
         String password = (String) userProperties.get(Constants.WS_AUTHENTICATION_PASSWORD);
@@ -60,7 +60,7 @@ public class DigestAuthenticator extends Authenticator {
 
         if (!messageQop.isEmpty()) {
             if (cnonceGenerator == null) {
-                synchronized(cnonceGeneratorLock) {
+                synchronized (cnonceGeneratorLock) {
                     if (cnonceGenerator == null) {
                         cnonceGenerator = new SecureRandom();
                     }
@@ -80,9 +80,7 @@ public class DigestAuthenticator extends Authenticator {
         try {
             challenge.append("response=\"" + calculateRequestDigest(requestUri, userName, password,
                     realm, nonce, messageQop, algorithm) + "\",");
-        }
-
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new AuthenticationException(
                     "Unable to generate request digest " + e.getMessage());
         }
@@ -101,7 +99,7 @@ public class DigestAuthenticator extends Authenticator {
     }
 
     private String calculateRequestDigest(String requestUri, String userName, String password,
-            String realm, String nonce, String qop, String algorithm)
+                                          String realm, String nonce, String qop, String algorithm)
             throws NoSuchAlgorithmException {
 
         StringBuilder preDigest = new StringBuilder();
@@ -109,7 +107,8 @@ public class DigestAuthenticator extends Authenticator {
 
         if (algorithm.equalsIgnoreCase("MD5")) {
             A1 = userName + ":" + realm + ":" + password;
-        } else {
+        }
+        else {
             A1 = encodeMD5(userName + ":" + realm + ":" + password) + ":" + nonce + ":" + cNonce;
         }
 
@@ -128,7 +127,7 @@ public class DigestAuthenticator extends Authenticator {
             preDigest.append(':');
             preDigest.append(String.format("%08X", Integer.valueOf(nonceCount)));
             preDigest.append(':');
-            preDigest.append(String.valueOf(cNonce));
+            preDigest.append(cNonce);
             preDigest.append(':');
             preDigest.append(qop);
         }

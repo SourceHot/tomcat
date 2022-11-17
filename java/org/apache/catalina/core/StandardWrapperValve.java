@@ -17,16 +17,8 @@
 package org.apache.catalina.core;
 
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import jakarta.servlet.DispatcherType;
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.UnavailableException;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
@@ -41,6 +33,9 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.log.SystemLogHandler;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Valve that implements the default basic behavior for the
  * <code>StandardWrapper</code> container implementation.
@@ -53,22 +48,20 @@ final class StandardWrapperValve extends ValveBase {
 
 
     //------------------------------------------------------ Constructor
-
-    public StandardWrapperValve() {
-        super(true);
-    }
+    private final AtomicInteger requestCount = new AtomicInteger(0);
 
 
     // ----------------------------------------------------- Instance Variables
-
+    private final AtomicInteger errorCount = new AtomicInteger(0);
     // Some JMX statistics. This valve is associated with a StandardWrapper.
     // We expose the StandardWrapper as JMX ( j2eeType=Servlet ). The fields
     // are here for performance.
     private volatile long processingTime;
     private volatile long maxTime;
     private volatile long minTime = Long.MAX_VALUE;
-    private final AtomicInteger requestCount = new AtomicInteger(0);
-    private final AtomicInteger errorCount = new AtomicInteger(0);
+    public StandardWrapperValve() {
+        super(true);
+    }
 
 
     // --------------------------------------------------------- Public Methods
@@ -77,21 +70,20 @@ final class StandardWrapperValve extends ValveBase {
      * Invoke the servlet we are managing, respecting the rules regarding
      * servlet lifecycle and SingleThreadModel support.
      *
-     * @param request Request to be processed
+     * @param request  Request to be processed
      * @param response Response to be produced
-     *
-     * @exception IOException if an input/output error occurred
-     * @exception ServletException if a servlet error occurred
+     * @throws IOException      if an input/output error occurred
+     * @throws ServletException if a servlet error occurred
      */
     @Override
-    public final void invoke(Request request, Response response)
-        throws IOException, ServletException {
+    public void invoke(Request request, Response response)
+            throws IOException, ServletException {
 
         // Initialize local variables we may need
         boolean unavailable = false;
         Throwable throwable = null;
         // This should be a Request attribute...
-        long t1=System.currentTimeMillis();
+        long t1 = System.currentTimeMillis();
         requestCount.incrementAndGet();
         StandardWrapper wrapper = (StandardWrapper) getContainer();
         Servlet servlet = null;
@@ -100,7 +92,7 @@ final class StandardWrapperValve extends ValveBase {
         // Check for the application being marked unavailable
         if (!context.getState().isAvailable()) {
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                           sm.getString("standardContext.isUnavailable"));
+                    sm.getString("standardContext.isUnavailable"));
             unavailable = true;
         }
 
@@ -114,7 +106,8 @@ final class StandardWrapperValve extends ValveBase {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
                         sm.getString("standardWrapper.isUnavailable",
                                 wrapper.getName()));
-            } else if (available == Long.MAX_VALUE) {
+            }
+            else if (available == Long.MAX_VALUE) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND,
                         sm.getString("standardWrapper.notFound",
                                 wrapper.getName()));
@@ -135,22 +128,23 @@ final class StandardWrapperValve extends ValveBase {
             if ((available > 0L) && (available < Long.MAX_VALUE)) {
                 response.setDateHeader("Retry-After", available);
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                           sm.getString("standardWrapper.isUnavailable",
-                                        wrapper.getName()));
-            } else if (available == Long.MAX_VALUE) {
+                        sm.getString("standardWrapper.isUnavailable",
+                                wrapper.getName()));
+            }
+            else if (available == Long.MAX_VALUE) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                           sm.getString("standardWrapper.notFound",
-                                        wrapper.getName()));
+                        sm.getString("standardWrapper.notFound",
+                                wrapper.getName()));
             }
         } catch (ServletException e) {
             container.getLogger().error(sm.getString("standardWrapper.allocateException",
-                             wrapper.getName()), StandardWrapper.getRootCause(e));
+                    wrapper.getName()), StandardWrapper.getRootCause(e));
             throwable = e;
             exception(request, response, e);
         } catch (Throwable e) {
             ExceptionUtils.handleThrowable(e);
             container.getLogger().error(sm.getString("standardWrapper.allocateException",
-                             wrapper.getName()), e);
+                    wrapper.getName()), e);
             throwable = e;
             exception(request, response, e);
             servlet = null;
@@ -158,10 +152,10 @@ final class StandardWrapperValve extends ValveBase {
 
         MessageBytes requestPathMB = request.getRequestPathMB();
         DispatcherType dispatcherType = DispatcherType.REQUEST;
-        if (request.getDispatcherType()==DispatcherType.ASYNC) {
+        if (request.getDispatcherType() == DispatcherType.ASYNC) {
             dispatcherType = DispatcherType.ASYNC;
         }
-        request.setAttribute(Globals.DISPATCHER_TYPE_ATTR,dispatcherType);
+        request.setAttribute(Globals.DISPATCHER_TYPE_ATTR, dispatcherType);
         request.setAttribute(Globals.DISPATCHER_REQUEST_PATH_ATTR,
                 requestPathMB);
         // Create the filter chain for this request
@@ -179,7 +173,8 @@ final class StandardWrapperValve extends ValveBase {
                         SystemLogHandler.startCapture();
                         if (request.isAsyncDispatching()) {
                             request.getAsyncContextInternal().doInternalDispatch();
-                        } else {
+                        }
+                        else {
                             filterChain.doFilter(request.getRequest(),
                                     response.getResponse());
                         }
@@ -189,12 +184,14 @@ final class StandardWrapperValve extends ValveBase {
                             context.getLogger().info(log);
                         }
                     }
-                } else {
+                }
+                else {
                     if (request.isAsyncDispatching()) {
                         request.getAsyncContextInternal().doInternalDispatch();
-                    } else {
+                    }
+                    else {
                         filterChain.doFilter
-                            (request.getRequest(), response.getResponse());
+                                (request.getRequest(), response.getResponse());
                     }
                 }
 
@@ -224,12 +221,13 @@ final class StandardWrapperValve extends ValveBase {
             if ((available > 0L) && (available < Long.MAX_VALUE)) {
                 response.setDateHeader("Retry-After", available);
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                           sm.getString("standardWrapper.isUnavailable",
-                                        wrapper.getName()));
-            } else if (available == Long.MAX_VALUE) {
+                        sm.getString("standardWrapper.isUnavailable",
+                                wrapper.getName()));
+            }
+            else if (available == Long.MAX_VALUE) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                            sm.getString("standardWrapper.notFound",
-                                        wrapper.getName()));
+                        sm.getString("standardWrapper.notFound",
+                                wrapper.getName()));
             }
             // Do not save exception in 'throwable', because we
             // do not want to do exception(request, response, e) processing
@@ -237,8 +235,8 @@ final class StandardWrapperValve extends ValveBase {
             Throwable rootCause = StandardWrapper.getRootCause(e);
             if (!(rootCause instanceof ClientAbortException)) {
                 container.getLogger().error(sm.getString(
-                        "standardWrapper.serviceExceptionRoot",
-                        wrapper.getName(), context.getName(), e.getMessage()),
+                                "standardWrapper.serviceExceptionRoot",
+                                wrapper.getName(), context.getName(), e.getMessage()),
                         rootCause);
             }
             throwable = e;
@@ -264,7 +262,7 @@ final class StandardWrapperValve extends ValveBase {
             } catch (Throwable e) {
                 ExceptionUtils.handleThrowable(e);
                 container.getLogger().error(sm.getString("standardWrapper.deallocateException",
-                                 wrapper.getName()), e);
+                        wrapper.getName()), e);
                 if (throwable == null) {
                     throwable = e;
                     exception(request, response, e);
@@ -275,26 +273,26 @@ final class StandardWrapperValve extends ValveBase {
             // unload it and release this instance
             try {
                 if ((servlet != null) &&
-                    (wrapper.getAvailable() == Long.MAX_VALUE)) {
+                        (wrapper.getAvailable() == Long.MAX_VALUE)) {
                     wrapper.unload();
                 }
             } catch (Throwable e) {
                 ExceptionUtils.handleThrowable(e);
                 container.getLogger().error(sm.getString("standardWrapper.unloadException",
-                                 wrapper.getName()), e);
+                        wrapper.getName()), e);
                 if (throwable == null) {
                     exception(request, response, e);
                 }
             }
-            long t2=System.currentTimeMillis();
+            long t2 = System.currentTimeMillis();
 
-            long time=t2-t1;
+            long time = t2 - t1;
             processingTime += time;
-            if( time > maxTime) {
-                maxTime=time;
+            if (time > maxTime) {
+                maxTime = time;
             }
-            if( time < minTime) {
-                minTime=time;
+            if (time < minTime) {
+                minTime = time;
             }
         }
     }
@@ -308,10 +306,10 @@ final class StandardWrapperValve extends ValveBase {
      * exceptions that occur during generation of the exception report are
      * logged and swallowed.
      *
-     * @param request The request being processed
-     * @param response The response being generated
+     * @param request   The request being processed
+     * @param response  The response being generated
      * @param exception The exception that occurred (which possibly wraps
-     *  a root cause exception
+     *                  a root cause exception
      */
     private void exception(Request request, Response response,
                            Throwable exception) {

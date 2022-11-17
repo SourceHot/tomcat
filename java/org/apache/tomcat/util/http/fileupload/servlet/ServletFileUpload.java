@@ -16,18 +16,12 @@
  */
 package org.apache.tomcat.util.http.fileupload.servlet;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.tomcat.util.http.fileupload.*;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.apache.tomcat.util.http.fileupload.FileItem;
-import org.apache.tomcat.util.http.fileupload.FileItemFactory;
-import org.apache.tomcat.util.http.fileupload.FileItemIterator;
-import org.apache.tomcat.util.http.fileupload.FileUpload;
-import org.apache.tomcat.util.http.fileupload.FileUploadBase;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 
 
 /**
@@ -54,25 +48,6 @@ public class ServletFileUpload extends FileUpload {
     // ---------------------------------------------------------- Class methods
 
     /**
-     * Utility method that determines whether the request contains multipart
-     * content.
-     *
-     * @param request The servlet request to be evaluated. Must be non-null.
-     *
-     * @return {@code true} if the request is multipart;
-     *         {@code false} otherwise.
-     */
-    public static final boolean isMultipartContent(
-            final HttpServletRequest request) {
-        if (!POST_METHOD.equalsIgnoreCase(request.getMethod())) {
-            return false;
-        }
-        return FileUploadBase.isMultipartContent(new ServletRequestContext(request));
-    }
-
-    // ----------------------------------------------------------- Constructors
-
-    /**
      * Constructs an uninitialized instance of this class. A factory must be
      * configured, using {@code setFileItemFactory()}, before attempting
      * to parse requests.
@@ -82,15 +57,33 @@ public class ServletFileUpload extends FileUpload {
     public ServletFileUpload() {
     }
 
+    // ----------------------------------------------------------- Constructors
+
     /**
      * Constructs an instance of this class which uses the supplied factory to
      * create {@code FileItem} instances.
      *
-     * @see FileUpload#FileUpload()
      * @param fileItemFactory The factory to use for creating file items.
+     * @see FileUpload#FileUpload()
      */
     public ServletFileUpload(final FileItemFactory fileItemFactory) {
         super(fileItemFactory);
+    }
+
+    /**
+     * Utility method that determines whether the request contains multipart
+     * content.
+     *
+     * @param request The servlet request to be evaluated. Must be non-null.
+     * @return {@code true} if the request is multipart;
+     * {@code false} otherwise.
+     */
+    public static final boolean isMultipartContent(
+            final HttpServletRequest request) {
+        if (!POST_METHOD.equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        return FileUploadBase.isMultipartContent(new ServletRequestContext(request));
     }
 
     // --------------------------------------------------------- Public methods
@@ -100,12 +93,9 @@ public class ServletFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The servlet request to be parsed.
-     *
      * @return A map of {@code FileItem} instances parsed from the request.
-     *
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     *
      * @since 1.3
      */
     public Map<String, List<FileItem>> parseParameterMap(final HttpServletRequest request)
@@ -118,19 +108,17 @@ public class ServletFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The servlet request to be parsed.
-     *
      * @return An iterator to instances of {@code FileItemStream}
-     *         parsed from the request, in the order that they were
-     *         transmitted.
-     *
+     * parsed from the request, in the order that they were
+     * transmitted.
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     * @throws IOException An I/O error occurred. This may be a network
-     *   error while communicating with the client or a problem while
-     *   storing the uploaded content.
+     * @throws IOException         An I/O error occurred. This may be a network
+     *                             error while communicating with the client or a problem while
+     *                             storing the uploaded content.
      */
     public FileItemIterator getItemIterator(final HttpServletRequest request)
-    throws FileUploadException, IOException {
+            throws FileUploadException, IOException {
         return super.getItemIterator(new ServletRequestContext(request));
     }
 

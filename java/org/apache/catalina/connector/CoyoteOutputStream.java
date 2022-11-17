@@ -16,13 +16,12 @@
  */
 package org.apache.catalina.connector;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
-
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Coyote implementation of the servlet output stream.
@@ -128,7 +127,7 @@ public class CoyoteOutputStream extends ServletOutputStream {
      * CoyoteOutputStream->OutputBuffer->CoyoteResponse.
      *
      * @return <code>true</code> if this OutputStream is currently in
-     *         non-blocking mode.
+     * non-blocking mode.
      */
     private boolean checkNonBlockingWrite() {
         boolean nonBlocking = !ob.isBlocking();

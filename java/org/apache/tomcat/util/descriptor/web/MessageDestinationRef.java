@@ -36,6 +36,10 @@ public class MessageDestinationRef extends ResourceBase {
      * The link of this destination ref.
      */
     private String link = null;
+    /**
+     * The usage of this destination ref.
+     */
+    private String usage = null;
 
     public String getLink() {
         return this.link;
@@ -44,12 +48,6 @@ public class MessageDestinationRef extends ResourceBase {
     public void setLink(String link) {
         this.link = link;
     }
-
-
-    /**
-     * The usage of this destination ref.
-     */
-    private String usage = null;
 
     public String getUsage() {
         return this.usage;
@@ -117,16 +115,13 @@ public class MessageDestinationRef extends ResourceBase {
             if (other.link != null) {
                 return false;
             }
-        } else if (!link.equals(other.link)) {
+        }
+        else if (!link.equals(other.link)) {
             return false;
         }
         if (usage == null) {
-            if (other.usage != null) {
-                return false;
-            }
-        } else if (!usage.equals(other.usage)) {
-            return false;
+            return other.usage == null;
         }
-        return true;
+        else return usage.equals(other.usage);
     }
 }

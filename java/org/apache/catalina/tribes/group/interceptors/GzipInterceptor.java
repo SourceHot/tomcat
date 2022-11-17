@@ -16,14 +16,6 @@
  */
 package org.apache.catalina.tribes.group.interceptors;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
 import org.apache.catalina.tribes.ChannelException;
 import org.apache.catalina.tribes.ChannelMessage;
 import org.apache.catalina.tribes.Member;
@@ -33,22 +25,24 @@ import org.apache.catalina.tribes.util.StringManager;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 
 /**
  * @version 1.0
  */
 public class GzipInterceptor extends ChannelInterceptorBase implements GzipInterceptorMBean {
 
-    private static final Log log = LogFactory.getLog(GzipInterceptor.class);
-    protected static final StringManager sm = StringManager.getManager(GzipInterceptor.class);
-
     public static final int DEFAULT_BUFFER_SIZE = 2048;
     public static final int DEFAULT_OPTION_COMPRESSION_ENABLE = 0x0100;
-
-    private int compressionMinSize = 0;
-    private volatile boolean statsEnabled = false;
-    private int interval = 0;
-
+    protected static final StringManager sm = StringManager.getManager(GzipInterceptor.class);
+    private static final Log log = LogFactory.getLog(GzipInterceptor.class);
     // Stats
     private final AtomicInteger count = new AtomicInteger();
     private final AtomicInteger countCompressedTX = new AtomicInteger();
@@ -61,12 +55,42 @@ public class GzipInterceptor extends ChannelInterceptorBase implements GzipInter
     private final AtomicLong sizeRX = new AtomicLong();
     private final AtomicLong compressedSizeRX = new AtomicLong();
     private final AtomicLong uncompressedSizeRX = new AtomicLong();
+    private int compressionMinSize = 0;
+    private volatile boolean statsEnabled = false;
+    private int interval = 0;
 
 
     public GzipInterceptor() {
         setOptionFlag(DEFAULT_OPTION_COMPRESSION_ENABLE);
     }
 
+    public static byte[] compress(byte[] data) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        GZIPOutputStream gout = new GZIPOutputStream(bout);
+        gout.write(data);
+        gout.flush();
+        gout.close();
+        return bout.toByteArray();
+    }
+
+    /**
+     * @param data Data to decompress
+     * @return Decompressed data
+     * @throws IOException Compression error
+     */
+    public static byte[] decompress(byte[] data) throws IOException {
+        ByteArrayOutputStream bout =
+                new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE);
+        ByteArrayInputStream bin = new ByteArrayInputStream(data);
+        GZIPInputStream gin = new GZIPInputStream(bin);
+        byte[] tmp = new byte[DEFAULT_BUFFER_SIZE];
+        int length = gin.read(tmp);
+        while (length > -1) {
+            bout.write(tmp, 0, length);
+            length = gin.read(tmp);
+        }
+        return bout.toByteArray();
+    }
 
     @Override
     public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload)
@@ -85,25 +109,25 @@ public class GzipInterceptor extends ChannelInterceptorBase implements GzipInter
                     countCompressedTX.incrementAndGet();
                     compressedSizeTX.addAndGet(data.length);
                 }
-            } else if (statsEnabled){
+            }
+            else if (statsEnabled) {
                 countUncompressedTX.incrementAndGet();
                 uncompressedSizeTX.addAndGet(data.length);
             }
 
             msg.getMessage().trim(msg.getMessage().getLength());
-            msg.getMessage().append(data,0,data.length);
+            msg.getMessage().append(data, 0, data.length);
             super.sendMessage(destination, msg, payload);
 
             int currentCount = count.incrementAndGet();
             if (statsEnabled && interval > 0 && currentCount % interval == 0) {
                 report();
             }
-        } catch ( IOException x ) {
+        } catch (IOException x) {
             log.error(sm.getString("gzipInterceptor.compress.failed"));
             throw new ChannelException(x);
         }
     }
-
 
     @Override
     public void messageReceived(ChannelMessage msg) {
@@ -116,7 +140,8 @@ public class GzipInterceptor extends ChannelInterceptorBase implements GzipInter
                 }
                 // Message was compressed
                 data = decompress(data);
-            } else if (statsEnabled) {
+            }
+            else if (statsEnabled) {
                 countUncompressedRX.incrementAndGet();
                 uncompressedSizeRX.addAndGet(data.length);
             }
@@ -126,48 +151,17 @@ public class GzipInterceptor extends ChannelInterceptorBase implements GzipInter
             }
 
             msg.getMessage().trim(msg.getMessage().getLength());
-            msg.getMessage().append(data,0,data.length);
+            msg.getMessage().append(data, 0, data.length);
             super.messageReceived(msg);
 
             int currentCount = count.incrementAndGet();
             if (statsEnabled && interval > 0 && currentCount % interval == 0) {
                 report();
             }
-        } catch ( IOException x ) {
-            log.error(sm.getString("gzipInterceptor.decompress.failed"),x);
+        } catch (IOException x) {
+            log.error(sm.getString("gzipInterceptor.decompress.failed"), x);
         }
     }
-
-
-    public static byte[] compress(byte[] data) throws IOException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        GZIPOutputStream gout = new GZIPOutputStream(bout);
-        gout.write(data);
-        gout.flush();
-        gout.close();
-        return bout.toByteArray();
-    }
-
-
-    /**
-     * @param data  Data to decompress
-     * @return      Decompressed data
-     * @throws IOException Compression error
-     */
-    public static byte[] decompress(byte[] data) throws IOException {
-        ByteArrayOutputStream bout =
-            new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE);
-        ByteArrayInputStream bin = new ByteArrayInputStream(data);
-        GZIPInputStream gin = new GZIPInputStream(bin);
-        byte[] tmp = new byte[DEFAULT_BUFFER_SIZE];
-        int length = gin.read(tmp);
-        while (length > -1) {
-            bout.write(tmp, 0, length);
-            length = gin.read(tmp);
-        }
-        return bout.toByteArray();
-    }
-
 
     @Override
     public void report() {

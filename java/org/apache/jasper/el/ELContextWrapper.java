@@ -16,12 +16,12 @@
  */
 package org.apache.jasper.el;
 
-import java.util.Locale;
-
 import jakarta.el.ELContext;
 import jakarta.el.ELResolver;
 import jakarta.el.FunctionMapper;
 import jakarta.el.VariableMapper;
+
+import java.util.Locale;
 
 /**
  * Simple ELContextWrapper for runtime evaluation of EL w/ dynamic FunctionMappers
@@ -67,23 +67,23 @@ public final class ELContextWrapper extends ELContext {
     }
 
     @Override
-    public boolean isPropertyResolved() {
-        return this.target.isPropertyResolved();
-    }
-
-    @Override
-    public void putContext(Class<?> key, Object contextObject) throws NullPointerException {
-        this.target.putContext(key, contextObject);
-    }
-
-    @Override
     public void setLocale(Locale locale) {
         this.target.setLocale(locale);
     }
 
     @Override
+    public boolean isPropertyResolved() {
+        return this.target.isPropertyResolved();
+    }
+
+    @Override
     public void setPropertyResolved(boolean resolved) {
         this.target.setPropertyResolved(resolved);
+    }
+
+    @Override
+    public void putContext(Class<?> key, Object contextObject) throws NullPointerException {
+        this.target.putContext(key, contextObject);
     }
 
 }

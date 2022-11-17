@@ -59,7 +59,7 @@ public abstract class LifecycleBase implements Lifecycle {
      * the caller to handle or will it be logged instead?
      *
      * @return {@code true} if the exception will be re-thrown, otherwise
-     *         {@code false}
+     * {@code false}
      */
     public boolean getThrowOnFailure() {
         return throwOnFailure;
@@ -110,8 +110,8 @@ public abstract class LifecycleBase implements Lifecycle {
     /**
      * Allow sub classes to fire {@link Lifecycle} events.
      *
-     * @param type  Event type
-     * @param data  Data associated with event.
+     * @param type Event type
+     * @param data Data associated with event.
      */
     protected void fireLifecycleEvent(String type, Object data) {
         LifecycleEvent event = new LifecycleEvent(this, type, data);
@@ -165,7 +165,8 @@ public abstract class LifecycleBase implements Lifecycle {
             if (log.isDebugEnabled()) {
                 Exception e = new LifecycleException();
                 log.debug(sm.getString("lifecycleBase.alreadyStarted", toString()), e);
-            } else if (log.isInfoEnabled()) {
+            }
+            else if (log.isInfoEnabled()) {
                 log.info(sm.getString("lifecycleBase.alreadyStarted", toString()));
             }
 
@@ -221,7 +222,7 @@ public abstract class LifecycleBase implements Lifecycle {
      * Sub-classes must ensure that the state is changed to
      * {@link LifecycleState#STARTING} during the execution of this method.
      * Changing state will trigger the {@link Lifecycle#START_EVENT} event.
-     *
+     * <p>
      * If a component fails to start it may either throw a
      * {@link LifecycleException} which will cause it's parent to fail to start
      * or it can place itself in the error state in which case {@link #stop()}
@@ -246,7 +247,8 @@ public abstract class LifecycleBase implements Lifecycle {
             if (log.isDebugEnabled()) {
                 Exception e = new LifecycleException();
                 log.debug(sm.getString("lifecycleBase.alreadyStopped", toString()), e);
-            } else if (log.isInfoEnabled()) {
+            }
+            else if (log.isInfoEnabled()) {
                 log.info(sm.getString("lifecycleBase.alreadyStopped", toString()));
             }
 
@@ -273,7 +275,8 @@ public abstract class LifecycleBase implements Lifecycle {
                 // fired
                 // 广播BEFORE_STOP_EVENT事件
                 fireLifecycleEvent(BEFORE_STOP_EVENT, null);
-            } else {
+            }
+            else {
                 // 设置状态为STOPPING_PREP
                 setStateInternal(LifecycleState.STOPPING_PREP, null, false);
             }
@@ -377,16 +380,6 @@ public abstract class LifecycleBase implements Lifecycle {
         return state;
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getStateName() {
-        return getState().toString();
-    }
-
-
     /**
      * Provides a mechanism for sub-classes to update the component state.
      * Calling this method will automatically fire any associated
@@ -400,6 +393,13 @@ public abstract class LifecycleBase implements Lifecycle {
         setStateInternal(state, null, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getStateName() {
+        return getState().toString();
+    }
 
     /**
      * Provides a mechanism for sub-classes to update the component state.
@@ -480,7 +480,8 @@ public abstract class LifecycleBase implements Lifecycle {
                 t = new LifecycleException(msg, t);
             }
             throw (LifecycleException) t;
-        } else {
+        }
+        else {
             log.error(msg, t);
         }
     }

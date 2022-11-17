@@ -16,10 +16,10 @@
  */
 package org.apache.catalina.ant;
 
+import org.apache.tools.ant.BuildException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
-import org.apache.tools.ant.BuildException;
 
 public abstract class AbstractCatalinaCommandTask extends AbstractCatalinaTask {
 
@@ -27,6 +27,10 @@ public abstract class AbstractCatalinaCommandTask extends AbstractCatalinaTask {
      * The context path of the web application we are managing.
      */
     protected String path = null;
+    /**
+     * The context version of the web application we are managing.
+     */
+    protected String version = null;
 
     public String getPath() {
         return this.path;
@@ -35,11 +39,6 @@ public abstract class AbstractCatalinaCommandTask extends AbstractCatalinaTask {
     public void setPath(String path) {
         this.path = path;
     }
-
-    /**
-     * The context version of the web application we are managing.
-     */
-    protected String version = null;
 
     public String getVersion() {
         return this.version;
@@ -56,10 +55,8 @@ public abstract class AbstractCatalinaCommandTask extends AbstractCatalinaTask {
      * Create query string for the specified command.
      *
      * @param command Command to be executed
-     *
      * @return The generated query string
-     *
-     * @exception BuildException if an error occurs
+     * @throws BuildException if an error occurs
      */
     public StringBuilder createQueryString(String command) throws BuildException {
         StringBuilder buffer = new StringBuilder();
@@ -68,7 +65,8 @@ public abstract class AbstractCatalinaCommandTask extends AbstractCatalinaTask {
             buffer.append(command);
             if (path == null) {
                 throw new BuildException("Must specify 'path' attribute");
-            } else {
+            }
+            else {
                 buffer.append("?path=");
                 buffer.append(URLEncoder.encode(this.path, getCharset()));
                 if (this.version != null) {

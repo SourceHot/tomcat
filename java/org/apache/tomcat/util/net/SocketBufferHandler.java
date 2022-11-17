@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.util.net;
 
+import org.apache.tomcat.util.buf.ByteBufferUtils;
+
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-
-import org.apache.tomcat.util.buf.ByteBufferUtils;
 
 public class SocketBufferHandler {
 
@@ -27,6 +27,7 @@ public class SocketBufferHandler {
         @Override
         public void expand(int newSize) {
         }
+
         /*
          * Http2AsyncParser$FrameCompletionHandler will return incomplete
          * frame(s) to the buffer. If the previous frame (or concurrent write to
@@ -39,22 +40,20 @@ public class SocketBufferHandler {
         public void unReadReadBuffer(ByteBuffer returnedData) {
         }
     };
-
+    private final boolean direct;
     private volatile boolean readBufferConfiguredForWrite = true;
     private volatile ByteBuffer readBuffer;
-
     private volatile boolean writeBufferConfiguredForWrite = true;
     private volatile ByteBuffer writeBuffer;
 
-    private final boolean direct;
-
     public SocketBufferHandler(int readBufferSize, int writeBufferSize,
-            boolean direct) {
+                               boolean direct) {
         this.direct = direct;
         if (direct) {
             readBuffer = ByteBuffer.allocateDirect(readBufferSize);
             writeBuffer = ByteBuffer.allocateDirect(writeBufferSize);
-        } else {
+        }
+        else {
             readBuffer = ByteBuffer.allocate(readBufferSize);
             writeBuffer = ByteBuffer.allocate(writeBufferSize);
         }
@@ -79,10 +78,12 @@ public class SocketBufferHandler {
                 int remaining = readBuffer.remaining();
                 if (remaining == 0) {
                     readBuffer.clear();
-                } else {
+                }
+                else {
                     readBuffer.compact();
                 }
-            } else {
+            }
+            else {
                 // Switching to read
                 readBuffer.flip();
             }
@@ -99,7 +100,8 @@ public class SocketBufferHandler {
     public boolean isReadBufferEmpty() {
         if (readBufferConfiguredForWrite) {
             return readBuffer.position() == 0;
-        } else {
+        }
+        else {
             return readBuffer.remaining() == 0;
         }
     }
@@ -109,13 +111,15 @@ public class SocketBufferHandler {
         if (isReadBufferEmpty()) {
             configureReadBufferForWrite();
             readBuffer.put(returnedData);
-        } else {
+        }
+        else {
             int bytesReturned = returnedData.remaining();
             if (readBufferConfiguredForWrite) {
                 // Writes always start at position zero
                 if ((readBuffer.position() + bytesReturned) > readBuffer.capacity()) {
                     throw new BufferOverflowException();
-                } else {
+                }
+                else {
                     // Move the bytes up to make space for the returned data
                     for (int i = 0; i < readBuffer.position(); i++) {
                         readBuffer.put(i + bytesReturned, readBuffer.get(i));
@@ -127,7 +131,8 @@ public class SocketBufferHandler {
                     // Update the position
                     readBuffer.position(readBuffer.position() + bytesReturned);
                 }
-            } else {
+            }
+            else {
                 // Reads will start at zero but may have progressed
                 int shiftRequired = bytesReturned - readBuffer.position();
                 if (shiftRequired > 0) {
@@ -140,7 +145,8 @@ public class SocketBufferHandler {
                     for (int i = readBuffer.position(); i < oldLimit; i++) {
                         readBuffer.put(i + shiftRequired, readBuffer.get(i));
                     }
-                } else {
+                }
+                else {
                     shiftRequired = 0;
                 }
                 // Insert the returned bytes
@@ -172,12 +178,14 @@ public class SocketBufferHandler {
                 int remaining = writeBuffer.remaining();
                 if (remaining == 0) {
                     writeBuffer.clear();
-                } else {
+                }
+                else {
                     writeBuffer.compact();
                     writeBuffer.position(remaining);
                     writeBuffer.limit(writeBuffer.capacity());
                 }
-            } else {
+            }
+            else {
                 // Switching to read
                 writeBuffer.flip();
             }
@@ -189,7 +197,8 @@ public class SocketBufferHandler {
     public boolean isWriteBufferWritable() {
         if (writeBufferConfiguredForWrite) {
             return writeBuffer.hasRemaining();
-        } else {
+        }
+        else {
             return writeBuffer.remaining() == 0;
         }
     }
@@ -203,7 +212,8 @@ public class SocketBufferHandler {
     public boolean isWriteBufferEmpty() {
         if (writeBufferConfiguredForWrite) {
             return writeBuffer.position() == 0;
-        } else {
+        }
+        else {
             return writeBuffer.remaining() == 0;
         }
     }

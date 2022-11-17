@@ -16,11 +16,7 @@
  */
 package org.apache.tomcat.util.descriptor.web;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -35,8 +31,24 @@ public class ContextHandler extends ResourceBase {
     private static final long serialVersionUID = 1L;
 
     // ------------------------------------------------------------- Properties
-
-
+    /**
+     * A list of QName specifying the SOAP Headers the handler will work on.
+     * -namespace and localpart values must be found inside the WSDL.
+     * <p>
+     * A service-qname is composed by a namespaceURI and a localpart.
+     * <p>
+     * soapHeader[0] : namespaceURI
+     * soapHeader[1] : localpart
+     */
+    private final Map<String, String> soapHeaders = new HashMap<>();
+    /**
+     * The soapRole.
+     */
+    private final List<String> soapRoles = new ArrayList<>();
+    /**
+     * The portName.
+     */
+    private final List<String> portNames = new ArrayList<>();
     /**
      * The Handler reference class.
      */
@@ -49,17 +61,6 @@ public class ContextHandler extends ResourceBase {
     public void setHandlerclass(String handlerclass) {
         this.handlerclass = handlerclass;
     }
-
-    /**
-     * A list of QName specifying the SOAP Headers the handler will work on.
-     * -namespace and localpart values must be found inside the WSDL.
-     *
-     * A service-qname is composed by a namespaceURI and a localpart.
-     *
-     * soapHeader[0] : namespaceURI
-     * soapHeader[1] : localpart
-     */
-    private final Map<String, String> soapHeaders = new HashMap<>();
 
     public Iterator<String> getLocalparts() {
         return soapHeaders.keySet().iterator();
@@ -75,17 +76,13 @@ public class ContextHandler extends ResourceBase {
 
     /**
      * Set a configured property.
-     * @param name The property name
+     *
+     * @param name  The property name
      * @param value The property value
      */
     public void setProperty(String name, String value) {
         this.setProperty(name, (Object) value);
     }
-
-    /**
-     * The soapRole.
-     */
-    private final List<String> soapRoles = new ArrayList<>();
 
     public String getSoapRole(int i) {
         return this.soapRoles.get(i);
@@ -98,11 +95,6 @@ public class ContextHandler extends ResourceBase {
     public void addSoapRole(String soapRole) {
         this.soapRoles.add(soapRole);
     }
-
-    /**
-     * The portName.
-     */
-    private final List<String> portNames = new ArrayList<>();
 
     public String getPortName(int i) {
         return this.portNames.get(i);
@@ -185,30 +177,29 @@ public class ContextHandler extends ResourceBase {
             if (other.handlerclass != null) {
                 return false;
             }
-        } else if (!handlerclass.equals(other.handlerclass)) {
+        }
+        else if (!handlerclass.equals(other.handlerclass)) {
             return false;
         }
         if (portNames == null) {
             if (other.portNames != null) {
                 return false;
             }
-        } else if (!portNames.equals(other.portNames)) {
+        }
+        else if (!portNames.equals(other.portNames)) {
             return false;
         }
         if (soapHeaders == null) {
             if (other.soapHeaders != null) {
                 return false;
             }
-        } else if (!soapHeaders.equals(other.soapHeaders)) {
+        }
+        else if (!soapHeaders.equals(other.soapHeaders)) {
             return false;
         }
         if (soapRoles == null) {
-            if (other.soapRoles != null) {
-                return false;
-            }
-        } else if (!soapRoles.equals(other.soapRoles)) {
-            return false;
+            return other.soapRoles == null;
         }
-        return true;
+        else return soapRoles.equals(other.soapRoles);
     }
 }

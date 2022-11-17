@@ -16,6 +16,13 @@
  */
 package org.apache.catalina.valves;
 
+import jakarta.servlet.ServletException;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
+import org.apache.catalina.util.NetMask;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -23,14 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import jakarta.servlet.ServletException;
-
-import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
-import org.apache.catalina.util.NetMask;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 public final class RemoteCIDRValve extends RequestFilterValve {
 
@@ -58,7 +57,7 @@ public final class RemoteCIDRValve extends RequestFilterValve {
      * Return a string representation of the {@link NetMask} list in #allow.
      *
      * @return the #allow list as a string, without the leading '[' and trailing
-     *         ']'
+     * ']'
      */
     @Override
     public String getAllow() {
@@ -94,7 +93,7 @@ public final class RemoteCIDRValve extends RequestFilterValve {
      * Return a string representation of the {@link NetMask} list in #deny.
      *
      * @return the #deny list as a string, without the leading '[' and trailing
-     *         ']'
+     * ']'
      */
     @Override
     public String getDeny() {
@@ -131,12 +130,13 @@ public final class RemoteCIDRValve extends RequestFilterValve {
         String property;
         if (getUsePeerAddress()) {
             property = request.getPeerAddr();
-        } else {
+        }
+        else {
             property = request.getRequest().getRemoteAddr();
         }
         if (getAddConnectorPort()) {
             property = property + ";" +
-                request.getConnector().getPortWithOffset();
+                    request.getConnector().getPortWithOffset();
         }
         process(property, request, response);
     }
@@ -155,7 +155,8 @@ public final class RemoteCIDRValve extends RequestFilterValve {
             }
             port = -1;
             nonPortPart = property;
-        } else {
+        }
+        else {
             if (!getAddConnectorPort()) {
                 log.error(sm.getString("remoteCidrValve.unexpectedPort"));
                 return false;
@@ -186,7 +187,8 @@ public final class RemoteCIDRValve extends RequestFilterValve {
                 if (nm.matches(addr, port)) {
                     return false;
                 }
-            } else {
+            }
+            else {
                 if (nm.matches(addr)) {
                     return false;
                 }
@@ -198,7 +200,8 @@ public final class RemoteCIDRValve extends RequestFilterValve {
                 if (nm.matches(addr, port)) {
                     return true;
                 }
-            } else {
+            }
+            else {
                 if (nm.matches(addr)) {
                     return true;
                 }
@@ -206,12 +209,9 @@ public final class RemoteCIDRValve extends RequestFilterValve {
         }
 
         // Allow if deny is specified but allow isn't
-        if (!deny.isEmpty() && allow.isEmpty()) {
-            return true;
-        }
+        return !deny.isEmpty() && allow.isEmpty();
 
         // Deny this request
-        return false;
     }
 
 
@@ -225,7 +225,7 @@ public final class RemoteCIDRValve extends RequestFilterValve {
      * Fill a {@link NetMask} list from a string input containing a
      * comma-separated list of (hopefully valid) {@link NetMask}s.
      *
-     * @param input The input string
+     * @param input  The input string
      * @param target The list to fill
      * @return a string list of processing errors (empty when no errors)
      */

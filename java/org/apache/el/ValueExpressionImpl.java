@@ -16,25 +16,17 @@
  */
 package org.apache.el;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-
-import jakarta.el.ELContext;
-import jakarta.el.ELException;
-import jakarta.el.FunctionMapper;
-import jakarta.el.PropertyNotFoundException;
-import jakarta.el.PropertyNotWritableException;
-import jakarta.el.ValueExpression;
-import jakarta.el.ValueReference;
-import jakarta.el.VariableMapper;
-
+import jakarta.el.*;
 import org.apache.el.lang.EvaluationContext;
 import org.apache.el.lang.ExpressionBuilder;
 import org.apache.el.parser.AstLiteralExpression;
 import org.apache.el.parser.Node;
 import org.apache.el.util.ReflectionUtil;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 
 /**
@@ -77,12 +69,11 @@ import org.apache.el.util.ReflectionUtil;
  * <p>See the notes about comparison, serialization and immutability in
  * the {@link jakarta.el.Expression} javadocs.
  *
+ * @author Jacob Hookom [jacob@hookom.net]
  * @see jakarta.el.ELResolver
  * @see jakarta.el.Expression
  * @see jakarta.el.ExpressionFactory
  * @see jakarta.el.ValueExpression
- *
- * @author Jacob Hookom [jacob@hookom.net]
  */
 public final class ValueExpressionImpl extends ValueExpression implements
         Externalizable {
@@ -102,7 +93,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
     }
 
     public ValueExpressionImpl(String expr, Node node, FunctionMapper fnMapper,
-            VariableMapper varMapper, Class<?> expectedType) {
+                               VariableMapper varMapper, Class<?> expectedType) {
         this.expr = expr;
         this.node = node;
         this.fnMapper = fnMapper;
@@ -142,9 +133,8 @@ public final class ValueExpressionImpl extends ValueExpression implements
      * evaluation.
      *
      * @return the <code>expectedType</code> passed to the
-     *         <code>ExpressionFactory.createValueExpression</code> method
-     *         that created this <code>ValueExpression</code>.
-     *
+     * <code>ExpressionFactory.createValueExpression</code> method
+     * that created this <code>ValueExpression</code>.
      * @see jakarta.el.Expression#getExpressionString()
      */
     @Override
@@ -165,7 +155,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
      * @see jakarta.el.ValueExpression#getType(jakarta.el.ELContext)
      */
     @Override
-    public Class<?> getType(ELContext context) throws PropertyNotFoundException,
+    public Class<?> getType(ELContext context) throws
             ELException {
         EvaluationContext ctx = new EvaluationContext(context, this.fnMapper,
                 this.varMapper);
@@ -181,7 +171,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
      * @see jakarta.el.ValueExpression#getValue(jakarta.el.ELContext)
      */
     @Override
-    public Object getValue(ELContext context) throws PropertyNotFoundException,
+    public Object getValue(ELContext context) throws
             ELException {
         EvaluationContext ctx = new EvaluationContext(context, this.fnMapper,
                 this.varMapper);
@@ -225,7 +215,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
      */
     @Override
     public boolean isReadOnly(ELContext context)
-            throws PropertyNotFoundException, ELException {
+            throws ELException {
         EvaluationContext ctx = new EvaluationContext(context, this.fnMapper,
                 this.varMapper);
         context.notifyBeforeEvaluation(getExpressionString());
@@ -254,7 +244,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
      */
     @Override
     public void setValue(ELContext context, Object value)
-            throws PropertyNotFoundException, PropertyNotWritableException,
+            throws
             ELException {
         EvaluationContext ctx = new EvaluationContext(context, this.fnMapper,
                 this.varMapper);
@@ -274,7 +264,7 @@ public final class ValueExpressionImpl extends ValueExpression implements
 
     @Override
     public String toString() {
-        return "ValueExpression["+this.expr+"]";
+        return "ValueExpression[" + this.expr + "]";
     }
 
     /**

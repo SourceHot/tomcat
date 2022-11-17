@@ -22,73 +22,23 @@ import java.util.regex.Pattern;
 
 public class RewriteCond {
 
-    public abstract static class Condition {
-        public abstract boolean evaluate(String value, Resolver resolver);
-    }
-
-    public static class PatternCondition extends Condition {
-        public Pattern pattern;
-        private ThreadLocal<Matcher> matcher = new ThreadLocal<>();
-
-        @Override
-        public boolean evaluate(String value, Resolver resolver) {
-            Matcher m = pattern.matcher(value);
-            if (m.matches()) {
-                matcher.set(m);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        public Matcher getMatcher() {
-            return matcher.get();
-        }
-    }
-
-    public static class LexicalCondition extends Condition {
-        /**
-         * -1: &lt;
-         * 0: =
-         * 1: &gt;
-         */
-        public int type = 0;
-        public String condition;
-
-        @Override
-        public boolean evaluate(String value, Resolver resolver) {
-            int result = value.compareTo(condition);
-            switch (type) {
-            case -1:
-                return (result < 0);
-            case 0:
-                return (result == 0);
-            case 1:
-                return (result > 0);
-            default:
-                return false;
-            }
-
-        }
-    }
-
-    public static class ResourceCondition extends Condition {
-        /**
-         * 0: -d (is directory ?)
-         * 1: -f (is regular file ?)
-         * 2: -s (is regular file with size ?)
-         */
-        public int type = 0;
-
-        @Override
-        public boolean evaluate(String value, Resolver resolver) {
-            return resolver.resolveResource(type, value);
-        }
-    }
-
+    /**
+     * This makes the test case-insensitive, i.e., there is no difference between
+     * 'A-Z' and 'a-z' both in the expanded TestString and the CondPattern. This
+     * flag is effective only for comparisons between TestString and CondPattern.
+     * It has no effect on filesystem and subrequest checks.
+     */
+    public boolean nocase = false;
+    /**
+     * Use this to combine rule conditions with a local OR instead of the implicit AND.
+     */
+    public boolean ornext = false;
     protected String testString = null;
     protected String condPattern = null;
     protected String flagsString = null;
+    protected boolean positive = true;
+    protected Substitution test = null;
+    protected Condition condition = null;
 
     public String getCondPattern() {
         return condPattern;
@@ -127,29 +77,35 @@ public class RewriteCond {
             ncondition.type = -1;
             ncondition.condition = condPattern.substring(1);
             this.condition = ncondition;
-        } else if (condPattern.startsWith(">")) {
+        }
+        else if (condPattern.startsWith(">")) {
             LexicalCondition ncondition = new LexicalCondition();
             ncondition.type = 1;
             ncondition.condition = condPattern.substring(1);
             this.condition = ncondition;
-        } else if (condPattern.startsWith("=")) {
+        }
+        else if (condPattern.startsWith("=")) {
             LexicalCondition ncondition = new LexicalCondition();
             ncondition.type = 0;
             ncondition.condition = condPattern.substring(1);
             this.condition = ncondition;
-        } else if (condPattern.equals("-d")) {
+        }
+        else if (condPattern.equals("-d")) {
             ResourceCondition ncondition = new ResourceCondition();
             ncondition.type = 0;
             this.condition = ncondition;
-        } else if (condPattern.equals("-f")) {
+        }
+        else if (condPattern.equals("-f")) {
             ResourceCondition ncondition = new ResourceCondition();
             ncondition.type = 1;
             this.condition = ncondition;
-        } else if (condPattern.equals("-s")) {
+        }
+        else if (condPattern.equals("-s")) {
             ResourceCondition ncondition = new ResourceCondition();
             ncondition.type = 2;
             this.condition = ncondition;
-        } else {
+        }
+        else {
             PatternCondition ncondition = new PatternCondition();
             int flags = 0;
             if (isNocase()) {
@@ -176,31 +132,11 @@ public class RewriteCond {
                 + ((flagsString != null) ? (" " + flagsString) : "");
     }
 
-
-    protected boolean positive = true;
-
-    protected Substitution test = null;
-
-    protected Condition condition = null;
-
-    /**
-     * This makes the test case-insensitive, i.e., there is no difference between
-     * 'A-Z' and 'a-z' both in the expanded TestString and the CondPattern. This
-     * flag is effective only for comparisons between TestString and CondPattern.
-     * It has no effect on filesystem and subrequest checks.
-     */
-    public boolean nocase = false;
-
-    /**
-     * Use this to combine rule conditions with a local OR instead of the implicit AND.
-     */
-    public boolean ornext = false;
-
     /**
      * Evaluate the condition based on the context
      *
-     * @param rule corresponding matched rule
-     * @param cond last matched condition
+     * @param rule     corresponding matched rule
+     * @param cond     last matched condition
      * @param resolver Property resolver
      * @return <code>true</code> if the condition matches
      */
@@ -208,7 +144,8 @@ public class RewriteCond {
         String value = test.evaluate(rule, cond, resolver);
         if (positive) {
             return condition.evaluate(value, resolver);
-        } else {
+        }
+        else {
             return !condition.evaluate(value, resolver);
         }
     }
@@ -235,5 +172,70 @@ public class RewriteCond {
 
     public void setPositive(boolean positive) {
         this.positive = positive;
+    }
+
+    public abstract static class Condition {
+        public abstract boolean evaluate(String value, Resolver resolver);
+    }
+
+    public static class PatternCondition extends Condition {
+        public Pattern pattern;
+        private final ThreadLocal<Matcher> matcher = new ThreadLocal<>();
+
+        @Override
+        public boolean evaluate(String value, Resolver resolver) {
+            Matcher m = pattern.matcher(value);
+            if (m.matches()) {
+                matcher.set(m);
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        public Matcher getMatcher() {
+            return matcher.get();
+        }
+    }
+
+    public static class LexicalCondition extends Condition {
+        /**
+         * -1: &lt;
+         * 0: =
+         * 1: &gt;
+         */
+        public int type = 0;
+        public String condition;
+
+        @Override
+        public boolean evaluate(String value, Resolver resolver) {
+            int result = value.compareTo(condition);
+            switch (type) {
+                case -1:
+                    return (result < 0);
+                case 0:
+                    return (result == 0);
+                case 1:
+                    return (result > 0);
+                default:
+                    return false;
+            }
+
+        }
+    }
+
+    public static class ResourceCondition extends Condition {
+        /**
+         * 0: -d (is directory ?)
+         * 1: -f (is regular file ?)
+         * 2: -s (is regular file with size ?)
+         */
+        public int type = 0;
+
+        @Override
+        public boolean evaluate(String value, Resolver resolver) {
+            return resolver.resolveResource(type, value);
+        }
     }
 }

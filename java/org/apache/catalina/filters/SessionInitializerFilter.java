@@ -16,15 +16,11 @@
  */
 package org.apache.catalina.filters;
 
-import java.io.IOException;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+
+import java.io.IOException;
 
 /**
  * A {@link jakarta.servlet.Filter} that initializes the {@link HttpSession} for
@@ -53,7 +49,7 @@ public class SessionInitializerFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        ((HttpServletRequest)request).getSession();
+        ((HttpServletRequest) request).getSession();
 
         chain.doFilter(request, response);
     }

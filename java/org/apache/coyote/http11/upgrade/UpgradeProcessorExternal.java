@@ -16,11 +16,8 @@
  */
 package org.apache.coyote.http11.upgrade;
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.ServletOutputStream;
-
 import org.apache.coyote.UpgradeToken;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -29,6 +26,8 @@ import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.SocketEvent;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
 
 public class UpgradeProcessorExternal extends UpgradeProcessorBase {
 
@@ -40,7 +39,7 @@ public class UpgradeProcessorExternal extends UpgradeProcessorBase {
     private final UpgradeInfo upgradeInfo;
 
     public UpgradeProcessorExternal(SocketWrapperBase<?> wrapper, UpgradeToken upgradeToken,
-            UpgradeGroupInfo upgradeGroupInfo) {
+                                    UpgradeGroupInfo upgradeGroupInfo) {
         super(upgradeToken);
         this.upgradeInfo = new UpgradeInfo();
         upgradeGroupInfo.addUpgradeInfo(upgradeInfo);
@@ -91,9 +90,11 @@ public class UpgradeProcessorExternal extends UpgradeProcessorBase {
     public final SocketState dispatch(SocketEvent status) {
         if (status == SocketEvent.OPEN_READ) {
             upgradeServletInputStream.onDataAvailable();
-        } else if (status == SocketEvent.OPEN_WRITE) {
+        }
+        else if (status == SocketEvent.OPEN_WRITE) {
             upgradeServletOutputStream.onWritePossible();
-        } else if (status == SocketEvent.STOP) {
+        }
+        else if (status == SocketEvent.STOP) {
             if (log.isDebugEnabled()) {
                 log.debug(sm.getString("upgradeProcessor.stop"));
             }
@@ -108,7 +109,8 @@ public class UpgradeProcessorExternal extends UpgradeProcessorBase {
                 log.debug(sm.getString("upgradeProcessor.osCloseFail", ioe));
             }
             return SocketState.CLOSED;
-        } else {
+        }
+        else {
             // Unexpected state
             if (log.isDebugEnabled()) {
                 log.debug(sm.getString("upgradeProcessor.unexpectedState"));

@@ -28,6 +28,9 @@ public class MultipartDef implements Serializable {
 
     // ------------------------------------------------------------- Properties
     private String location;
+    private String maxFileSize;
+    private String maxRequestSize;
+    private String fileSizeThreshold;
 
     public String getLocation() {
         return location;
@@ -37,9 +40,6 @@ public class MultipartDef implements Serializable {
         this.location = location;
     }
 
-
-    private String maxFileSize;
-
     public String getMaxFileSize() {
         return maxFileSize;
     }
@@ -48,9 +48,6 @@ public class MultipartDef implements Serializable {
         this.maxFileSize = maxFileSize;
     }
 
-
-    private String maxRequestSize;
-
     public String getMaxRequestSize() {
         return maxRequestSize;
     }
@@ -58,9 +55,6 @@ public class MultipartDef implements Serializable {
     public void setMaxRequestSize(String maxRequestSize) {
         this.maxRequestSize = maxRequestSize;
     }
-
-
-    private String fileSizeThreshold;
 
     public String getFileSizeThreshold() {
         return fileSizeThreshold;
@@ -80,7 +74,7 @@ public class MultipartDef implements Serializable {
         result = prime
                 * result
                 + ((fileSizeThreshold == null) ? 0 : fileSizeThreshold
-                        .hashCode());
+                .hashCode());
         result = prime * result
                 + ((location == null) ? 0 : location.hashCode());
         result = prime * result
@@ -106,31 +100,30 @@ public class MultipartDef implements Serializable {
             if (other.fileSizeThreshold != null) {
                 return false;
             }
-        } else if (!fileSizeThreshold.equals(other.fileSizeThreshold)) {
+        }
+        else if (!fileSizeThreshold.equals(other.fileSizeThreshold)) {
             return false;
         }
         if (location == null) {
             if (other.location != null) {
                 return false;
             }
-        } else if (!location.equals(other.location)) {
+        }
+        else if (!location.equals(other.location)) {
             return false;
         }
         if (maxFileSize == null) {
             if (other.maxFileSize != null) {
                 return false;
             }
-        } else if (!maxFileSize.equals(other.maxFileSize)) {
+        }
+        else if (!maxFileSize.equals(other.maxFileSize)) {
             return false;
         }
         if (maxRequestSize == null) {
-            if (other.maxRequestSize != null) {
-                return false;
-            }
-        } else if (!maxRequestSize.equals(other.maxRequestSize)) {
-            return false;
+            return other.maxRequestSize == null;
         }
-        return true;
+        else return maxRequestSize.equals(other.maxRequestSize);
     }
 
 }

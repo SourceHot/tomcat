@@ -20,19 +20,18 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- *
  * For smarter replication, an object can implement this interface to replicate diffs<br>
  * The replication logic will call the methods in the following order:<br>
  * <code>
  * 1. if ( entry.isDirty() ) <br>
- *      try {
+ * try {
  * 2.     entry.lock();<br>
  * 3.     byte[] diff = entry.getDiff();<br>
  * 4.     entry.reset();<br>
- *      } finally {<br>
+ * } finally {<br>
  * 5.     entry.unlock();<br>
- *      }<br>
- *    }<br>
+ * }<br>
+ * }<br>
  * </code>
  * <br>
  * <br>
@@ -43,7 +42,6 @@ import java.io.Serializable;
  * </code>
  * <br>
  *
- *
  * @version 1.0
  */
 public interface ReplicatedMapEntry extends Serializable {
@@ -51,49 +49,53 @@ public interface ReplicatedMapEntry extends Serializable {
     /**
      * Has the object changed since last replication
      * and is not in a locked state
+     *
      * @return boolean
      */
-    public boolean isDirty();
+    boolean isDirty();
 
     /**
      * If this returns true, the map will extract the diff using getDiff()
      * Otherwise it will serialize the entire object.
+     *
      * @return boolean
      */
-    public boolean isDiffable();
+    boolean isDiffable();
 
     /**
      * Returns a diff and sets the dirty map to false
+     *
      * @return Serialized diff data
      * @throws IOException IO error serializing
      */
-    public byte[] getDiff() throws IOException;
+    byte[] getDiff() throws IOException;
 
 
     /**
      * Applies a diff to an existing object.
-     * @param diff Serialized diff data
+     *
+     * @param diff   Serialized diff data
      * @param offset Array offset
      * @param length Array length
-     * @throws IOException IO error deserializing
+     * @throws IOException            IO error deserializing
      * @throws ClassNotFoundException Serialization error
      */
-    public void applyDiff(byte[] diff, int offset, int length) throws IOException, ClassNotFoundException;
+    void applyDiff(byte[] diff, int offset, int length) throws IOException, ClassNotFoundException;
 
     /**
      * Resets the current diff state and resets the dirty flag
      */
-    public void resetDiff();
+    void resetDiff();
 
     /**
      * Lock during serialization
      */
-    public void lock();
+    void lock();
 
     /**
      * Unlock after serialization
      */
-    public void unlock();
+    void unlock();
 
     /**
      * This method is called after the object has been
@@ -102,42 +104,46 @@ public interface ReplicatedMapEntry extends Serializable {
      *
      * @param owner Object
      */
-    public void setOwner(Object owner);
+    void setOwner(Object owner);
 
     /**
      * For accuracy checking, a serialized attribute can contain a version number
      * This number increases as modifications are made to the data.
      * The replicated map can use this to ensure accuracy on a periodic basis
+     *
      * @return long - the version number or -1 if the data is not versioned
      */
-    public long getVersion();
+    long getVersion();
 
     /**
      * Forces a certain version to a replicated map entry<br>
+     *
      * @param version long
      */
-    public void setVersion(long version);
+    void setVersion(long version);
 
     /**
      * @return the last replicate time.
      */
-    public long getLastTimeReplicated();
+    long getLastTimeReplicated();
 
     /**
      * Set the last replicate time.
+     *
      * @param lastTimeReplicated New timestamp
      */
-    public void setLastTimeReplicated(long lastTimeReplicated);
+    void setLastTimeReplicated(long lastTimeReplicated);
 
     /**
      * If this returns true, to replicate that an object has been accessed
+     *
      * @return boolean
      */
-    public boolean isAccessReplicate();
+    boolean isAccessReplicate();
 
     /**
      * Access to an existing object.
      */
-    public void accessEntry();
+    void accessEntry();
 
 }

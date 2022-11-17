@@ -16,40 +16,13 @@
  */
 package org.apache.tomcat.websocket;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.naming.NamingException;
-
-import jakarta.websocket.ClientEndpointConfig;
-import jakarta.websocket.CloseReason;
+import jakarta.websocket.*;
 import jakarta.websocket.CloseReason.CloseCode;
 import jakarta.websocket.CloseReason.CloseCodes;
-import jakarta.websocket.DeploymentException;
-import jakarta.websocket.Endpoint;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.Extension;
-import jakarta.websocket.MessageHandler;
 import jakarta.websocket.MessageHandler.Partial;
 import jakarta.websocket.MessageHandler.Whole;
-import jakarta.websocket.PongMessage;
-import jakarta.websocket.RemoteEndpoint;
-import jakarta.websocket.SendResult;
-import jakarta.websocket.Session;
-import jakarta.websocket.WebSocketContainer;
 import jakarta.websocket.server.ServerEndpointConfig;
 import jakarta.websocket.server.ServerEndpointConfig.Configurator;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.InstanceManager;
@@ -58,20 +31,26 @@ import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.pojo.PojoEndpointServer;
 import org.apache.tomcat.websocket.server.DefaultServerEndpointConfigurator;
 
+import javax.naming.NamingException;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class WsSession implements Session {
 
-    private final Log log = LogFactory.getLog(WsSession.class); // must not be static
     private static final StringManager sm = StringManager.getManager(WsSession.class);
-
     // An ellipsis is a single character that looks like three periods in a row
     // and is used to indicate a continuation.
     private static final byte[] ELLIPSIS_BYTES = "\u2026".getBytes(StandardCharsets.UTF_8);
     // An ellipsis is three bytes in UTF-8
     private static final int ELLIPSIS_BYTES_LEN = ELLIPSIS_BYTES.length;
-
     private static final boolean SEC_CONFIGURATOR_USES_IMPL_DEFAULT;
-
-    private static AtomicLong ids = new AtomicLong(0);
+    private static final AtomicLong ids = new AtomicLong(0);
 
     static {
         // Use fake end point and path. They are never used, they just need to
@@ -82,6 +61,7 @@ public class WsSession implements Session {
                 sec.getConfigurator().getClass().equals(DefaultServerEndpointConfigurator.class);
     }
 
+    private final Log log = LogFactory.getLog(WsSession.class); // must not be static
     private final Endpoint localEndpoint;
     private final WsRemoteEndpointImplBase wsRemoteEndpoint;
     private final RemoteEndpoint.Async remoteEndpointAsync;
@@ -100,21 +80,21 @@ public class WsSession implements Session {
     private final boolean secure;
     private final String httpSessionId;
     private final String id;
-
+    private final Object stateLock = new Object();
+    private final Map<String, Object> userProperties = new ConcurrentHashMap<>();
     // Expected to handle message types of <String> only
     private volatile MessageHandler textMessageHandler = null;
     // Expected to handle message types of <ByteBuffer> only
     private volatile MessageHandler binaryMessageHandler = null;
     private volatile MessageHandler.Whole<PongMessage> pongMessageHandler = null;
     private volatile State state = State.OPEN;
-    private final Object stateLock = new Object();
-    private final Map<String, Object> userProperties = new ConcurrentHashMap<>();
     private volatile int maxBinaryMessageBufferSize = Constants.DEFAULT_BUFFER_SIZE;
     private volatile int maxTextMessageBufferSize = Constants.DEFAULT_BUFFER_SIZE;
     private volatile long maxIdleTimeout = 0;
     private volatile long lastActiveRead = System.currentTimeMillis();
     private volatile long lastActiveWrite = System.currentTimeMillis();
-    private Map<FutureToSendHandler, FutureToSendHandler> futures = new ConcurrentHashMap<>();
+    private final Map<FutureToSendHandler, FutureToSendHandler> futures = new ConcurrentHashMap<>();
+    private WsFrameBase wsFrame;
 
 
     /**
@@ -140,10 +120,10 @@ public class WsSession implements Session {
      * @throws DeploymentException if an invalid encode is specified
      */
     public WsSession(ClientEndpointHolder clientEndpointHolder,
-            WsRemoteEndpointImplBase wsRemoteEndpoint,
-            WsWebSocketContainer wsWebSocketContainer,
-            List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
-            boolean secure, ClientEndpointConfig clientEndpointConfig) throws DeploymentException {
+                     WsRemoteEndpointImplBase wsRemoteEndpoint,
+                     WsWebSocketContainer wsWebSocketContainer,
+                     List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
+                     boolean secure, ClientEndpointConfig clientEndpointConfig) throws DeploymentException {
         this.wsRemoteEndpoint = wsRemoteEndpoint;
         this.wsRemoteEndpoint.setSession(this);
         this.remoteEndpointAsync = new WsRemoteEndpointAsync(wsRemoteEndpoint);
@@ -162,7 +142,8 @@ public class WsSession implements Session {
         this.negotiatedExtensions = negotiatedExtensions;
         if (subProtocol == null) {
             this.subProtocol = "";
-        } else {
+        }
+        else {
             this.subProtocol = subProtocol;
         }
         this.pathParameters = pathParameters;
@@ -217,11 +198,11 @@ public class WsSession implements Session {
      * @throws DeploymentException if an invalid encode is specified
      */
     public WsSession(WsRemoteEndpointImplBase wsRemoteEndpoint,
-            WsWebSocketContainer wsWebSocketContainer,
-            URI requestUri, Map<String, List<String>> requestParameterMap,
-            String queryString, Principal userPrincipal, String httpSessionId,
-            List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
-            boolean secure, ServerEndpointConfig serverEndpointConfig) throws DeploymentException {
+                     WsWebSocketContainer wsWebSocketContainer,
+                     URI requestUri, Map<String, List<String>> requestParameterMap,
+                     String queryString, Principal userPrincipal, String httpSessionId,
+                     List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
+                     boolean secure, ServerEndpointConfig serverEndpointConfig) throws DeploymentException {
 
         this.wsRemoteEndpoint = wsRemoteEndpoint;
         this.wsRemoteEndpoint.setSession(this);
@@ -236,7 +217,8 @@ public class WsSession implements Session {
         this.requestUri = requestUri;
         if (requestParameterMap == null) {
             this.requestParameterMap = Collections.emptyMap();
-        } else {
+        }
+        else {
             this.requestParameterMap = requestParameterMap;
         }
         this.queryString = queryString;
@@ -245,7 +227,8 @@ public class WsSession implements Session {
         this.negotiatedExtensions = negotiatedExtensions;
         if (subProtocol == null) {
             this.subProtocol = "";
-        } else {
+        }
+        else {
             this.subProtocol = subProtocol;
         }
         this.pathParameters = pathParameters;
@@ -271,7 +254,8 @@ public class WsSession implements Session {
                         throw new DeploymentException(sm.getString("wsSession.instanceNew"), e);
                     }
                 }
-            } else {
+            }
+            else {
                 endpointInstance = instanceManager.newInstance(clazz);
             }
         } catch (ReflectiveOperationException | NamingException e) {
@@ -280,25 +264,14 @@ public class WsSession implements Session {
 
         if (endpointInstance instanceof Endpoint) {
             this.localEndpoint = (Endpoint) endpointInstance;
-        } else {
+        }
+        else {
             this.localEndpoint = new PojoEndpointServer(pathParameters, endpointInstance);
         }
 
         if (log.isDebugEnabled()) {
             log.debug(sm.getString("wsSession.created", id));
         }
-    }
-
-
-    private boolean isDefaultConfigurator(Configurator configurator) {
-        if (configurator.getClass().equals(DefaultServerEndpointConfigurator.class)) {
-            return true;
-        }
-        if (SEC_CONFIGURATOR_USES_IMPL_DEFAULT &&
-                configurator.getClass().equals(ServerEndpointConfig.Configurator.class)) {
-            return true;
-        }
-        return false;
     }
 
 
@@ -336,17 +309,16 @@ public class WsSession implements Session {
      * @param endpointConfig       The configuration information for the
      *                             endpoint
      * @throws DeploymentException if an invalid encode is specified
-     *
-     * @deprecated  Unused. This will be removed in Tomcat 10.1
+     * @deprecated Unused. This will be removed in Tomcat 10.1
      */
     @Deprecated
     public WsSession(Endpoint localEndpoint,
-            WsRemoteEndpointImplBase wsRemoteEndpoint,
-            WsWebSocketContainer wsWebSocketContainer,
-            URI requestUri, Map<String, List<String>> requestParameterMap,
-            String queryString, Principal userPrincipal, String httpSessionId,
-            List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
-            boolean secure, EndpointConfig endpointConfig) throws DeploymentException {
+                     WsRemoteEndpointImplBase wsRemoteEndpoint,
+                     WsWebSocketContainer wsWebSocketContainer,
+                     URI requestUri, Map<String, List<String>> requestParameterMap,
+                     String queryString, Principal userPrincipal, String httpSessionId,
+                     List<Extension> negotiatedExtensions, String subProtocol, Map<String, String> pathParameters,
+                     boolean secure, EndpointConfig endpointConfig) throws DeploymentException {
         this.localEndpoint = localEndpoint;
         this.wsRemoteEndpoint = wsRemoteEndpoint;
         this.wsRemoteEndpoint.setSession(this);
@@ -361,7 +333,8 @@ public class WsSession implements Session {
         this.requestUri = requestUri;
         if (requestParameterMap == null) {
             this.requestParameterMap = Collections.emptyMap();
-        } else {
+        }
+        else {
             this.requestParameterMap = requestParameterMap;
         }
         this.queryString = queryString;
@@ -370,7 +343,8 @@ public class WsSession implements Session {
         this.negotiatedExtensions = negotiatedExtensions;
         if (subProtocol == null) {
             this.subProtocol = "";
-        } else {
+        }
+        else {
             this.subProtocol = subProtocol;
         }
         this.pathParameters = pathParameters;
@@ -395,11 +369,49 @@ public class WsSession implements Session {
         }
     }
 
+    /**
+     * Use protected so unit tests can access this method directly.
+     *
+     * @param msg    The message
+     * @param reason The reason
+     */
+    protected static void appendCloseReasonWithTruncation(ByteBuffer msg, String reason) {
+        // Once the close code has been added there are a maximum of 123 bytes
+        // left for the reason phrase. If it is truncated then care needs to be
+        // taken to ensure the bytes are not truncated in the middle of a
+        // multi-byte UTF-8 character.
+        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
+
+        if (reasonBytes.length <= 123) {
+            // No need to truncate
+            msg.put(reasonBytes);
+        }
+        else {
+            // Need to truncate
+            int remaining = 123 - ELLIPSIS_BYTES_LEN;
+            int pos = 0;
+            byte[] bytesNext = reason.substring(pos, pos + 1).getBytes(StandardCharsets.UTF_8);
+            while (remaining >= bytesNext.length) {
+                msg.put(bytesNext);
+                remaining -= bytesNext.length;
+                pos++;
+                bytesNext = reason.substring(pos, pos + 1).getBytes(StandardCharsets.UTF_8);
+            }
+            msg.put(ELLIPSIS_BYTES);
+        }
+    }
+
+    private boolean isDefaultConfigurator(Configurator configurator) {
+        if (configurator.getClass().equals(DefaultServerEndpointConfigurator.class)) {
+            return true;
+        }
+        return SEC_CONFIGURATOR_USES_IMPL_DEFAULT &&
+                configurator.getClass().equals(Configurator.class);
+    }
 
     public InstanceManager getInstanceManager() {
         return webSocketContainer.getInstanceManager(applicationClassLoader);
     }
-
 
     @Override
     public WebSocketContainer getContainer() {
@@ -407,13 +419,11 @@ public class WsSession implements Session {
         return webSocketContainer;
     }
 
-
     @Override
     public void addMessageHandler(MessageHandler listener) {
         Class<?> target = Util.getMessageType(listener);
         doAddMessageHandler(target, listener);
     }
-
 
     @Override
     public <T> void addMessageHandler(Class<T> clazz, Partial<T> handler)
@@ -421,13 +431,11 @@ public class WsSession implements Session {
         doAddMessageHandler(clazz, handler);
     }
 
-
     @Override
     public <T> void addMessageHandler(Class<T> clazz, Whole<T> handler)
             throws IllegalStateException {
         doAddMessageHandler(clazz, handler);
     }
-
 
     @SuppressWarnings("unchecked")
     private void doAddMessageHandler(Class<?> target, MessageHandler listener) {
@@ -448,43 +456,43 @@ public class WsSession implements Session {
 
         for (MessageHandlerResult mhResult : mhResults) {
             switch (mhResult.getType()) {
-            case TEXT: {
-                if (textMessageHandler != null) {
-                    throw new IllegalStateException(sm.getString("wsSession.duplicateHandlerText"));
+                case TEXT: {
+                    if (textMessageHandler != null) {
+                        throw new IllegalStateException(sm.getString("wsSession.duplicateHandlerText"));
+                    }
+                    textMessageHandler = mhResult.getHandler();
+                    break;
                 }
-                textMessageHandler = mhResult.getHandler();
-                break;
-            }
-            case BINARY: {
-                if (binaryMessageHandler != null) {
-                    throw new IllegalStateException(
-                            sm.getString("wsSession.duplicateHandlerBinary"));
+                case BINARY: {
+                    if (binaryMessageHandler != null) {
+                        throw new IllegalStateException(
+                                sm.getString("wsSession.duplicateHandlerBinary"));
+                    }
+                    binaryMessageHandler = mhResult.getHandler();
+                    break;
                 }
-                binaryMessageHandler = mhResult.getHandler();
-                break;
-            }
-            case PONG: {
-                if (pongMessageHandler != null) {
-                    throw new IllegalStateException(sm.getString("wsSession.duplicateHandlerPong"));
-                }
-                MessageHandler handler = mhResult.getHandler();
-                if (handler instanceof MessageHandler.Whole<?>) {
-                    pongMessageHandler = (MessageHandler.Whole<PongMessage>) handler;
-                } else {
-                    throw new IllegalStateException(
-                            sm.getString("wsSession.invalidHandlerTypePong"));
-                }
+                case PONG: {
+                    if (pongMessageHandler != null) {
+                        throw new IllegalStateException(sm.getString("wsSession.duplicateHandlerPong"));
+                    }
+                    MessageHandler handler = mhResult.getHandler();
+                    if (handler instanceof MessageHandler.Whole<?>) {
+                        pongMessageHandler = (MessageHandler.Whole<PongMessage>) handler;
+                    }
+                    else {
+                        throw new IllegalStateException(
+                                sm.getString("wsSession.invalidHandlerTypePong"));
+                    }
 
-                break;
-            }
-            default: {
-                throw new IllegalArgumentException(
-                        sm.getString("wsSession.unknownHandlerType", listener, mhResult.getType()));
-            }
+                    break;
+                }
+                default: {
+                    throw new IllegalArgumentException(
+                            sm.getString("wsSession.unknownHandlerType", listener, mhResult.getType()));
+                }
             }
         }
     }
-
 
     @Override
     public Set<MessageHandler> getMessageHandlers() {
@@ -501,7 +509,6 @@ public class WsSession implements Session {
         }
         return result;
     }
-
 
     @Override
     public void removeMessageHandler(MessageHandler listener) {
@@ -544,13 +551,11 @@ public class WsSession implements Session {
         }
     }
 
-
     @Override
     public String getProtocolVersion() {
         checkState();
         return Constants.WS_VERSION_HEADER_VALUE;
     }
-
 
     @Override
     public String getNegotiatedSubprotocol() {
@@ -558,13 +563,11 @@ public class WsSession implements Session {
         return subProtocol;
     }
 
-
     @Override
     public List<Extension> getNegotiatedExtensions() {
         checkState();
         return negotiatedExtensions;
     }
-
 
     @Override
     public boolean isSecure() {
@@ -572,12 +575,10 @@ public class WsSession implements Session {
         return secure;
     }
 
-
     @Override
     public boolean isOpen() {
         return state == State.OPEN;
     }
-
 
     @Override
     public long getMaxIdleTimeout() {
@@ -585,20 +586,11 @@ public class WsSession implements Session {
         return maxIdleTimeout;
     }
 
-
     @Override
     public void setMaxIdleTimeout(long timeout) {
         checkState();
         this.maxIdleTimeout = timeout;
     }
-
-
-    @Override
-    public void setMaxBinaryMessageBufferSize(int max) {
-        checkState();
-        this.maxBinaryMessageBufferSize = max;
-    }
-
 
     @Override
     public int getMaxBinaryMessageBufferSize() {
@@ -606,13 +598,11 @@ public class WsSession implements Session {
         return maxBinaryMessageBufferSize;
     }
 
-
     @Override
-    public void setMaxTextMessageBufferSize(int max) {
+    public void setMaxBinaryMessageBufferSize(int max) {
         checkState();
-        this.maxTextMessageBufferSize = max;
+        this.maxBinaryMessageBufferSize = max;
     }
-
 
     @Override
     public int getMaxTextMessageBufferSize() {
@@ -620,6 +610,11 @@ public class WsSession implements Session {
         return maxTextMessageBufferSize;
     }
 
+    @Override
+    public void setMaxTextMessageBufferSize(int max) {
+        checkState();
+        this.maxTextMessageBufferSize = max;
+    }
 
     @Override
     public Set<Session> getOpenSessions() {
@@ -627,13 +622,11 @@ public class WsSession implements Session {
         return webSocketContainer.getOpenSessions(getSessionMapKey());
     }
 
-
     @Override
     public RemoteEndpoint.Async getAsyncRemote() {
         checkState();
         return remoteEndpointAsync;
     }
-
 
     @Override
     public RemoteEndpoint.Basic getBasicRemote() {
@@ -641,18 +634,15 @@ public class WsSession implements Session {
         return remoteEndpointBasic;
     }
 
-
     @Override
     public void close() throws IOException {
         close(new CloseReason(CloseCodes.NORMAL_CLOSURE, ""));
     }
 
-
     @Override
     public void close(CloseReason closeReason) throws IOException {
         doClose(closeReason, closeReason);
     }
-
 
     /**
      * WebSocket 1.0. Section 2.1.5.
@@ -666,7 +656,6 @@ public class WsSession implements Session {
         doClose(closeReasonMessage, closeReasonLocal, false);
     }
 
-
     /**
      * WebSocket 1.0. Section 2.1.5.
      * Need internal close method as spec requires that the local endpoint
@@ -678,7 +667,7 @@ public class WsSession implements Session {
      *                           for the server to respond
      */
     public void doClose(CloseReason closeReasonMessage, CloseReason closeReasonLocal,
-            boolean closeSocket) {
+                        boolean closeSocket) {
         // Double-checked locking. OK because state is volatile
         if (state != State.OPEN) {
             return;
@@ -723,7 +712,6 @@ public class WsSession implements Session {
             f2sh.onResult(sr);
         }
     }
-
 
     /**
      * Called when a close message is received. Should only ever happen once.
@@ -788,8 +776,6 @@ public class WsSession implements Session {
         }
     }
 
-
-
     private void fireEndpointOnError(Throwable throwable) {
 
         // Fire the onError event
@@ -803,7 +789,6 @@ public class WsSession implements Session {
         }
     }
 
-
     private void sendCloseMessage(CloseReason closeReason) {
         // 125 is maximum size for the payload of a control message
         ByteBuffer msg = ByteBuffer.allocate(125);
@@ -812,7 +797,8 @@ public class WsSession implements Session {
         if (closeCode == CloseCodes.CLOSED_ABNORMALLY) {
             // PROTOCOL_ERROR is probably better than GOING_AWAY here
             msg.putShort((short) CloseCodes.PROTOCOL_ERROR.getCode());
-        } else {
+        }
+        else {
             msg.putShort((short) closeCode.getCode());
         }
 
@@ -842,52 +828,22 @@ public class WsSession implements Session {
         }
     }
 
-
     private Object getSessionMapKey() {
         if (endpointConfig instanceof ServerEndpointConfig) {
             // Server
             return ((ServerEndpointConfig) endpointConfig).getPath();
-        } else {
+        }
+        else {
             // Client
             return localEndpoint;
         }
     }
 
     /**
-     * Use protected so unit tests can access this method directly.
-     * @param msg The message
-     * @param reason The reason
-     */
-    protected static void appendCloseReasonWithTruncation(ByteBuffer msg, String reason) {
-        // Once the close code has been added there are a maximum of 123 bytes
-        // left for the reason phrase. If it is truncated then care needs to be
-        // taken to ensure the bytes are not truncated in the middle of a
-        // multi-byte UTF-8 character.
-        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
-
-        if (reasonBytes.length <= 123) {
-            // No need to truncate
-            msg.put(reasonBytes);
-        } else {
-            // Need to truncate
-            int remaining = 123 - ELLIPSIS_BYTES_LEN;
-            int pos = 0;
-            byte[] bytesNext = reason.substring(pos, pos + 1).getBytes(StandardCharsets.UTF_8);
-            while (remaining >= bytesNext.length) {
-                msg.put(bytesNext);
-                remaining -= bytesNext.length;
-                pos++;
-                bytesNext = reason.substring(pos, pos + 1).getBytes(StandardCharsets.UTF_8);
-            }
-            msg.put(ELLIPSIS_BYTES);
-        }
-    }
-
-
-    /**
      * Make the session aware of a {@link FutureToSendHandler} that will need to
      * be forcibly closed if the session closes before the
      * {@link FutureToSendHandler} completes.
+     *
      * @param f2sh The handler
      */
     protected void registerFuture(FutureToSendHandler f2sh) {
@@ -935,15 +891,14 @@ public class WsSession implements Session {
         f2sh.onResult(sr);
     }
 
-
     /**
      * Remove a {@link FutureToSendHandler} from the set of tracked instances.
+     *
      * @param f2sh The handler
      */
     protected void unregisterFuture(FutureToSendHandler f2sh) {
         futures.remove(f2sh);
     }
-
 
     @Override
     public URI getRequestURI() {
@@ -951,13 +906,11 @@ public class WsSession implements Session {
         return requestUri;
     }
 
-
     @Override
     public Map<String, List<String>> getRequestParameterMap() {
         checkState();
         return requestParameterMap;
     }
-
 
     @Override
     public String getQueryString() {
@@ -965,13 +918,11 @@ public class WsSession implements Session {
         return queryString;
     }
 
-
     @Override
     public Principal getUserPrincipal() {
         checkState();
         return userPrincipal;
     }
-
 
     @Override
     public Map<String, String> getPathParameters() {
@@ -979,12 +930,10 @@ public class WsSession implements Session {
         return pathParameters;
     }
 
-
     @Override
     public String getId() {
         return id;
     }
-
 
     @Override
     public Map<String, Object> getUserProperties() {
@@ -992,41 +941,33 @@ public class WsSession implements Session {
         return userProperties;
     }
 
-
     public Endpoint getLocal() {
         return localEndpoint;
     }
-
 
     public String getHttpSessionId() {
         return httpSessionId;
     }
 
-
     protected MessageHandler getTextMessageHandler() {
         return textMessageHandler;
     }
-
 
     protected MessageHandler getBinaryMessageHandler() {
         return binaryMessageHandler;
     }
 
-
     protected MessageHandler.Whole<PongMessage> getPongMessageHandler() {
         return pongMessageHandler;
     }
-
 
     protected void updateLastActiveRead() {
         lastActiveRead = System.currentTimeMillis();
     }
 
-
     protected void updateLastActiveWrite() {
         lastActiveWrite = System.currentTimeMillis();
     }
-
 
     protected void checkExpiration() {
         // Local copies to ensure consistent behaviour during method execution
@@ -1039,9 +980,11 @@ public class WsSession implements Session {
 
         if (timeoutRead > 0 && (currentTime - lastActiveRead) > timeoutRead) {
             key = "wsSession.timeoutRead";
-        } else if (timeoutWrite > 0 && (currentTime - lastActiveWrite) > timeoutWrite) {
+        }
+        else if (timeoutWrite > 0 && (currentTime - lastActiveWrite) > timeoutWrite) {
             key = "wsSession.timeoutWrite";
-        } else if (timeout > 0 && (currentTime - lastActiveRead) > timeout &&
+        }
+        else if (timeout > 0 && (currentTime - lastActiveRead) > timeout &&
                 (currentTime - lastActiveWrite) > timeout) {
             key = "wsSession.timeout";
         }
@@ -1055,7 +998,6 @@ public class WsSession implements Session {
         }
     }
 
-
     private long getMaxIdleTimeoutRead() {
         Object timeout = userProperties.get(Constants.READ_IDLE_TIMEOUT_MS);
         if (timeout instanceof Long) {
@@ -1064,7 +1006,6 @@ public class WsSession implements Session {
         return 0;
     }
 
-
     private long getMaxIdleTimeoutWrite() {
         Object timeout = userProperties.get(Constants.WRITE_IDLE_TIMEOUT_MS);
         if (timeout instanceof Long) {
@@ -1072,7 +1013,6 @@ public class WsSession implements Session {
         }
         return 0;
     }
-
 
     private void checkState() {
         if (state == State.CLOSED) {
@@ -1084,18 +1024,9 @@ public class WsSession implements Session {
         }
     }
 
-    private enum State {
-        OPEN,
-        OUTPUT_CLOSED,
-        CLOSED
-    }
-
-
-    private WsFrameBase wsFrame;
     void setWsFrame(WsFrameBase wsFrame) {
         this.wsFrame = wsFrame;
     }
-
 
     /**
      * Suspends the reading of the incoming messages.
@@ -1104,11 +1035,17 @@ public class WsSession implements Session {
         wsFrame.suspend();
     }
 
-
     /**
      * Resumes the reading of the incoming messages.
      */
     public void resume() {
         wsFrame.resume();
+    }
+
+
+    private enum State {
+        OPEN,
+        OUTPUT_CLOSED,
+        CLOSED
     }
 }

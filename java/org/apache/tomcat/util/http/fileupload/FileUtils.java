@@ -54,6 +54,7 @@ public class FileUtils {
     }
 
     //-----------------------------------------------------------------------
+
     /**
      * Deletes a directory recursively.
      *
@@ -115,6 +116,7 @@ public class FileUtils {
     }
 
     //-----------------------------------------------------------------------
+
     /**
      * Deletes a file. If file is a directory, delete it and all sub-directories.
      * <p>
@@ -133,7 +135,8 @@ public class FileUtils {
     public static void forceDelete(final File file) throws IOException {
         if (file.isDirectory()) {
             deleteDirectory(file);
-        } else {
+        }
+        else {
             final boolean filePresent = file.exists();
             if (!file.delete()) {
                 if (!filePresent) {
@@ -157,7 +160,8 @@ public class FileUtils {
     public static void forceDeleteOnExit(final File file) throws IOException {
         if (file.isDirectory()) {
             deleteDirectoryOnExit(file);
-        } else {
+        }
+        else {
             file.deleteOnExit();
         }
     }
@@ -238,7 +242,8 @@ public class FileUtils {
                                 + "not a directory. Unable to create directory.";
                 throw new IOException(message);
             }
-        } else {
+        }
+        else {
             if (!directory.mkdirs()) {
                 // Double-check that some other thread or process hasn't made
                 // the directory in the background
@@ -295,15 +300,12 @@ public class FileUtils {
         File fileInCanonicalDir = null;
         if (file.getParent() == null) {
             fileInCanonicalDir = file;
-        } else {
+        }
+        else {
             File canonicalDir = file.getParentFile().getCanonicalFile();
             fileInCanonicalDir = new File(canonicalDir, file.getName());
         }
 
-        if (fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile())) {
-            return false;
-        } else {
-            return true;
-        }
+        return !fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile());
     }
 }

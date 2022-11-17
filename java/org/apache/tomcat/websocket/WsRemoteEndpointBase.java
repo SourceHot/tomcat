@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.websocket;
 
+import jakarta.websocket.RemoteEndpoint;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import jakarta.websocket.RemoteEndpoint;
 
 public abstract class WsRemoteEndpointBase implements RemoteEndpoint {
 
@@ -30,18 +30,15 @@ public abstract class WsRemoteEndpointBase implements RemoteEndpoint {
         this.base = base;
     }
 
-
-    @Override
-    public final void setBatchingAllowed(boolean batchingAllowed) throws IOException {
-        base.setBatchingAllowed(batchingAllowed);
-    }
-
-
     @Override
     public final boolean getBatchingAllowed() {
         return base.getBatchingAllowed();
     }
 
+    @Override
+    public final void setBatchingAllowed(boolean batchingAllowed) throws IOException {
+        base.setBatchingAllowed(batchingAllowed);
+    }
 
     @Override
     public final void flushBatch() throws IOException {

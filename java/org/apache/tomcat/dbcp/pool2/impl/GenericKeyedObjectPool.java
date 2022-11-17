@@ -16,17 +16,11 @@
  */
 package org.apache.tomcat.dbcp.pool2.impl;
 
+import org.apache.tomcat.dbcp.pool2.*;
+
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,15 +29,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-
-import org.apache.tomcat.dbcp.pool2.DestroyMode;
-import org.apache.tomcat.dbcp.pool2.KeyedObjectPool;
-import org.apache.tomcat.dbcp.pool2.KeyedPooledObjectFactory;
-import org.apache.tomcat.dbcp.pool2.PoolUtils;
-import org.apache.tomcat.dbcp.pool2.PooledObject;
-import org.apache.tomcat.dbcp.pool2.PooledObjectState;
-import org.apache.tomcat.dbcp.pool2.SwallowedExceptionListener;
-import org.apache.tomcat.dbcp.pool2.UsageTracking;
 
 /**
  * A configurable {@code KeyedObjectPool} implementation.
@@ -80,133 +65,20 @@ import org.apache.tomcat.dbcp.pool2.UsageTracking;
  * This class is intended to be thread-safe.
  * </p>
  *
- * @see GenericObjectPool
- *
  * @param <K> The type of keys maintained by this pool.
  * @param <T> Type of element pooled in this pool.
- *
+ * @see GenericObjectPool
  * @since 2.0
  */
 public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         implements KeyedObjectPool<K, T>, GenericKeyedObjectPoolMXBean<K>, UsageTracking<T> {
 
-    /**
-     * Maintains information on the per key queue for a given key.
-     *
-     * @param <S> type of objects in the pool
-     */
-    private class ObjectDeque<S> {
-
-        private final LinkedBlockingDeque<PooledObject<S>> idleObjects;
-
-        /*
-         * Number of instances created - number destroyed.
-         * Invariant: createCount <= maxTotalPerKey
-         */
-        private final AtomicInteger createCount = new AtomicInteger(0);
-
-        private long makeObjectCount;
-        private final Object makeObjectCountLock = new Object();
-
-        /*
-         * The map is keyed on pooled instances, wrapped to ensure that
-         * they work properly as keys.
-         */
-        private final Map<IdentityWrapper<S>, PooledObject<S>> allObjects =
-                new ConcurrentHashMap<>();
-
-        /*
-         * Number of threads with registered interest in this key.
-         * register(K) increments this counter and deRegister(K) decrements it.
-         * Invariant: empty keyed pool will not be dropped unless numInterested
-         *            is 0.
-         */
-        private final AtomicLong numInterested = new AtomicLong();
-
-        /**
-         * Constructs a new ObjecDeque with the given fairness policy.
-         * @param fairness true means client threads waiting to borrow / return instances
-         * will be served as if waiting in a FIFO queue.
-         */
-        public ObjectDeque(final boolean fairness) {
-            idleObjects = new LinkedBlockingDeque<>(fairness);
-        }
-
-        /**
-         * Gets all the objects for the current key.
-         *
-         * @return All the objects
-         */
-        public Map<IdentityWrapper<S>, PooledObject<S>> getAllObjects() {
-            return allObjects;
-        }
-
-        /**
-         * Gets the count of the number of objects created for the current
-         * key.
-         *
-         * @return The number of objects created for this key
-         */
-        public AtomicInteger getCreateCount() {
-            return createCount;
-        }
-
-        /**
-         * Gets the idle objects for the current key.
-         *
-         * @return The idle objects
-         */
-        public LinkedBlockingDeque<PooledObject<S>> getIdleObjects() {
-            return idleObjects;
-        }
-
-        /**
-         * Gets the number of threads with an interest registered in this key.
-         *
-         * @return The number of threads with a registered interest in this key
-         */
-        public AtomicLong getNumInterested() {
-            return numInterested;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder builder = new StringBuilder();
-            builder.append("ObjectDeque [idleObjects=");
-            builder.append(idleObjects);
-            builder.append(", createCount=");
-            builder.append(createCount);
-            builder.append(", allObjects=");
-            builder.append(allObjects);
-            builder.append(", numInterested=");
-            builder.append(numInterested);
-            builder.append("]");
-            return builder.toString();
-        }
-
-    }
-
     private static final Integer ZERO = Integer.valueOf(0);
-
     // JMX specific attributes
     private static final String ONAME_BASE =
             "org.apache.commons.pool2:type=GenericKeyedObjectPool,name=";
-
-    //--- configuration attributes ---------------------------------------------
-    private volatile int maxIdlePerKey =
-            GenericKeyedObjectPoolConfig.DEFAULT_MAX_IDLE_PER_KEY;
-
-    private volatile int minIdlePerKey =
-            GenericKeyedObjectPoolConfig.DEFAULT_MIN_IDLE_PER_KEY;
-
-
-    private volatile int maxTotalPerKey =
-            GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL_PER_KEY;
-
     private final KeyedPooledObjectFactory<K, T> factory;
-
     private final boolean fairness;
-
     /*
      * My hash of sub-pools (ObjectQueue). The list of keys <b>must</b> be kept
      * in step with {@link #poolKeyList} using {@link #keyLock} to ensure any
@@ -214,7 +86,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      */
     private final Map<K, ObjectDeque<T>> poolMap =
             new ConcurrentHashMap<>(); // @GuardedBy("keyLock") for write access (and some read access)
-
     /*
      * List of pool keys - used to control eviction order. The list of keys
      * <b>must</b> be kept in step with {@link #poolMap} using {@link #keyLock}
@@ -222,9 +93,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * thread-safe manner.
      */
     private final List<K> poolKeyList = new ArrayList<>(); // @GuardedBy("keyLock")
-
     private final ReadWriteLock keyLock = new ReentrantReadWriteLock(true);
-
     /*
      * The combined count of the currently active objects for all keys and those
      * in the process of being created. Under load, it may exceed
@@ -232,15 +101,21 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * created at any one time.
      */
     private final AtomicInteger numTotal = new AtomicInteger(0);
-
+    //--- configuration attributes ---------------------------------------------
+    private volatile int maxIdlePerKey =
+            GenericKeyedObjectPoolConfig.DEFAULT_MAX_IDLE_PER_KEY;
+    private volatile int minIdlePerKey =
+            GenericKeyedObjectPoolConfig.DEFAULT_MIN_IDLE_PER_KEY;
+    private volatile int maxTotalPerKey =
+            GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL_PER_KEY;
     private Iterator<K> evictionKeyIterator; // @GuardedBy("evictionLock")
-
-
     private K evictionKey; // @GuardedBy("evictionLock")
+
 
     /**
      * Constructs a new {@code GenericKeyedObjectPool} using defaults from
      * {@link GenericKeyedObjectPoolConfig}.
+     *
      * @param factory the factory to be used to create entries
      */
     public GenericKeyedObjectPool(final KeyedPooledObjectFactory<K, T> factory) {
@@ -252,13 +127,13 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * configuration.
      *
      * @param factory the factory to be used to create entries
-     * @param config    The configuration to use for this pool instance. The
-     *                  configuration is used by value. Subsequent changes to
-     *                  the configuration object will not be reflected in the
-     *                  pool.
+     * @param config  The configuration to use for this pool instance. The
+     *                configuration is used by value. Subsequent changes to
+     *                the configuration object will not be reflected in the
+     *                pool.
      */
     public GenericKeyedObjectPool(final KeyedPooledObjectFactory<K, T> factory,
-            final GenericKeyedObjectPoolConfig<T> config) {
+                                  final GenericKeyedObjectPoolConfig<T> config) {
 
         super(config, ONAME_BASE, config.getJmxNamePrefix());
 
@@ -276,18 +151,18 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * Creates a new {@code GenericKeyedObjectPool} that tracks and destroys
      * objects that are checked out, but never returned to the pool.
      *
-     * @param factory   The object factory to be used to create object instances
-     *                  used by this pool
-     * @param config    The base pool configuration to use for this pool instance.
-     *                  The configuration is used by value. Subsequent changes to
-     *                  the configuration object will not be reflected in the
-     *                  pool.
-     * @param abandonedConfig  Configuration for abandoned object identification
-     *                         and removal.  The configuration is used by value.
+     * @param factory         The object factory to be used to create object instances
+     *                        used by this pool
+     * @param config          The base pool configuration to use for this pool instance.
+     *                        The configuration is used by value. Subsequent changes to
+     *                        the configuration object will not be reflected in the
+     *                        pool.
+     * @param abandonedConfig Configuration for abandoned object identification
+     *                        and removal.  The configuration is used by value.
      * @since 2.10.0
      */
     public GenericKeyedObjectPool(final KeyedPooledObjectFactory<K, T> factory,
-            final GenericKeyedObjectPoolConfig<T> config, final AbandonedConfig abandonedConfig) {
+                                  final GenericKeyedObjectPoolConfig<T> config, final AbandonedConfig abandonedConfig) {
         this(factory, config);
         setAbandonedConfig(abandonedConfig);
     }
@@ -296,8 +171,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * Add an object to the set of idle objects for a given key.
      *
      * @param key The key to associate with the idle object
-     * @param p The wrapped object to add.
-     *
+     * @param p   The wrapped object to add.
      * @throws Exception If the associated factory fails to passivate the object
      */
     private void addIdleObject(final K key, final PooledObject<T> p) throws Exception {
@@ -308,12 +182,12 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                     poolMap.get(key).getIdleObjects();
             if (getLifo()) {
                 idleObjects.addFirst(p);
-            } else {
+            }
+            else {
                 idleObjects.addLast(p);
             }
         }
     }
-
 
     /**
      * Create an object using the {@link KeyedPooledObjectFactory#makeObject
@@ -322,7 +196,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * objects.
      *
      * @param key the key a new instance should be added to
-     *
      * @throws Exception when {@link KeyedPooledObjectFactory#makeObject}
      *                   fails.
      */
@@ -338,18 +211,16 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         }
     }
 
-
     /**
      * Equivalent to <code>{@link #borrowObject(Object, long) borrowObject}(key,
      * {@link #getMaxWaitDuration()})</code>.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
     public T borrowObject(final K key) throws Exception {
         return borrowObject(key, getMaxWaitDuration().toMillis());
     }
-
 
     /**
      * Borrows an object from the sub-pool associated with the given key using
@@ -400,17 +271,14 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * available instances in request arrival order.
      * </p>
      *
-     * @param key pool key
+     * @param key                 pool key
      * @param borrowMaxWaitMillis The time to wait in milliseconds for an object
      *                            to become available
-     *
      * @return object instance from the keyed pool
-     *
      * @throws NoSuchElementException if a keyed object instance cannot be
      *                                returned because the pool is exhausted.
-     *
-     * @throws Exception if a keyed object instance cannot be returned due to an
-     *                   error
+     * @throws Exception              if a keyed object instance cannot be returned due to an
+     *                                error
      */
     public T borrowObject(final K key, final long borrowMaxWaitMillis) throws Exception {
         assertOpen();
@@ -445,7 +313,8 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                     if (p == null) {
                         if (borrowMaxWaitMillis < 0) {
                             p = objectDeque.getIdleObjects().takeFirst();
-                        } else {
+                        }
+                        else {
                             p = objectDeque.getIdleObjects().pollFirst(borrowMaxWaitMillis, TimeUnit.MILLISECONDS);
                         }
                     }
@@ -453,7 +322,8 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                         throw new NoSuchElementException(appendStats(
                                 "Timeout waiting for idle object, borrowMaxWaitMillis=" + borrowMaxWaitMillis));
                     }
-                } else if (p == null) {
+                }
+                else if (p == null) {
                     throw new NoSuchElementException(appendStats("Pool exhausted"));
                 }
                 if (!p.allocate()) {
@@ -517,8 +387,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * maintain the minimum number of idle objects while not exceeded the limits
      * on the maximum number of objects either per key or totally.
      *
-     * @param objectDeque   The set of objects to check
-     *
+     * @param objectDeque The set of objects to check
      * @return The number of new objects to create
      */
     private int calculateDeficit(final ObjectDeque<T> objectDeque) {
@@ -573,7 +442,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         poolMap.keySet().forEach(this::clear);
     }
 
-
     /**
      * Clears the specified sub-pool, removing all pooled instances
      * corresponding to the given {@code key}. Exceptions encountered
@@ -605,7 +473,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
             deregister(key);
         }
     }
-
 
     /**
      * Clears oldest 15% of objects in pool.  The method sorts the objects into
@@ -652,7 +519,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         }
     }
 
-
     /**
      * Closes the keyed object pool. Once the pool is closed,
      * {@link #borrowObject(Object)} will fail with IllegalStateException, but
@@ -692,14 +558,11 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         }
     }
 
-
     /**
      * Creates a new pooled object.
      *
      * @param key Key associated with new pooled object
-     *
      * @return The new, wrapped pooled object
-     *
      * @throws Exception If the objection creation fails
      */
     private PooledObject<T> create(final K key) throws Exception {
@@ -722,7 +585,8 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                     return null;
                 }
                 clearOldest();
-            } else {
+            }
+            else {
                 loop = false;
             }
         }
@@ -747,14 +611,16 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                         // create a new object. Return and wait for an object to
                         // be returned.
                         create = Boolean.FALSE;
-                    } else {
+                    }
+                    else {
                         // There are makeObject() calls in progress that might
                         // bring the pool to capacity. Those calls might also
                         // fail so wait until they complete and then re-test if
                         // the pool is at capacity or not.
                         objectDeque.makeObjectCountLock.wait();
                     }
-                } else {
+                }
+                else {
                     // The pool is not at capacity. Create a new object.
                     objectDeque.makeObjectCount++;
                     create = Boolean.TRUE;
@@ -833,12 +699,11 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
     /**
      * Destroy the wrapped, pooled object.
      *
-     * @param key The key associated with the object to destroy.
-     * @param toDestroy The wrapped object to be destroyed
-     * @param always Should the object be destroyed even if it is not currently
-     *               in the set of idle objects for the given key
+     * @param key         The key associated with the object to destroy.
+     * @param toDestroy   The wrapped object to be destroyed
+     * @param always      Should the object be destroyed even if it is not currently
+     *                    in the set of idle objects for the given key
      * @param destroyMode DestroyMode context provided to the factory
-     *
      * @return {@code true} if the object was destroyed, otherwise {@code false}
      * @throws Exception If the object destruction failed
      */
@@ -849,7 +714,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
 
         try {
             boolean isIdle;
-            synchronized(toDestroy) {
+            synchronized (toDestroy) {
                 // Check idle state directly
                 isIdle = toDestroy.getState().equals(PooledObjectState.IDLE);
                 // If idle, not under eviction test, or always is true, remove instance,
@@ -877,7 +742,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         }
     }
 
-
     @Override
     void ensureMinIdle() throws Exception {
         final int minIdlePerKeySave = getMinIdlePerKey();
@@ -895,7 +759,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * the pool for the given key.
      *
      * @param key The key to check for idle objects
-     *
      * @throws Exception If a new object is required and cannot be created
      */
     private void ensureMinIdle(final K key) throws Exception {
@@ -1019,7 +882,8 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                     if (evict) {
                         destroy(evictionKey, underTest, true, DestroyMode.NORMAL);
                         destroyedByEvictorCount.incrementAndGet();
-                    } else {
+                    }
+                    else {
                         if (testWhileIdle) {
                             boolean active = false;
                             try {
@@ -1047,7 +911,8 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                                         }
                                         throw (Error) validationThrowable;
                                     }
-                                } else {
+                                }
+                                else {
                                     try {
                                         factory.passivateObject(evictionKey, underTest);
                                     } catch (final Exception e) {
@@ -1071,7 +936,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         }
     }
 
-
     /**
      * Gets a reference to the factory used to create, destroy and validate
      * the objects used by this pool.
@@ -1093,8 +957,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * good starting point.
      *
      * @return the maximum number of "idle" instances that can be held in a
-     *         given keyed sub-pool or a negative value if there is no limit
-     *
+     * given keyed sub-pool or a negative value if there is no limit
      * @see #setMaxIdlePerKey
      */
     @Override
@@ -1103,17 +966,47 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
     }
 
     /**
+     * Sets the cap on the number of "idle" instances per key in the pool.
+     * If maxIdlePerKey is set too low on heavily loaded systems it is possible
+     * you will see objects being destroyed and almost immediately new objects
+     * being created. This is a result of the active threads momentarily
+     * returning objects faster than they are requesting them, causing the
+     * number of idle objects to rise above maxIdlePerKey. The best value for
+     * maxIdlePerKey for heavily loaded system will vary but the default is a
+     * good starting point.
+     *
+     * @param maxIdlePerKey the maximum number of "idle" instances that can be
+     *                      held in a given keyed sub-pool. Use a negative value
+     *                      for no limit
+     * @see #getMaxIdlePerKey
+     */
+    public void setMaxIdlePerKey(final int maxIdlePerKey) {
+        this.maxIdlePerKey = maxIdlePerKey;
+    }
+
+    /**
      * Gets the limit on the number of object instances allocated by the pool
      * (checked out or idle), per key. When the limit is reached, the sub-pool
      * is said to be exhausted. A negative value indicates no limit.
      *
      * @return the limit on the number of active instances per key
-     *
      * @see #setMaxTotalPerKey
      */
     @Override
     public int getMaxTotalPerKey() {
         return maxTotalPerKey;
+    }
+
+    /**
+     * Sets the limit on the number of object instances allocated by the pool
+     * (checked out or idle), per key. When the limit is reached, the sub-pool
+     * is said to be exhausted. A negative value indicates no limit.
+     *
+     * @param maxTotalPerKey the limit on the number of active instances per key
+     * @see #getMaxTotalPerKey
+     */
+    public void setMaxTotalPerKey(final int maxTotalPerKey) {
+        this.maxTotalPerKey = maxTotalPerKey;
     }
 
     /**
@@ -1130,13 +1023,34 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * </p>
      *
      * @return minimum size of the each keyed pool
-     *
      * @see #setTimeBetweenEvictionRunsMillis
      */
     @Override
     public int getMinIdlePerKey() {
         final int maxIdlePerKeySave = getMaxIdlePerKey();
         return this.minIdlePerKey > maxIdlePerKeySave ? maxIdlePerKeySave : minIdlePerKey;
+    }
+
+    /**
+     * Sets the target for the minimum number of idle objects to maintain in
+     * each of the keyed sub-pools. This setting only has an effect if it is
+     * positive and {@link #getDurationBetweenEvictionRuns()} is greater than
+     * zero. If this is the case, an attempt is made to ensure that each
+     * sub-pool has the required minimum number of instances during idle object
+     * eviction runs.
+     * <p>
+     * If the configured value of minIdlePerKey is greater than the configured
+     * value for maxIdlePerKey then the value of maxIdlePerKey will be used
+     * instead.
+     * </p>
+     *
+     * @param minIdlePerKey The minimum size of the each keyed pool
+     * @see #getMinIdlePerKey()
+     * @see #getMaxIdlePerKey()
+     * @see #setTimeBetweenEvictionRuns(Duration)
+     */
+    public void setMinIdlePerKey(final int minIdlePerKey) {
+        this.minIdlePerKey = minIdlePerKey;
     }
 
     @Override
@@ -1165,12 +1079,15 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                 if (key != null && objectDequeue != null) {
                     result.put(key.toString(), Integer.valueOf(
                             objectDequeue.getAllObjects().size() -
-                            objectDequeue.getIdleObjects().size()));
+                                    objectDequeue.getIdleObjects().size()));
                 }
             }
         });
         return result;
     }
+
+
+    //--- JMX support ----------------------------------------------------------
 
     @Override
     public int getNumIdle() {
@@ -1182,9 +1099,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         final ObjectDeque<T> objectDeque = poolMap.get(key);
         return objectDeque != null ? objectDeque.getIdleObjects().size() : 0;
     }
-
-
-    //--- JMX support ----------------------------------------------------------
 
     /**
      * Calculate the number of objects to test in a run of the idle object
@@ -1207,7 +1121,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * synchronization control.
      *
      * @return The estimate of the number of threads currently blocked waiting
-     *         for an object from the pool
+     * for an object from the pool
      */
     @Override
     public int getNumWaiters() {
@@ -1224,7 +1138,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * monitoring only, not for synchronization control.
      *
      * @return The estimate of the number of threads currently blocked waiting
-     *         for an object from the pool for each key
+     * for an object from the pool for each key
      */
     @Override
     public Map<String, Integer> getNumWaitersByKey() {
@@ -1254,7 +1168,7 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * objects but are blocked waiting for more objects to become available.
      *
      * @return {@code true} if there is at least one thread waiting otherwise
-     *         {@code false}
+     * {@code false}
      */
     private boolean hasBorrowWaiters() {
         return poolMap.values().stream().anyMatch(deque -> deque != null && deque.getIdleObjects().hasTakeWaiters());
@@ -1269,7 +1183,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      *
      * @param key pool key
      * @param obj instance to invalidate
-     *
      * @throws Exception             if an exception occurs destroying the
      *                               object
      * @throws IllegalStateException if obj does not belong to the pool
@@ -1287,10 +1200,9 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * the given keyed pool and attempts to destroy {@code obj.}
      * </p>
      *
-     * @param key pool key
-     * @param obj instance to invalidate
+     * @param key         pool key
+     * @param obj         instance to invalidate
      * @param destroyMode DestroyMode context provided to factory
-     *
      * @throws Exception             if an exception occurs destroying the
      *                               object
      * @throws IllegalStateException if obj does not belong to the pool
@@ -1343,7 +1255,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * {@link #getMinIdlePerKey()} idle instances are created.
      *
      * @param key - The key to register for pool control.
-     *
      * @throws Exception If the associated factory throws an exception
      */
     public void preparePool(final K key) throws Exception {
@@ -1361,10 +1272,9 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * </p>
      *
      * @param k The key to register
-     *
      * @return The objects currently associated with the given key. If this
-     *         method returns without throwing an exception then it will never
-     *         return null.
+     * method returns without throwing an exception then it will never
+     * return null.
      */
     private ObjectDeque<T> register(final K k) {
         Lock lock = keyLock.readLock();
@@ -1386,10 +1296,12 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                     //       keyLock.writeLock()
                     poolMap.put(k, objectDeque);
                     poolKeyList.add(k);
-                } else {
+                }
+                else {
                     objectDeque.getNumInterested().incrementAndGet();
                 }
-            } else {
+            }
+            else {
                 objectDeque.getNumInterested().incrementAndGet();
             }
         } finally {
@@ -1442,7 +1354,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      *
      * @param key pool key
      * @param obj instance to return to the keyed pool
-     *
      * @throws IllegalStateException if an object is returned to the pool that
      *                               was not borrowed from it or if an object is
      *                               returned to the pool multiple times
@@ -1504,10 +1415,12 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                 } catch (final Exception e) {
                     swallowException(e);
                 }
-            } else {
+            }
+            else {
                 if (getLifo()) {
                     idleObjects.addFirst(p);
-                } else {
+                }
+                else {
                     idleObjects.addLast(p);
                 }
                 if (isClosed()) {
@@ -1528,11 +1441,11 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
     /**
      * Attempt to create one new instance to serve from the most heavily
      * loaded pool that can add a new instance.
-     *
+     * <p>
      * This method exists to ensure liveness in the pool when threads are
      * parked waiting and capacity to create instances under the requested keys
      * subsequently becomes available.
-     *
+     * <p>
      * This method is not guaranteed to create an instance and its selection
      * of the most loaded pool that can create an instance may not always be
      * correct, since it does not lock the pool and instances may be created,
@@ -1579,7 +1492,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
      * Sets the configuration.
      *
      * @param conf the new configuration to use. This is used by value.
-     *
      * @see GenericKeyedObjectPoolConfig
      */
     public void setConfig(final GenericKeyedObjectPoolConfig<T> conf) {
@@ -1588,62 +1500,6 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         setMaxTotalPerKey(conf.getMaxTotalPerKey());
         setMaxTotal(conf.getMaxTotal());
         setMinIdlePerKey(conf.getMinIdlePerKey());
-    }
-
-    /**
-     * Sets the cap on the number of "idle" instances per key in the pool.
-     * If maxIdlePerKey is set too low on heavily loaded systems it is possible
-     * you will see objects being destroyed and almost immediately new objects
-     * being created. This is a result of the active threads momentarily
-     * returning objects faster than they are requesting them, causing the
-     * number of idle objects to rise above maxIdlePerKey. The best value for
-     * maxIdlePerKey for heavily loaded system will vary but the default is a
-     * good starting point.
-     *
-     * @param maxIdlePerKey the maximum number of "idle" instances that can be
-     *                      held in a given keyed sub-pool. Use a negative value
-     *                      for no limit
-     *
-     * @see #getMaxIdlePerKey
-     */
-    public void setMaxIdlePerKey(final int maxIdlePerKey) {
-        this.maxIdlePerKey = maxIdlePerKey;
-    }
-
-    /**
-     * Sets the limit on the number of object instances allocated by the pool
-     * (checked out or idle), per key. When the limit is reached, the sub-pool
-     * is said to be exhausted. A negative value indicates no limit.
-     *
-     * @param maxTotalPerKey the limit on the number of active instances per key
-     *
-     * @see #getMaxTotalPerKey
-     */
-    public void setMaxTotalPerKey(final int maxTotalPerKey) {
-        this.maxTotalPerKey = maxTotalPerKey;
-    }
-
-    /**
-     * Sets the target for the minimum number of idle objects to maintain in
-     * each of the keyed sub-pools. This setting only has an effect if it is
-     * positive and {@link #getDurationBetweenEvictionRuns()} is greater than
-     * zero. If this is the case, an attempt is made to ensure that each
-     * sub-pool has the required minimum number of instances during idle object
-     * eviction runs.
-     * <p>
-     * If the configured value of minIdlePerKey is greater than the configured
-     * value for maxIdlePerKey then the value of maxIdlePerKey will be used
-     * instead.
-     * </p>
-     *
-     * @param minIdlePerKey The minimum size of the each keyed pool
-     *
-     * @see #getMinIdlePerKey()
-     * @see #getMaxIdlePerKey()
-     * @see #setTimeBetweenEvictionRuns(Duration)
-     */
-    public void setMinIdlePerKey(final int minIdlePerKey) {
-        this.minIdlePerKey = minIdlePerKey;
     }
 
     @Override
@@ -1683,16 +1539,17 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
         final AbandonedConfig abandonedCfg = this.abandonedConfig;
         if (abandonedCfg != null && abandonedCfg.getUseUsageTracking()) {
             poolMap.values().stream()
-                .map(pool -> pool.getAllObjects().get(new IdentityWrapper<>(pooledObject)))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .ifPresent(PooledObject::use);
+                    .map(pool -> pool.getAllObjects().get(new IdentityWrapper<>(pooledObject)))
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .ifPresent(PooledObject::use);
         }
     }
 
     /**
      * Whether there is at least one thread waiting on this deque, add an pool object.
-     * @param key pool key.
+     *
+     * @param key         pool key.
      * @param idleObjects list of idle pool objects.
      */
     private void whenWaitersAddObject(final K key, final LinkedBlockingDeque<PooledObject<T>> idleObjects) {
@@ -1703,6 +1560,99 @@ public class GenericKeyedObjectPool<K, T> extends BaseGenericObjectPool<T>
                 swallowException(e);
             }
         }
+    }
+
+    /**
+     * Maintains information on the per key queue for a given key.
+     *
+     * @param <S> type of objects in the pool
+     */
+    private class ObjectDeque<S> {
+
+        private final LinkedBlockingDeque<PooledObject<S>> idleObjects;
+
+        /*
+         * Number of instances created - number destroyed.
+         * Invariant: createCount <= maxTotalPerKey
+         */
+        private final AtomicInteger createCount = new AtomicInteger(0);
+        private final Object makeObjectCountLock = new Object();
+        /*
+         * The map is keyed on pooled instances, wrapped to ensure that
+         * they work properly as keys.
+         */
+        private final Map<IdentityWrapper<S>, PooledObject<S>> allObjects =
+                new ConcurrentHashMap<>();
+        /*
+         * Number of threads with registered interest in this key.
+         * register(K) increments this counter and deRegister(K) decrements it.
+         * Invariant: empty keyed pool will not be dropped unless numInterested
+         *            is 0.
+         */
+        private final AtomicLong numInterested = new AtomicLong();
+        private long makeObjectCount;
+
+        /**
+         * Constructs a new ObjecDeque with the given fairness policy.
+         *
+         * @param fairness true means client threads waiting to borrow / return instances
+         *                 will be served as if waiting in a FIFO queue.
+         */
+        public ObjectDeque(final boolean fairness) {
+            idleObjects = new LinkedBlockingDeque<>(fairness);
+        }
+
+        /**
+         * Gets all the objects for the current key.
+         *
+         * @return All the objects
+         */
+        public Map<IdentityWrapper<S>, PooledObject<S>> getAllObjects() {
+            return allObjects;
+        }
+
+        /**
+         * Gets the count of the number of objects created for the current
+         * key.
+         *
+         * @return The number of objects created for this key
+         */
+        public AtomicInteger getCreateCount() {
+            return createCount;
+        }
+
+        /**
+         * Gets the idle objects for the current key.
+         *
+         * @return The idle objects
+         */
+        public LinkedBlockingDeque<PooledObject<S>> getIdleObjects() {
+            return idleObjects;
+        }
+
+        /**
+         * Gets the number of threads with an interest registered in this key.
+         *
+         * @return The number of threads with a registered interest in this key
+         */
+        public AtomicLong getNumInterested() {
+            return numInterested;
+        }
+
+        @Override
+        public String toString() {
+            String builder = "ObjectDeque [idleObjects=" +
+                    idleObjects +
+                    ", createCount=" +
+                    createCount +
+                    ", allObjects=" +
+                    allObjects +
+                    ", numInterested=" +
+                    numInterested +
+                    "]";
+            return builder;
+        }
+
     }
 
 }

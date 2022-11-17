@@ -16,17 +16,16 @@
  */
 package org.apache.el;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-
 import jakarta.el.ELContext;
 import jakarta.el.ELException;
 import jakarta.el.MethodExpression;
 import jakarta.el.MethodInfo;
-
 import org.apache.el.util.ReflectionUtil;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 
 public class MethodExpressionLiteral extends MethodExpression implements Externalizable {
@@ -42,7 +41,7 @@ public class MethodExpressionLiteral extends MethodExpression implements Externa
     }
 
     public MethodExpressionLiteral(String expr, Class<?> expectedType,
-            Class<?>[] paramTypes) {
+                                   Class<?>[] paramTypes) {
         this.expr = expr;
         this.expectedType = expectedType;
         this.paramTypes = paramTypes;
@@ -63,7 +62,8 @@ public class MethodExpressionLiteral extends MethodExpression implements Externa
         Object result;
         if (this.expectedType != null) {
             result = context.convertToType(this.expr, this.expectedType);
-        } else {
+        }
+        else {
             result = this.expr;
         }
         context.notifyAfterEvaluation(getExpressionString());

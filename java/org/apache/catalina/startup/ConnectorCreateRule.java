@@ -17,8 +17,6 @@
 package org.apache.catalina.startup;
 
 
-import java.lang.reflect.Method;
-
 import org.apache.catalina.Executor;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
@@ -30,6 +28,8 @@ import org.apache.tomcat.util.digester.Rule;
 import org.apache.tomcat.util.res.StringManager;
 import org.xml.sax.Attributes;
 
+import java.lang.reflect.Method;
+
 
 /**
  * Rule implementation that creates a connector.
@@ -37,19 +37,38 @@ import org.xml.sax.Attributes;
 
 public class ConnectorCreateRule extends Rule {
 
-    private static final Log log = LogFactory.getLog(ConnectorCreateRule.class);
     protected static final StringManager sm = StringManager.getManager(ConnectorCreateRule.class);
+    private static final Log log = LogFactory.getLog(ConnectorCreateRule.class);
     // --------------------------------------------------------- Public Methods
 
+    private static void setExecutor(Connector con, Executor ex) throws Exception {
+        Method m = IntrospectionUtils.findMethod(con.getProtocolHandler().getClass(), "setExecutor", new Class[]{java.util.concurrent.Executor.class});
+        if (m != null) {
+            m.invoke(con.getProtocolHandler(), ex);
+        }
+        else {
+            log.warn(sm.getString("connector.noSetExecutor", con));
+        }
+    }
+
+    private static void setSSLImplementationName(Connector con, String sslImplementationName) throws Exception {
+        Method m = IntrospectionUtils.findMethod(con.getProtocolHandler().getClass(), "setSslImplementationName", new Class[]{String.class});
+        if (m != null) {
+            m.invoke(con.getProtocolHandler(), sslImplementationName);
+        }
+        else {
+            log.warn(sm.getString("connector.noSetSSLImplementationName", con));
+        }
+    }
 
     /**
      * Process the beginning of this element.
      *
-     * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     * @param namespace  the namespace URI of the matching element, or an
+     *                   empty string if the parser is not namespace aware or the element has
+     *                   no namespace
+     * @param name       the local name if the parser is namespace aware, or just
+     *                   the element name otherwise
      * @param attributes The attribute list for this element
      */
     @Override
@@ -58,7 +77,7 @@ public class ConnectorCreateRule extends Rule {
         Service svc = (Service) digester.peek();
         Executor ex = null;
         String executorName = attributes.getValue("executor");
-        if (executorName != null ) {
+        if (executorName != null) {
             ex = svc.getExecutor(executorName);
         }
         String protocolName = attributes.getValue("protocol");
@@ -94,32 +113,14 @@ public class ConnectorCreateRule extends Rule {
         }
     }
 
-    private static void setExecutor(Connector con, Executor ex) throws Exception {
-        Method m = IntrospectionUtils.findMethod(con.getProtocolHandler().getClass(),"setExecutor",new Class[] {java.util.concurrent.Executor.class});
-        if (m!=null) {
-            m.invoke(con.getProtocolHandler(), new Object[] {ex});
-        }else {
-            log.warn(sm.getString("connector.noSetExecutor", con));
-        }
-    }
-
-    private static void setSSLImplementationName(Connector con, String sslImplementationName) throws Exception {
-        Method m = IntrospectionUtils.findMethod(con.getProtocolHandler().getClass(),"setSslImplementationName",new Class[] {String.class});
-        if (m != null) {
-            m.invoke(con.getProtocolHandler(), new Object[] {sslImplementationName});
-        } else {
-            log.warn(sm.getString("connector.noSetSSLImplementationName", con));
-        }
-    }
-
     /**
      * Process the end of this element.
      *
      * @param namespace the namespace URI of the matching element, or an
-     *   empty string if the parser is not namespace aware or the element has
-     *   no namespace
-     * @param name the local name if the parser is namespace aware, or just
-     *   the element name otherwise
+     *                  empty string if the parser is not namespace aware or the element has
+     *                  no namespace
+     * @param name      the local name if the parser is namespace aware, or just
+     *                  the element name otherwise
      */
     @Override
     public void end(String namespace, String name) throws Exception {

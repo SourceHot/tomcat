@@ -1,28 +1,22 @@
 /**
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package jakarta.security.auth.message.config;
 
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.Security;
-import java.security.SecurityPermission;
+import java.security.*;
 import java.util.Map;
 
 public abstract class AuthConfigFactory {
@@ -71,7 +65,8 @@ public abstract class AuthConfigFactory {
                                 // in container environments.
                                 if (className.equals("org.apache.catalina.authenticator.jaspic.AuthConfigFactoryImpl")) {
                                     return new org.apache.catalina.authenticator.jaspic.AuthConfigFactoryImpl();
-                                } else {
+                                }
+                                else {
                                     Class<?> clazz = Class.forName(className);
                                     return (AuthConfigFactory) clazz.getConstructor().newInstance();
                                 }
@@ -81,7 +76,8 @@ public abstract class AuthConfigFactory {
                     if (inner instanceof InstantiationException) {
                         throw new SecurityException("AuthConfigFactory error:" +
                                 inner.getCause().getMessage(), inner.getCause());
-                    } else {
+                    }
+                    else {
                         throw new SecurityException("AuthConfigFactory error: " + inner, inner);
                     }
                 }
@@ -95,27 +91,6 @@ public abstract class AuthConfigFactory {
         checkPermission(setFactorySecurityPermission);
         AuthConfigFactory.factory = factory;
     }
-
-    public abstract AuthConfigProvider getConfigProvider(String layer, String appContext,
-            RegistrationListener listener);
-
-    @SuppressWarnings("rawtypes") // JASPIC API uses raw types
-    public abstract String registerConfigProvider(String className, Map properties, String layer,
-            String appContext, String description);
-
-    public abstract String registerConfigProvider(AuthConfigProvider provider, String layer,
-            String appContext, String description);
-
-    public abstract boolean removeRegistration(String registrationID);
-
-    public abstract String[] detachListener(RegistrationListener listener, String layer,
-            String appContext);
-
-    public abstract String[] getRegistrationIDs(AuthConfigProvider provider);
-
-    public abstract RegistrationContext getRegistrationContext(String registrationID);
-
-    public abstract void refresh();
 
     private static void checkPermission(Permission permission) {
         SecurityManager securityManager = System.getSecurityManager();
@@ -135,7 +110,28 @@ public abstract class AuthConfigFactory {
         return DEFAULT_JASPI_AUTHCONFIGFACTORYIMPL;
     }
 
-    public static interface RegistrationContext {
+    public abstract AuthConfigProvider getConfigProvider(String layer, String appContext,
+                                                         RegistrationListener listener);
+
+    @SuppressWarnings("rawtypes") // JASPIC API uses raw types
+    public abstract String registerConfigProvider(String className, Map properties, String layer,
+                                                  String appContext, String description);
+
+    public abstract String registerConfigProvider(AuthConfigProvider provider, String layer,
+                                                  String appContext, String description);
+
+    public abstract boolean removeRegistration(String registrationID);
+
+    public abstract String[] detachListener(RegistrationListener listener, String layer,
+                                            String appContext);
+
+    public abstract String[] getRegistrationIDs(AuthConfigProvider provider);
+
+    public abstract RegistrationContext getRegistrationContext(String registrationID);
+
+    public abstract void refresh();
+
+    public interface RegistrationContext {
 
         String getMessageLayer();
 

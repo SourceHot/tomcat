@@ -29,10 +29,8 @@ public class SynchronizedStack<T> {
 
     public static final int DEFAULT_SIZE = 128;
     private static final int DEFAULT_LIMIT = -1;
-
-    private int size;
     private final int limit;
-
+    private int size;
     /*
      * Points to the next available object in the stack
      */
@@ -48,7 +46,8 @@ public class SynchronizedStack<T> {
     public SynchronizedStack(int size, int limit) {
         if (limit > -1 && size > limit) {
             this.size = limit;
-        } else {
+        }
+        else {
             this.size = size;
         }
         this.limit = limit;
@@ -61,7 +60,8 @@ public class SynchronizedStack<T> {
         if (index == size) {
             if (limit == -1 || size < limit) {
                 expand();
-            } else {
+            }
+            else {
                 index--;
                 return false;
             }

@@ -17,13 +17,7 @@
 package jakarta.el;
 
 import java.beans.FeatureDescriptor;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.MissingResourceException;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class ResourceBundleELResolver extends ELResolver {
 
@@ -43,7 +37,7 @@ public class ResourceBundleELResolver extends ELResolver {
                     return ((ResourceBundle) base).getObject(property
                             .toString());
                 } catch (MissingResourceException mre) {
-                    return "???" + property.toString() + "???";
+                    return "???" + property + "???";
                 }
             }
         }
@@ -64,7 +58,7 @@ public class ResourceBundleELResolver extends ELResolver {
 
     @Override
     public void setValue(ELContext context, Object base, Object property,
-            Object value) {
+                         Object value) {
         Objects.requireNonNull(context);
 
         if (base instanceof ResourceBundle) {

@@ -16,39 +16,64 @@
  */
 package org.apache.tomcat.util.buf;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.*;
 import java.util.Locale;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * NIO based character decoder.
  */
 public class B2CConverter {
 
-    private static final StringManager sm = StringManager.getManager(B2CConverter.class);
-
-    private static final CharsetCache charsetCache = new CharsetCache();
-
-
     // Protected so unit tests can use it
     protected static final int LEFTOVER_SIZE = 9;
+    private static final StringManager sm = StringManager.getManager(B2CConverter.class);
+    private static final CharsetCache charsetCache = new CharsetCache();
+    private final CharsetDecoder decoder;
+    /**
+     * Leftover buffer used for incomplete characters.
+     */
+    private final ByteBuffer leftovers;
+    private ByteBuffer bb = null;
+    private CharBuffer cb = null;
+
+    public B2CConverter(Charset charset) {
+        this(charset, false);
+    }
+
+    public B2CConverter(Charset charset, boolean replaceOnError) {
+        byte[] left = new byte[LEFTOVER_SIZE];
+        leftovers = ByteBuffer.wrap(left);
+        CodingErrorAction action;
+        if (replaceOnError) {
+            action = CodingErrorAction.REPLACE;
+        }
+        else {
+            action = CodingErrorAction.REPORT;
+        }
+        // Special case. Use the Apache Harmony based UTF-8 decoder because it
+        // - a) rejects invalid sequences that the JVM decoder does not
+        // - b) fails faster for some invalid sequences
+        if (charset.equals(StandardCharsets.UTF_8)) {
+            decoder = new Utf8Decoder();
+        }
+        else {
+            decoder = charset.newDecoder();
+        }
+        decoder.onMalformedInput(action);
+        decoder.onUnmappableCharacter(action);
+    }
 
     /**
      * Obtain the Charset for the given encoding
      *
      * @param enc The name of the encoding for the required charset
-     *
      * @return The Charset corresponding to the requested encoding
-     *
      * @throws UnsupportedEncodingException If the requested Charset is not
      *                                      available
      */
@@ -67,41 +92,6 @@ public class B2CConverter {
         return charset;
     }
 
-
-    private final CharsetDecoder decoder;
-    private ByteBuffer bb = null;
-    private CharBuffer cb = null;
-
-    /**
-     * Leftover buffer used for incomplete characters.
-     */
-    private final ByteBuffer leftovers;
-
-    public B2CConverter(Charset charset) {
-        this(charset, false);
-    }
-
-    public B2CConverter(Charset charset, boolean replaceOnError) {
-        byte[] left = new byte[LEFTOVER_SIZE];
-        leftovers = ByteBuffer.wrap(left);
-        CodingErrorAction action;
-        if (replaceOnError) {
-            action = CodingErrorAction.REPLACE;
-        } else {
-            action = CodingErrorAction.REPORT;
-        }
-        // Special case. Use the Apache Harmony based UTF-8 decoder because it
-        // - a) rejects invalid sequences that the JVM decoder does not
-        // - b) fails faster for some invalid sequences
-        if (charset.equals(StandardCharsets.UTF_8)) {
-            decoder = new Utf8Decoder();
-        } else {
-            decoder = charset.newDecoder();
-        }
-        decoder.onMalformedInput(action);
-        decoder.onUnmappableCharacter(action);
-    }
-
     /**
      * Reset the decoder state.
      */
@@ -113,10 +103,9 @@ public class B2CConverter {
     /**
      * Convert the given bytes to characters.
      *
-     * @param bc byte input
-     * @param cc char output
-     * @param endOfInput    Is this all of the available data
-     *
+     * @param bc         byte input
+     * @param cc         char output
+     * @param endOfInput Is this all of the available data
      * @throws IOException If the conversion can not be completed
      */
     public void convert(ByteChunk bc, CharChunk cc, boolean endOfInput)
@@ -124,7 +113,8 @@ public class B2CConverter {
         if ((bb == null) || (bb.array() != bc.getBuffer())) {
             // Create a new byte buffer if anything changed
             bb = ByteBuffer.wrap(bc.getBuffer(), bc.getStart(), bc.getLength());
-        } else {
+        }
+        else {
             // Initialize the byte buffer
             bb.limit(bc.getEnd());
             bb.position(bc.getStart());
@@ -133,7 +123,8 @@ public class B2CConverter {
             // Create a new char buffer if anything changed
             cb = CharBuffer.wrap(cc.getBuffer(), cc.getEnd(),
                     cc.getBuffer().length - cc.getEnd());
-        } else {
+        }
+        else {
             // Initialize the char buffer
             cb.limit(cc.getBuffer().length);
             cb.position(cc.getEnd());
@@ -161,12 +152,14 @@ public class B2CConverter {
         result = decoder.decode(bb, cb, endOfInput);
         if (result.isError() || result.isMalformed()) {
             result.throwException();
-        } else if (result.isOverflow()) {
+        }
+        else if (result.isOverflow()) {
             // Propagate current positions to the byte chunk and char chunk, if
             // this continues the char buffer will get resized
             bc.setOffset(bb.position());
             cc.setEnd(cb.position());
-        } else if (result.isUnderflow()) {
+        }
+        else if (result.isUnderflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.setOffset(bb.position());
             cc.setEnd(cb.position());
@@ -182,11 +175,10 @@ public class B2CConverter {
     /**
      * Convert the given bytes to characters.
      *
-     * @param bc byte input
-     * @param cc char output
-     * @param ic byte input channel
-     * @param endOfInput    Is this all of the available data
-     *
+     * @param bc         byte input
+     * @param cc         char output
+     * @param ic         byte input channel
+     * @param endOfInput Is this all of the available data
      * @throws IOException If the conversion can not be completed
      */
     public void convert(ByteBuffer bc, CharBuffer cc, ByteChunk.ByteInputChannel ic, boolean endOfInput)
@@ -194,7 +186,8 @@ public class B2CConverter {
         if ((bb == null) || (bb.array() != bc.array())) {
             // Create a new byte buffer if anything changed
             bb = ByteBuffer.wrap(bc.array(), bc.arrayOffset() + bc.position(), bc.remaining());
-        } else {
+        }
+        else {
             // Initialize the byte buffer
             bb.limit(bc.limit());
             bb.position(bc.position());
@@ -202,7 +195,8 @@ public class B2CConverter {
         if ((cb == null) || (cb.array() != cc.array())) {
             // Create a new char buffer if anything changed
             cb = CharBuffer.wrap(cc.array(), cc.limit(), cc.capacity() - cc.limit());
-        } else {
+        }
+        else {
             // Initialize the char buffer
             cb.limit(cc.capacity());
             cb.position(cc.limit());
@@ -217,7 +211,8 @@ public class B2CConverter {
                 if (bc.remaining() == 0) {
                     int n = ic.realReadBytes();
                     chr = n < 0 ? -1 : bc.get();
-                } else {
+                }
+                else {
                     chr = bc.get();
                 }
                 leftovers.put(chr);
@@ -237,12 +232,14 @@ public class B2CConverter {
         result = decoder.decode(bb, cb, endOfInput);
         if (result.isError() || result.isMalformed()) {
             result.throwException();
-        } else if (result.isOverflow()) {
+        }
+        else if (result.isOverflow()) {
             // Propagate current positions to the byte chunk and char chunk, if
             // this continues the char buffer will get resized
             bc.position(bb.position());
             cc.limit(cb.position());
-        } else if (result.isUnderflow()) {
+        }
+        else if (result.isUnderflow()) {
             // Propagate current positions to the byte chunk and char chunk
             bc.position(bb.position());
             cc.limit(cb.position());

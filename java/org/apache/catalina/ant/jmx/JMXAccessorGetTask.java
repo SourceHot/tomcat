@@ -17,10 +17,10 @@
 package org.apache.catalina.ant.jmx;
 
 
+import org.apache.tools.ant.BuildException;
+
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-
-import org.apache.tools.ant.BuildException;
 
 
 /**
@@ -80,7 +80,7 @@ public class JMXAccessorGetTask extends JMXAccessorTask {
 
     @Override
     public String jmxExecute(MBeanServerConnection jmxServerConnection)
-        throws Exception {
+            throws Exception {
 
         if (getName() == null) {
             throw new BuildException("Must specify a 'name'");
@@ -89,29 +89,30 @@ public class JMXAccessorGetTask extends JMXAccessorTask {
             throw new BuildException(
                     "Must specify a 'attribute' for get");
         }
-        return  jmxGet(jmxServerConnection, getName());
-     }
+        return jmxGet(jmxServerConnection, getName());
+    }
 
 
     /**
      * Get property value.
      *
      * @param jmxServerConnection Connection to the JMX server
-     * @param name The MBean name
+     * @param name                The MBean name
      * @return The error message if any
      * @throws Exception An error occurred
      */
     protected String jmxGet(MBeanServerConnection jmxServerConnection, String name) throws Exception {
         String error = null;
-        if(isEcho()) {
-            handleOutput("MBean " + name + " get attribute " + attribute );
+        if (isEcho()) {
+            handleOutput("MBean " + name + " get attribute " + attribute);
         }
         Object result = jmxServerConnection.getAttribute(
                 new ObjectName(name), attribute);
         if (result != null) {
-            echoResult(attribute,result);
+            echoResult(attribute, result);
             createProperty(result);
-        } else {
+        }
+        else {
             error = "Attribute " + attribute + " is empty";
         }
         return error;

@@ -16,11 +16,10 @@
  */
 package org.apache.tomcat.util.modeler;
 
+import javax.management.MBeanNotificationInfo;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.management.MBeanNotificationInfo;
 
 /**
  * <p>Internal configuration information for a <code>Notification</code>
@@ -33,18 +32,15 @@ public class NotificationInfo extends FeatureInfo {
     private static final long serialVersionUID = -6319885418912650856L;
 
     // ----------------------------------------------------- Instance Variables
-
-
+    protected final ReadWriteLock notifTypesLock = new ReentrantReadWriteLock();
+    protected String[] notifTypes = new String[0];
     /**
      * The <code>ModelMBeanNotificationInfo</code> object that corresponds
      * to this <code>NotificationInfo</code> instance.
      */
     transient MBeanNotificationInfo info = null;
-    protected String notifTypes[] = new String[0];
-    protected final ReadWriteLock notifTypesLock = new ReentrantReadWriteLock();
 
     // ------------------------------------------------------------- Properties
-
 
     /**
      * Override the <code>description</code> property setter.
@@ -98,7 +94,7 @@ public class NotificationInfo extends FeatureInfo {
         writeLock.lock();
         try {
 
-            String results[] = new String[notifTypes.length + 1];
+            String[] results = new String[notifTypes.length + 1];
             System.arraycopy(notifTypes, 0, results, 0, notifTypes.length);
             results[notifTypes.length] = notifType;
             notifTypes = results;
@@ -112,6 +108,7 @@ public class NotificationInfo extends FeatureInfo {
     /**
      * Create and return a <code>ModelMBeanNotificationInfo</code> object that
      * corresponds to the attribute described by this instance.
+     *
      * @return the notification info
      */
     public MBeanNotificationInfo createNotificationInfo() {
@@ -123,7 +120,7 @@ public class NotificationInfo extends FeatureInfo {
 
         // Create and return a new information object
         info = new MBeanNotificationInfo
-            (getNotifTypes(), getName(), getDescription());
+                (getNotifTypes(), getName(), getDescription());
         //Descriptor descriptor = info.getDescriptor();
         //addFields(descriptor);
         //info.setDescriptor(descriptor);

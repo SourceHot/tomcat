@@ -18,7 +18,6 @@
 package org.apache.el.parser;
 
 import jakarta.el.ELException;
-
 import org.apache.el.lang.EvaluationContext;
 import org.apache.el.util.MessageFactory;
 import org.apache.el.util.Validation;

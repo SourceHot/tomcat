@@ -16,22 +16,17 @@
  */
 package org.apache.catalina.realm;
 
+import org.apache.catalina.*;
+import org.apache.naming.ContextBindings;
+import org.apache.tomcat.util.ExceptionUtils;
+
+import javax.naming.Context;
 import java.io.ObjectStreamException;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
-import javax.naming.Context;
-
-import org.apache.catalina.Group;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.Role;
-import org.apache.catalina.User;
-import org.apache.catalina.UserDatabase;
-import org.apache.naming.ContextBindings;
-import org.apache.tomcat.util.ExceptionUtils;
 
 /**
  * Implementation of {@link org.apache.catalina.Realm} that is based on an
@@ -47,13 +42,12 @@ public class UserDatabaseRealm extends RealmBase {
 
     // ----------------------------------------------------- Instance Variables
 
+    private final Object databaseLock = new Object();
     /**
      * The <code>UserDatabase</code> we will use to authenticate users and
      * identify associated roles.
      */
     protected volatile UserDatabase database = null;
-    private final Object databaseLock = new Object();
-
     /**
      * The global JNDI name of the <code>UserDatabase</code> resource we will be
      * utilizing.
@@ -75,14 +69,32 @@ public class UserDatabaseRealm extends RealmBase {
 
     // ------------------------------------------------------------- Properties
 
+    public static String[] getRoles(User user) {
+        Set<String> roles = new HashSet<>();
+        Iterator<Role> uroles = user.getRoles();
+        while (uroles.hasNext()) {
+            Role role = uroles.next();
+            roles.add(role.getName());
+        }
+        Iterator<Group> groups = user.getGroups();
+        while (groups.hasNext()) {
+            Group group = groups.next();
+            uroles = group.getRoles();
+            while (uroles.hasNext()) {
+                Role role = uroles.next();
+                roles.add(role.getName());
+            }
+        }
+        return roles.toArray(new String[0]);
+    }
+
     /**
      * @return the global JNDI name of the <code>UserDatabase</code> resource we
-     *         will be using.
+     * will be using.
      */
     public String getResourceName() {
         return resourceName;
     }
-
 
     /**
      * Set the global JNDI name of the <code>UserDatabase</code> resource we
@@ -94,7 +106,6 @@ public class UserDatabaseRealm extends RealmBase {
         this.resourceName = resourceName;
     }
 
-
     /**
      * @return the useStaticPrincipal flag
      */
@@ -102,15 +113,14 @@ public class UserDatabaseRealm extends RealmBase {
         return this.useStaticPrincipal;
     }
 
-
     /**
      * Allows using a static principal disconnected from the user database.
+     *
      * @param useStaticPrincipal the new value
      */
     public void setUseStaticPrincipal(boolean useStaticPrincipal) {
         this.useStaticPrincipal = useStaticPrincipal;
     }
-
 
     /**
      * Determines whether this Realm is configured to obtain the associated
@@ -118,12 +128,14 @@ public class UserDatabaseRealm extends RealmBase {
      * application) JNDI context.
      *
      * @return {@code true} if a local JNDI context will be used, {@code false}
-     *         if the the global JNDI context will be used
+     * if the the global JNDI context will be used
      */
     public boolean getLocalJndiResource() {
         return localJndiResource;
     }
 
+
+    // ------------------------------------------------------ Protected Methods
 
     /**
      * Configure whether this Realm obtains the associated {@link UserDatabase}
@@ -136,9 +148,6 @@ public class UserDatabaseRealm extends RealmBase {
         this.localJndiResource = localJndiResource;
     }
 
-
-    // ------------------------------------------------------ Protected Methods
-
     @Override
     public void backgroundProcess() {
         UserDatabase database = getUserDatabase();
@@ -146,7 +155,6 @@ public class UserDatabaseRealm extends RealmBase {
             database.backgroundProcess();
         }
     }
-
 
     /**
      * Return the password associated with the given principal's user name.
@@ -167,27 +175,6 @@ public class UserDatabaseRealm extends RealmBase {
         return user.getPassword();
     }
 
-
-    public static String[] getRoles(User user) {
-        Set<String> roles = new HashSet<>();
-        Iterator<Role> uroles = user.getRoles();
-        while (uroles.hasNext()) {
-            Role role = uroles.next();
-            roles.add(role.getName());
-        }
-        Iterator<Group> groups = user.getGroups();
-        while (groups.hasNext()) {
-            Group group = groups.next();
-            uroles = group.getRoles();
-            while (uroles.hasNext()) {
-                Role role = uroles.next();
-                roles.add(role.getName());
-            }
-        }
-        return roles.toArray(new String[0]);
-    }
-
-
     /**
      * Return the Principal associated with the given user name.
      */
@@ -200,10 +187,12 @@ public class UserDatabaseRealm extends RealmBase {
         User user = database.findUser(username);
         if (user == null) {
             return null;
-        } else {
+        }
+        else {
             if (useStaticPrincipal) {
                 return new GenericPrincipal(username, Arrays.asList(getRoles(user)));
-            } else {
+            }
+            else {
                 return new UserDatabasePrincipal(user, database);
             }
         }
@@ -224,7 +213,8 @@ public class UserDatabaseRealm extends RealmBase {
                         if (localJndiResource) {
                             context = ContextBindings.getClassLoader();
                             context = (Context) context.lookup("comp/env");
-                        } else {
+                        }
+                        else {
                             context = getServer().getGlobalNamingContext();
                         }
                         database = (UserDatabase) context.lookup(resourceName);
@@ -265,8 +255,8 @@ public class UserDatabaseRealm extends RealmBase {
      * component and implement the requirements of
      * {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *                that needs to be reported
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that needs to be reported
      */
     @Override
     protected void stopInternal() throws LifecycleException {
@@ -281,7 +271,7 @@ public class UserDatabaseRealm extends RealmBase {
 
     @Override
     public boolean isAvailable() {
-        return (database == null) ? false : database.isAvailable();
+        return database != null && database.isAvailable();
     }
 
 
@@ -325,7 +315,8 @@ public class UserDatabaseRealm extends RealmBase {
         public boolean hasRole(String role) {
             if ("*".equals(role)) {
                 return true;
-            } else if (role == null) {
+            }
+            else if (role == null) {
                 return false;
             }
             if (database == null) {
@@ -356,7 +347,6 @@ public class UserDatabaseRealm extends RealmBase {
          * Magic method from {@link java.io.Serializable}.
          *
          * @return The object to serialize instead of this object
-         *
          * @throws ObjectStreamException Not thrown by this implementation
          */
         private Object writeReplace() throws ObjectStreamException {

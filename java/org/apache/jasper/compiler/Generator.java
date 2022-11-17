@@ -16,39 +16,12 @@
  */
 package org.apache.jasper.compiler;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jakarta.el.MethodExpression;
 import jakarta.el.ValueExpression;
 import jakarta.servlet.jsp.tagext.TagAttributeInfo;
 import jakarta.servlet.jsp.tagext.TagInfo;
 import jakarta.servlet.jsp.tagext.TagVariableInfo;
 import jakarta.servlet.jsp.tagext.VariableInfo;
-
 import org.apache.el.util.JreCompat;
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
@@ -59,6 +32,20 @@ import org.apache.jasper.compiler.Node.NamedAttribute;
 import org.apache.jasper.runtime.JspRuntimeLibrary;
 import org.xml.sax.Attributes;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Generate Java source from Nodes
  *
@@ -67,14 +54,14 @@ import org.xml.sax.Attributes;
  * @author Mandar Raje
  * @author Rajiv Mordani
  * @author Pierre Delisle
- *
+ * <p>
  * Tomcat 4.1.x and Tomcat 5:
  * @author Kin-man Chung
  * @author Jan Luehe
  * @author Shawn Bayern
  * @author Mark Roth
  * @author Denis Benoit
- *
+ * <p>
  * Tomcat 6.x
  * @author Jacob Hookom
  * @author Remy Maucherat
@@ -82,7 +69,7 @@ import org.xml.sax.Attributes;
 
 class Generator {
 
-    private static final Class<?>[] OBJECT_CLASS = { Object.class };
+    private static final Class<?>[] OBJECT_CLASS = {Object.class};
 
     private static final Pattern PRE_TAG_PATTERN = Pattern.compile("(?s).*(<pre>|</pre>).*");
 
@@ -105,26 +92,77 @@ class Generator {
     private final boolean isPoolingEnabled;
 
     private final boolean breakAtLF;
-
-    private String jspIdPrefix;
-
-    private int jspId;
-
     private final PageInfo pageInfo;
-
     private final Vector<String> tagHandlerPoolNames;
-
+    private final DateFormat timestampFormat;
+    private final ELInterpreter elInterpreter;
+    private final StringInterpreter stringInterpreter;
+    private String jspIdPrefix;
+    private int jspId;
     private GenBuffer charArrayBuffer;
 
-    private final DateFormat timestampFormat;
+    /**
+     * Constructor.
+     */
+    Generator(ServletWriter out, Compiler compiler) throws JasperException {
+        this.out = out;
+        methodsBuffered = new ArrayList<>();
+        charArrayBuffer = null;
+        err = compiler.getErrorDispatcher();
+        ctxt = compiler.getCompilationContext();
+        fragmentHelperClass = new FragmentHelperClass("Helper");
+        pageInfo = compiler.getPageInfo();
 
-    private final ELInterpreter elInterpreter;
+        ELInterpreter elInterpreter = null;
+        try {
+            elInterpreter = ELInterpreterFactory.getELInterpreter(
+                    compiler.getCompilationContext().getServletContext());
+        } catch (Exception e) {
+            err.jspError("jsp.error.el_interpreter_class.instantiation",
+                    e.getMessage());
+        }
+        this.elInterpreter = elInterpreter;
 
-    private final StringInterpreter stringInterpreter;
+        StringInterpreter stringInterpreter = null;
+        try {
+            stringInterpreter = StringInterpreterFactory.getStringInterpreter(
+                    compiler.getCompilationContext().getServletContext());
+        } catch (Exception e) {
+            err.jspError("jsp.error.string_interpreter_class.instantiation",
+                    e.getMessage());
+        }
+        this.stringInterpreter = stringInterpreter;
+
+        /*
+         * Temporary hack. If a JSP page uses the "extends" attribute of the
+         * page directive, the _jspInit() method of the generated servlet class
+         * will not be called (it is only called for those generated servlets
+         * that extend HttpJspBase, the default), causing the tag handler pools
+         * not to be initialized and resulting in a NPE. The JSP spec needs to
+         * clarify whether containers can override init() and destroy(). For
+         * now, we just disable tag pooling for pages that use "extends".
+         */
+        if (pageInfo.getExtends(false) == null || ctxt.getOptions().getPoolTagsWithExtends()) {
+            isPoolingEnabled = ctxt.getOptions().isPoolingEnabled();
+        }
+        else {
+            isPoolingEnabled = false;
+        }
+        beanInfo = pageInfo.getBeanRepository();
+        varInfoNames = pageInfo.getVarInfoNames();
+        breakAtLF = ctxt.getOptions().getMappedFile();
+        if (isPoolingEnabled) {
+            tagHandlerPoolNames = new Vector<>();
+        }
+        else {
+            tagHandlerPoolNames = null;
+        }
+        timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        timestampFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     /**
-     * @param s
-     *            the input string
+     * @param s the input string
      * @return quoted and escaped string, per Java rule
      */
     static String quote(String s) {
@@ -137,8 +175,7 @@ class Generator {
     }
 
     /**
-     * @param s     the input string - must not be {@code null}
-     *
+     * @param s the input string - must not be {@code null}
      * @return escaped string, per Java rule
      */
     static String escape(String s) {
@@ -148,13 +185,17 @@ class Generator {
             char c = s.charAt(i);
             if (c == '"') {
                 b.append('\\').append('"');
-            } else if (c == '\\') {
+            }
+            else if (c == '\\') {
                 b.append('\\').append('\\');
-            } else if (c == '\n') {
+            }
+            else if (c == '\n') {
                 b.append('\\').append('n');
-            } else if (c == '\r') {
+            }
+            else if (c == '\r') {
                 b.append('\\').append('r');
-            } else {
+            }
+            else {
                 b.append(c);
             }
         }
@@ -170,17 +211,80 @@ class Generator {
         b.append('\'');
         if (c == '\'') {
             b.append('\\').append('\'');
-        } else if (c == '\\') {
+        }
+        else if (c == '\\') {
             b.append('\\').append('\\');
-        } else if (c == '\n') {
+        }
+        else if (c == '\n') {
             b.append('\\').append('n');
-        } else if (c == '\r') {
+        }
+        else if (c == '\r') {
             b.append('\\').append('r');
-        } else {
+        }
+        else {
             b.append(c);
         }
         b.append('\'');
         return b.toString();
+    }
+
+    private static void generateLocalVariables(ServletWriter out, ChildInfoBase n) {
+        Node.ChildInfo ci = n.getChildInfo();
+
+        if (ci.hasUseBean()) {
+            out.printil("jakarta.servlet.http.HttpSession session = _jspx_page_context.getSession();");
+            out.printil("jakarta.servlet.ServletContext application = _jspx_page_context.getServletContext();");
+        }
+        if (ci.hasUseBean() || ci.hasIncludeAction() || ci.hasSetProperty()
+                || ci.hasParamAction()) {
+            out.printil("jakarta.servlet.http.HttpServletRequest request = (jakarta.servlet.http.HttpServletRequest)_jspx_page_context.getRequest();");
+        }
+        if (ci.hasIncludeAction()) {
+            out.printil("jakarta.servlet.http.HttpServletResponse response = (jakarta.servlet.http.HttpServletResponse)_jspx_page_context.getResponse();");
+        }
+    }
+
+    /**
+     * The main entry for Generator.
+     *
+     * @param out      The servlet output writer
+     * @param compiler The compiler
+     * @param page     The input page
+     * @throws JasperException If something goes wrong during generation
+     */
+    public static void generate(ServletWriter out, Compiler compiler,
+                                Node.Nodes page) throws JasperException {
+
+        Generator gen = new Generator(out, compiler);
+
+        if (gen.isPoolingEnabled) {
+            gen.compileTagHandlerPoolList(page);
+        }
+        gen.generateCommentHeader();
+        if (gen.ctxt.isTagFile()) {
+            JasperTagInfo tagInfo = (JasperTagInfo) gen.ctxt.getTagInfo();
+            gen.generateTagHandlerPreamble(tagInfo, page);
+
+            if (gen.ctxt.isPrototypeMode()) {
+                return;
+            }
+
+            gen.generateXmlProlog(page);
+            gen.fragmentHelperClass.generatePreamble();
+            page.visit(gen.new GenerateVisitor(gen.ctxt.isTagFile(), out,
+                    gen.methodsBuffered, gen.fragmentHelperClass,
+                    gen.ctxt.getOptions().getUseInstanceManagerForTags()));
+            gen.generateTagHandlerPostamble(tagInfo);
+        }
+        else {
+            gen.generatePreamble(page);
+            gen.generateXmlProlog(page);
+            gen.fragmentHelperClass.generatePreamble();
+            page.visit(gen.new GenerateVisitor(gen.ctxt.isTagFile(), out,
+                    gen.methodsBuffered, gen.fragmentHelperClass,
+                    gen.ctxt.getOptions().getUseInstanceManagerForTags()));
+            gen.generatePostamble();
+        }
     }
 
     private String createJspId() {
@@ -254,7 +358,8 @@ class Generator {
                     n.getAtSTag().visit(this);
                     visitBody(n);
                     n.getAtETag().visit(this);
-                } else {
+                }
+                else {
                     visitBody(n);
                 }
             }
@@ -293,7 +398,7 @@ class Generator {
 
                 if (!n.implementsSimpleTag()) {
                     String name = createTagHandlerPoolName(n.getPrefix(), n
-                            .getLocalName(), n.getAttributes(),
+                                    .getLocalName(), n.getAttributes(),
                             n.getNamedAttributeNodes(), n.hasEmptyBody());
                     n.setTagHandlerPoolName(name);
                     if (!names.contains(name)) {
@@ -310,21 +415,21 @@ class Generator {
              * @return The name of the tag handler pool
              */
             private String createTagHandlerPoolName(String prefix,
-                    String shortName, Attributes attrs, Node.Nodes namedAttrs,
-                    boolean hasEmptyBody) {
+                                                    String shortName, Attributes attrs, Node.Nodes namedAttrs,
+                                                    boolean hasEmptyBody) {
                 StringBuilder poolName = new StringBuilder(64);
                 poolName.append("_jspx_tagPool_").append(prefix).append('_')
                         .append(shortName);
 
                 if (attrs != null) {
                     String[] attrNames =
-                        new String[attrs.getLength() + namedAttrs.size()];
+                            new String[attrs.getLength() + namedAttrs.size()];
                     for (int i = 0; i < attrNames.length; i++) {
                         attrNames[i] = attrs.getQName(i);
                     }
                     for (int i = 0; i < namedAttrs.size(); i++) {
                         attrNames[attrs.getLength() + i] =
-                            namedAttrs.getNode(i).getQName();
+                                namedAttrs.getNode(i).getQName();
                     }
                     Arrays.sort(attrNames, Collections.reverseOrder());
                     if (attrNames.length > 0) {
@@ -381,7 +486,8 @@ class Generator {
                                 out.println(";");
                             }
                         }
-                    } else {
+                    }
+                    else {
                         for (TagVariableInfo tagVarInfo : tagVarInfos) {
                             String varName = tagVarInfo.getNameGiven();
                             if (varName == null) {
@@ -489,14 +595,15 @@ class Generator {
      * Generates the _jspInit() method for instantiating the tag handler pools.
      * For tag file, _jspInit has to be invoked manually, and the ServletConfig
      * object explicitly passed.
-     *
+     * <p>
      * In JSP 2.1, we also instantiate an ExpressionFactory
      */
     private void generateInit() {
 
         if (ctxt.isTagFile()) {
             out.printil("private void _jspInit(jakarta.servlet.ServletConfig config) {");
-        } else {
+        }
+        else {
             out.printil("public void _jspInit() {");
         }
 
@@ -507,7 +614,8 @@ class Generator {
                 out.print(" = org.apache.jasper.runtime.TagHandlerPool.getTagHandlerPool(");
                 if (ctxt.isTagFile()) {
                     out.print("config");
-                } else {
+                }
+                else {
                     out.print("getServletConfig()");
                 }
                 out.println(");");
@@ -586,7 +694,7 @@ class Generator {
         // Static data for getDependants()
         out.printil("private static java.util.Map<java.lang.String,java.lang.Long> _jspx_dependants;");
         out.println();
-        Map<String,Long> dependants = pageInfo.getDependants();
+        Map<String, Long> dependants = pageInfo.getDependants();
         if (!dependants.isEmpty()) {
             out.printil("static {");
             out.pushIndent();
@@ -613,7 +721,8 @@ class Generator {
             String trimmed = importName.trim();
             if (trimmed.endsWith(".*")) {
                 packages.add(trimmed.substring(0, trimmed.length() - 2));
-            } else {
+            }
+            else {
                 classes.add(trimmed);
             }
         }
@@ -636,7 +745,8 @@ class Generator {
         if (classes.size() == 0) {
             out.printin("_jspx_imports_classes = null;");
             out.println();
-        } else {
+        }
+        else {
             out.printin("_jspx_imports_classes = new java.util.HashSet<>();");
             out.println();
             for (String className : classes) {
@@ -654,7 +764,7 @@ class Generator {
      * Declare tag handler pools (tags of the same type and with the same
      * attribute set share the same tag handler pool) (shared by servlet and tag
      * handler preamble generation)
-     *
+     * <p>
      * In JSP 2.1, we also scope an instance of ExpressionFactory
      */
     private void genPreambleClassVariableDeclarations() {
@@ -876,7 +986,8 @@ class Generator {
             out.print(doctypeName);
             if (doctypePublic == null) {
                 out.print(" SYSTEM \\\"");
-            } else {
+            }
+            else {
                 out.print(" PUBLIC \\\"");
                 out.print(doctypePublic);
                 out.print("\\\" \\\"");
@@ -887,52 +998,889 @@ class Generator {
     }
 
     /**
+     * Common part of postamble, shared by both servlets and tag files.
+     */
+    private void genCommonPostamble() {
+        // Append any methods that were generated in the buffer.
+        for (GenBuffer methodBuffer : methodsBuffered) {
+            methodBuffer.adjustJavaLines(out.getJavaLine() - 1);
+            out.printMultiLn(methodBuffer.toString());
+        }
+
+        // Append the helper class
+        if (fragmentHelperClass.isUsed()) {
+            fragmentHelperClass.generatePostamble();
+            fragmentHelperClass.adjustJavaLines(out.getJavaLine() - 1);
+            out.printMultiLn(fragmentHelperClass.toString());
+        }
+
+        // Append char array declarations
+        if (charArrayBuffer != null) {
+            out.printMultiLn(charArrayBuffer.toString());
+        }
+
+        // Close the class definition
+        out.popIndent();
+        out.printil("}");
+    }
+
+    /**
+     * Generates the ending part of the static portion of the servlet.
+     */
+    private void generatePostamble() {
+        out.popIndent();
+        out.printil("} catch (java.lang.Throwable t) {");
+        out.pushIndent();
+        out.printil("if (!(t instanceof jakarta.servlet.jsp.SkipPageException)){");
+        out.pushIndent();
+        out.printil("out = _jspx_out;");
+        out.printil("if (out != null && out.getBufferSize() != 0)");
+        out.pushIndent();
+        out.printil("try {");
+        out.pushIndent();
+        out.printil("if (response.isCommitted()) {");
+        out.pushIndent();
+        out.printil("out.flush();");
+        out.popIndent();
+        out.printil("} else {");
+        out.pushIndent();
+        out.printil("out.clearBuffer();");
+        out.popIndent();
+        out.printil("}");
+        out.popIndent();
+        out.printil("} catch (java.io.IOException e) {}");
+        out.popIndent();
+        out.printil("if (_jspx_page_context != null) _jspx_page_context.handlePageException(t);");
+        out.printil("else throw new ServletException(t);");
+        out.popIndent();
+        out.printil("}");
+        out.popIndent();
+        out.printil("} finally {");
+        out.pushIndent();
+        out.printil("_jspxFactory.releasePageContext(_jspx_page_context);");
+        out.popIndent();
+        out.printil("}");
+
+        // Close the service method
+        out.popIndent();
+        out.printil("}");
+
+        // Generated methods, helper classes, etc.
+        genCommonPostamble();
+    }
+
+    private void generateCommentHeader() {
+        out.println("/*");
+        out.println(" * Generated by the Jasper component of Apache Tomcat");
+        out.println(" * Version: " + ctxt.getServletContext().getServerInfo());
+        if (ctxt.getOptions().getGeneratedJavaAddTimestamp()) {
+            out.println(" * Generated at: " + timestampFormat.format(new Date()) +
+                    " UTC");
+        }
+        out.println(" * Note: The last modified time of this file was set to");
+        out.println(" *       the last modified time of the source file after");
+        out.println(" *       generation to assist with modification tracking.");
+        out.println(" */");
+    }
+
+    /*
+     * Generates tag handler preamble.
+     */
+    private void generateTagHandlerPreamble(JasperTagInfo tagInfo,
+                                            Node.Nodes tag) throws JasperException {
+
+        // Generate package declaration
+        String className = tagInfo.getTagClassName();
+        int lastIndex = className.lastIndexOf('.');
+        String packageName = className.substring(0, lastIndex);
+        genPreamblePackage(packageName);
+        className = className.substring(lastIndex + 1);
+
+        // Generate imports
+        genPreambleImports();
+
+        // Generate class declaration
+        out.printin("public final class ");
+        out.println(className);
+        out.printil("    extends jakarta.servlet.jsp.tagext.SimpleTagSupport");
+        out.printin("    implements org.apache.jasper.runtime.JspSourceDependent,");
+        out.println();
+        out.printin("                 org.apache.jasper.runtime.JspSourceImports");
+        if (tagInfo.hasDynamicAttributes()) {
+            out.println(",");
+            out.printin("               jakarta.servlet.jsp.tagext.DynamicAttributes");
+        }
+        out.println(" {");
+        out.pushIndent();
+
+        /*
+         * Class body begins here
+         */
+        generateDeclarations(tag);
+
+        // Static initializations here
+        genPreambleStaticInitializers();
+
+        out.printil("private jakarta.servlet.jsp.JspContext jspContext;");
+
+        // Declare writer used for storing result of fragment/body invocation
+        // if 'varReader' or 'var' attribute is specified
+        out.printil("private java.io.Writer _jspx_sout;");
+
+        // Class variable declarations
+        genPreambleClassVariableDeclarations();
+
+        generateSetJspContext(tagInfo);
+
+        // Tag-handler specific declarations
+        generateTagHandlerAttributes(tagInfo);
+        if (tagInfo.hasDynamicAttributes()) {
+            generateSetDynamicAttribute();
+        }
+
+        // Methods here
+        genPreambleMethods();
+
+        // Now the doTag() method
+        out.printil("public void doTag() throws jakarta.servlet.jsp.JspException, java.io.IOException {");
+
+        if (ctxt.isPrototypeMode()) {
+            out.printil("}");
+            out.popIndent();
+            out.printil("}");
+            return;
+        }
+
+        out.pushIndent();
+
+        /*
+         * According to the spec, 'pageContext' must not be made available as an
+         * implicit object in tag files. Declare _jspx_page_context, so we can
+         * share the code generator with JSPs.
+         */
+        out.printil("jakarta.servlet.jsp.PageContext _jspx_page_context = (jakarta.servlet.jsp.PageContext)jspContext;");
+
+        // Declare implicit objects.
+        out.printil("jakarta.servlet.http.HttpServletRequest request = "
+                + "(jakarta.servlet.http.HttpServletRequest) _jspx_page_context.getRequest();");
+        out.printil("jakarta.servlet.http.HttpServletResponse response = "
+                + "(jakarta.servlet.http.HttpServletResponse) _jspx_page_context.getResponse();");
+        out.printil("jakarta.servlet.http.HttpSession session = _jspx_page_context.getSession();");
+        out.printil("jakarta.servlet.ServletContext application = _jspx_page_context.getServletContext();");
+        out.printil("jakarta.servlet.ServletConfig config = _jspx_page_context.getServletConfig();");
+        out.printil("jakarta.servlet.jsp.JspWriter out = jspContext.getOut();");
+        out.printil("_jspInit(config);");
+
+        // set current JspContext on ELContext
+        out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,jspContext);");
+
+        generatePageScopedVariables(tagInfo);
+
+        declareTemporaryScriptingVars(tag);
+        out.println();
+
+        out.printil("try {");
+        out.pushIndent();
+    }
+
+    private void generateTagHandlerPostamble(TagInfo tagInfo) {
+        out.popIndent();
+
+        // Have to catch Throwable because a classic tag handler
+        // helper method is declared to throw Throwable.
+        out.printil("} catch( java.lang.Throwable t ) {");
+        out.pushIndent();
+        out.printil("if( t instanceof jakarta.servlet.jsp.SkipPageException )");
+        out.printil("    throw (jakarta.servlet.jsp.SkipPageException) t;");
+        out.printil("if( t instanceof java.io.IOException )");
+        out.printil("    throw (java.io.IOException) t;");
+        out.printil("if( t instanceof java.lang.IllegalStateException )");
+        out.printil("    throw (java.lang.IllegalStateException) t;");
+        out.printil("if( t instanceof jakarta.servlet.jsp.JspException )");
+        out.printil("    throw (jakarta.servlet.jsp.JspException) t;");
+        out.printil("throw new jakarta.servlet.jsp.JspException(t);");
+        out.popIndent();
+        out.printil("} finally {");
+        out.pushIndent();
+
+        // handle restoring VariableMapper
+        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
+        for (int i = 0; i < attrInfos.length; i++) {
+            if (attrInfos[i].isDeferredMethod() || attrInfos[i].isDeferredValue()) {
+                out.printin("_el_variablemapper.setVariable(");
+                out.print(quote(attrInfos[i].getName()));
+                out.print(",_el_ve");
+                out.print(i);
+                out.println(");");
+            }
+        }
+
+        // restore nested JspContext on ELContext
+        out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,super.getJspContext());");
+
+        out.printil("((org.apache.jasper.runtime.JspContextWrapper) jspContext).syncEndTagFile();");
+        if (isPoolingEnabled && !tagHandlerPoolNames.isEmpty()) {
+            out.printil("_jspDestroy();");
+        }
+        out.popIndent();
+        out.printil("}");
+
+        // Close the doTag method
+        out.popIndent();
+        out.printil("}");
+
+        // Generated methods, helper classes, etc.
+        genCommonPostamble();
+    }
+
+    /**
+     * Generates declarations for tag handler attributes, and defines the getter
+     * and setter methods for each.
+     */
+    private void generateTagHandlerAttributes(TagInfo tagInfo) {
+
+        if (tagInfo.hasDynamicAttributes()) {
+            out.printil("private java.util.HashMap _jspx_dynamic_attrs = new java.util.HashMap();");
+        }
+
+        // Declare attributes
+        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
+        for (TagAttributeInfo info : attrInfos) {
+            out.printin("private ");
+            if (info.isFragment()) {
+                out.print("jakarta.servlet.jsp.tagext.JspFragment ");
+            }
+            else {
+                out.print(JspUtil.toJavaSourceType(info.getTypeName()));
+                out.print(" ");
+            }
+            out.print(JspUtil.makeJavaIdentifierForAttribute(
+                    info.getName()));
+            out.println(";");
+        }
+        out.println();
+
+        // Define attribute getter and setter methods
+        for (TagAttributeInfo attrInfo : attrInfos) {
+            String javaName =
+                    JspUtil.makeJavaIdentifierForAttribute(attrInfo.getName());
+
+            // getter method
+            out.printin("public ");
+            if (attrInfo.isFragment()) {
+                out.print("jakarta.servlet.jsp.tagext.JspFragment ");
+            }
+            else {
+                out.print(JspUtil.toJavaSourceType(attrInfo.getTypeName()));
+                out.print(" ");
+            }
+            out.print(toGetterMethod(attrInfo.getName()));
+            out.println(" {");
+            out.pushIndent();
+            out.printin("return this.");
+            out.print(javaName);
+            out.println(";");
+            out.popIndent();
+            out.printil("}");
+            out.println();
+
+            // setter method
+            out.printin("public void ");
+            out.print(toSetterMethodName(attrInfo.getName()));
+            if (attrInfo.isFragment()) {
+                out.print("(jakarta.servlet.jsp.tagext.JspFragment ");
+            }
+            else {
+                out.print("(");
+                out.print(JspUtil.toJavaSourceType(attrInfo.getTypeName()));
+                out.print(" ");
+            }
+            out.print(javaName);
+            out.println(") {");
+            out.pushIndent();
+            out.printin("this.");
+            out.print(javaName);
+            out.print(" = ");
+            out.print(javaName);
+            out.println(";");
+            // Tag files should also set jspContext attributes
+            // Only called for tag files so always set the jspContext
+            out.printin("jspContext.setAttribute(\"");
+            out.print(attrInfo.getName());
+            out.print("\", ");
+            out.print(javaName);
+            out.println(");");
+            out.popIndent();
+            out.printil("}");
+            out.println();
+        }
+    }
+
+    /*
+     * Generate setter for JspContext so we can create a wrapper and store both
+     * the original and the wrapper. We need the wrapper to mask the page
+     * context from the tag file and simulate a fresh page context. We need the
+     * original to do things like sync AT_BEGIN and AT_END scripting variables.
+     */
+    private void generateSetJspContext(TagInfo tagInfo) {
+
+        boolean nestedSeen = false;
+        boolean atBeginSeen = false;
+        boolean atEndSeen = false;
+
+        // Determine if there are any aliases
+        boolean aliasSeen = false;
+        TagVariableInfo[] tagVars = tagInfo.getTagVariableInfos();
+        for (TagVariableInfo var : tagVars) {
+            // If a tag file uses a named attribute, the TagFileDirectiveVisitor
+            // will ensure that an alias is configured.
+            if (var.getNameFromAttribute() != null) {
+                aliasSeen = true;
+                break;
+            }
+        }
+
+        if (aliasSeen) {
+            out.printil("public void setJspContext(jakarta.servlet.jsp.JspContext ctx, java.util.Map aliasMap) {");
+        }
+        else {
+            out.printil("public void setJspContext(jakarta.servlet.jsp.JspContext ctx) {");
+        }
+        out.pushIndent();
+        out.printil("super.setJspContext(ctx);");
+        out.printil("java.util.ArrayList _jspx_nested = null;");
+        out.printil("java.util.ArrayList _jspx_at_begin = null;");
+        out.printil("java.util.ArrayList _jspx_at_end = null;");
+
+        for (TagVariableInfo tagVar : tagVars) {
+
+            switch (tagVar.getScope()) {
+                case VariableInfo.NESTED:
+                    if (!nestedSeen) {
+                        out.printil("_jspx_nested = new java.util.ArrayList();");
+                        nestedSeen = true;
+                    }
+                    out.printin("_jspx_nested.add(");
+                    break;
+
+                case VariableInfo.AT_BEGIN:
+                    if (!atBeginSeen) {
+                        out.printil("_jspx_at_begin = new java.util.ArrayList();");
+                        atBeginSeen = true;
+                    }
+                    out.printin("_jspx_at_begin.add(");
+                    break;
+
+                case VariableInfo.AT_END:
+                    if (!atEndSeen) {
+                        out.printil("_jspx_at_end = new java.util.ArrayList();");
+                        atEndSeen = true;
+                    }
+                    out.printin("_jspx_at_end.add(");
+                    break;
+            } // switch
+
+            out.print(quote(tagVar.getNameGiven()));
+            out.println(");");
+        }
+        if (aliasSeen) {
+            out.printil("this.jspContext = new org.apache.jasper.runtime.JspContextWrapper(this, ctx, _jspx_nested, _jspx_at_begin, _jspx_at_end, aliasMap);");
+        }
+        else {
+            out.printil("this.jspContext = new org.apache.jasper.runtime.JspContextWrapper(this, ctx, _jspx_nested, _jspx_at_begin, _jspx_at_end, null);");
+        }
+        out.popIndent();
+        out.printil("}");
+        out.println();
+        out.printil("public jakarta.servlet.jsp.JspContext getJspContext() {");
+        out.pushIndent();
+        out.printil("return this.jspContext;");
+        out.popIndent();
+        out.printil("}");
+    }
+
+    /*
+     * Generates implementation of
+     * jakarta.servlet.jsp.tagext.DynamicAttributes.setDynamicAttribute() method,
+     * which saves each dynamic attribute that is passed in so that a scoped
+     * variable can later be created for it.
+     */
+    public void generateSetDynamicAttribute() {
+        out.printil("public void setDynamicAttribute(java.lang.String uri, java.lang.String localName, java.lang.Object value) throws jakarta.servlet.jsp.JspException {");
+        out.pushIndent();
+        /*
+         * According to the spec, only dynamic attributes with no uri are to be
+         * present in the Map; all other dynamic attributes are ignored.
+         */
+        out.printil("if (uri == null)");
+        out.pushIndent();
+        out.printil("_jspx_dynamic_attrs.put(localName, value);");
+        out.popIndent();
+        out.popIndent();
+        out.printil("}");
+    }
+
+    /*
+     * Creates a page-scoped variable for each declared tag attribute. Also, if
+     * the tag accepts dynamic attributes, a page-scoped variable is made
+     * available for each dynamic attribute that was passed in.
+     */
+    private void generatePageScopedVariables(JasperTagInfo tagInfo) {
+
+        // "normal" attributes
+        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
+        boolean variableMapperVar = false;
+        for (int i = 0; i < attrInfos.length; i++) {
+            String attrName = attrInfos[i].getName();
+
+            // handle assigning deferred vars to VariableMapper, storing
+            // previous values under '_el_ve[i]' for later re-assignment
+            if (attrInfos[i].isDeferredValue() || attrInfos[i].isDeferredMethod()) {
+
+                // we need to scope the modified VariableMapper for consistency and performance
+                if (!variableMapperVar) {
+                    out.printil("jakarta.el.VariableMapper _el_variablemapper = jspContext.getELContext().getVariableMapper();");
+                    variableMapperVar = true;
+                }
+
+                out.printin("jakarta.el.ValueExpression _el_ve");
+                out.print(i);
+                out.print(" = _el_variablemapper.setVariable(");
+                out.print(quote(attrName));
+                out.print(',');
+                if (attrInfos[i].isDeferredMethod()) {
+                    out.print("_jsp_getExpressionFactory().createValueExpression(");
+                    out.print(toGetterMethod(attrName));
+                    out.print(",jakarta.el.MethodExpression.class)");
+                }
+                else {
+                    out.print(toGetterMethod(attrName));
+                }
+                out.println(");");
+            }
+            else {
+                out.printil("if( " + toGetterMethod(attrName) + " != null ) ");
+                out.pushIndent();
+                out.printin("_jspx_page_context.setAttribute(");
+                out.print(quote(attrName));
+                out.print(", ");
+                out.print(toGetterMethod(attrName));
+                out.println(");");
+                out.popIndent();
+            }
+        }
+
+        // Expose the Map containing dynamic attributes as a page-scoped var
+        if (tagInfo.hasDynamicAttributes()) {
+            out.printin("_jspx_page_context.setAttribute(\"");
+            out.print(tagInfo.getDynamicAttributesMapName());
+            out.print("\", _jspx_dynamic_attrs);");
+        }
+    }
+
+    /*
+     * Generates the getter method for the given attribute name.
+     */
+    private String toGetterMethod(String attrName) {
+        char[] attrChars = attrName.toCharArray();
+        attrChars[0] = Character.toUpperCase(attrChars[0]);
+        return "get" + new String(attrChars) + "()";
+    }
+
+    /*
+     * Generates the setter method name for the given attribute name.
+     */
+    private String toSetterMethodName(String attrName) {
+        char[] attrChars = attrName.toCharArray();
+        attrChars[0] = Character.toUpperCase(attrChars[0]);
+        return "set" + new String(attrChars);
+    }
+
+    /**
+     * Class storing the result of introspecting a custom tag handler.
+     */
+    private static class TagHandlerInfo {
+
+        private final Hashtable<String, Method> methodMaps;
+
+        private final Hashtable<String, Class<?>> propertyEditorMaps;
+
+        private final Class<?> tagHandlerClass;
+
+        /**
+         * Constructor.
+         *
+         * @param n               The custom tag whose tag handler class is to be
+         *                        introspected
+         * @param tagHandlerClass Tag handler class
+         * @param err             Error dispatcher
+         */
+        TagHandlerInfo(Node n, Class<?> tagHandlerClass,
+                       ErrorDispatcher err) throws JasperException {
+            this.tagHandlerClass = tagHandlerClass;
+            this.methodMaps = new Hashtable<>();
+            this.propertyEditorMaps = new Hashtable<>();
+
+            try {
+                BeanInfo tagClassInfo = Introspector.getBeanInfo(tagHandlerClass);
+                PropertyDescriptor[] pd = tagClassInfo.getPropertyDescriptors();
+                for (PropertyDescriptor propertyDescriptor : pd) {
+                    /*
+                     * FIXME: should probably be checking for things like
+                     * pageContext, bodyContent, and parent here -akv
+                     */
+                    if (propertyDescriptor.getWriteMethod() != null) {
+                        methodMaps.put(propertyDescriptor.getName(), propertyDescriptor.getWriteMethod());
+                    }
+                    if (propertyDescriptor.getPropertyEditorClass() != null) {
+                        propertyEditorMaps.put(propertyDescriptor.getName(), propertyDescriptor
+                                .getPropertyEditorClass());
+                    }
+                }
+            } catch (IntrospectionException ie) {
+                // Likely unreachable code
+                // When last checked (May 2021), current versions of Java only
+                // throw IntrospectionException for the 2-arg version of
+                // getBeanInfo if the stop class is not a super class of the
+                // bean class. That does not apply here.
+                err.jspError(n, ie, "jsp.error.introspect.taghandler", tagHandlerClass.getName());
+            }
+        }
+
+        public Method getSetterMethod(String attrName) {
+            return methodMaps.get(attrName);
+        }
+
+        public Class<?> getPropertyEditorClass(String attrName) {
+            return propertyEditorMaps.get(attrName);
+        }
+
+        public Class<?> getTagHandlerClass() {
+            return tagHandlerClass;
+        }
+    }
+
+    /**
+     * A class for generating codes to a buffer. Included here are some support
+     * for tracking source to Java lines mapping.
+     */
+    private static class GenBuffer {
+
+        protected ServletWriter out;
+        /*
+         * For a CustomTag, the codes that are generated at the beginning of the
+         * tag may not be in the same buffer as those for the body of the tag.
+         * Two fields are used here to keep this straight. For codes that do not
+         * corresponds to any JSP lines, they should be null.
+         */
+        private final Node node;
+        private final Node.Nodes body;
+        private final java.io.CharArrayWriter charWriter;
+
+        GenBuffer() {
+            this(null, null);
+        }
+
+        GenBuffer(Node n, Node.Nodes b) {
+            node = n;
+            body = b;
+            if (body != null) {
+                body.setGeneratedInBuffer(true);
+            }
+            charWriter = new java.io.CharArrayWriter();
+            out = new ServletWriter(new java.io.PrintWriter(charWriter));
+        }
+
+        private static void adjustJavaLine(Node n, int offset) {
+            if (n.getBeginJavaLine() > 0) {
+                n.setBeginJavaLine(n.getBeginJavaLine() + offset);
+                n.setEndJavaLine(n.getEndJavaLine() + offset);
+            }
+        }
+
+        public ServletWriter getOut() {
+            return out;
+        }
+
+        @Override
+        public String toString() {
+            return charWriter.toString();
+        }
+
+        /**
+         * Adjust the Java Lines. This is necessary because the Java lines
+         * stored with the nodes are relative the beginning of this buffer and
+         * need to be adjusted when this buffer is inserted into the source.
+         *
+         * @param offset The offset to apply to the start line and end line of
+         *               and Java lines of nodes in this buffer
+         */
+        public void adjustJavaLines(final int offset) {
+
+            if (node != null) {
+                adjustJavaLine(node, offset);
+            }
+
+            if (body != null) {
+                try {
+                    body.visit(new Node.Visitor() {
+
+                        @Override
+                        public void doVisit(Node n) {
+                            adjustJavaLine(n, offset);
+                        }
+
+                        @Override
+                        public void visit(Node.CustomTag n)
+                                throws JasperException {
+                            Node.Nodes b = n.getBody();
+                            if (b != null && !b.isGeneratedInBuffer()) {
+                                // Don't adjust lines for the nested tags that
+                                // are also generated in buffers, because the
+                                // adjustments will be done elsewhere.
+                                b.visit(this);
+                            }
+                        }
+                    });
+                } catch (JasperException ex) {
+                    // Ignore
+                }
+            }
+        }
+    }
+
+    /**
+     * Keeps track of the generated Fragment Helper Class
+     */
+    private static class FragmentHelperClass {
+
+        // True if the helper class should be generated.
+        private boolean used = false;
+        private final List<Fragment> fragments = new ArrayList<>();
+        private final String className;
+        // Buffer for entire helper class
+        private final GenBuffer classBuffer = new GenBuffer();
+
+        public FragmentHelperClass(String className) {
+            this.className = className;
+        }
+
+        public String getClassName() {
+            return this.className;
+        }
+
+        public boolean isUsed() {
+            return this.used;
+        }
+
+        public void generatePreamble() {
+            ServletWriter out = this.classBuffer.getOut();
+            out.println();
+            out.pushIndent();
+            // Note: cannot be static, as we need to reference things like
+            // _jspx_meth_*
+            out.printil("private class " + className);
+            out.printil("    extends "
+                    + "org.apache.jasper.runtime.JspFragmentHelper");
+            out.printil("{");
+            out.pushIndent();
+            out.printil("private jakarta.servlet.jsp.tagext.JspTag _jspx_parent;");
+            out.printil("private int[] _jspx_push_body_count;");
+            out.println();
+            out.printil("public " + className
+                    + "( int discriminator, jakarta.servlet.jsp.JspContext jspContext, "
+                    + "jakarta.servlet.jsp.tagext.JspTag _jspx_parent, "
+                    + "int[] _jspx_push_body_count ) {");
+            out.pushIndent();
+            out.printil("super( discriminator, jspContext, _jspx_parent );");
+            out.printil("this._jspx_parent = _jspx_parent;");
+            out.printil("this._jspx_push_body_count = _jspx_push_body_count;");
+            out.popIndent();
+            out.printil("}");
+        }
+
+        public Fragment openFragment(ChildInfoBase parent, int methodNesting) {
+            Fragment result = new Fragment(fragments.size(), parent);
+            fragments.add(result);
+            this.used = true;
+            parent.setInnerClassName(className);
+
+            ServletWriter out = result.getGenBuffer().getOut();
+            out.pushIndent();
+            out.pushIndent();
+            // XXX - Returns boolean because if a tag is invoked from
+            // within this fragment, the Generator sometimes might
+            // generate code like "return true". This is ignored for now,
+            // meaning only the fragment is skipped. The JSR-152
+            // expert group is currently discussing what to do in this case.
+            // See comment in closeFragment()
+            if (methodNesting > 0) {
+                out.printin("public boolean invoke");
+            }
+            else {
+                out.printin("public void invoke");
+            }
+            out.println(result.getId() + "( " + "jakarta.servlet.jsp.JspWriter out ) ");
+            out.pushIndent();
+            // Note: Throwable required because methods like _jspx_meth_*
+            // throw Throwable.
+            out.printil("throws java.lang.Throwable");
+            out.popIndent();
+            out.printil("{");
+            out.pushIndent();
+            generateLocalVariables(out, parent);
+
+            return result;
+        }
+
+        public void closeFragment(Fragment fragment, int methodNesting) {
+            ServletWriter out = fragment.getGenBuffer().getOut();
+            // XXX - See comment in openFragment()
+            if (methodNesting > 0) {
+                out.printil("return false;");
+            }
+            else {
+                out.printil("return;");
+            }
+            out.popIndent();
+            out.printil("}");
+        }
+
+        public void generatePostamble() {
+            ServletWriter out = this.classBuffer.getOut();
+            // Generate all fragment methods:
+            for (Fragment fragment : fragments) {
+                fragment.getGenBuffer().adjustJavaLines(out.getJavaLine() - 1);
+                out.printMultiLn(fragment.getGenBuffer().toString());
+            }
+
+            // Generate postamble:
+            out.printil("public void invoke( java.io.Writer writer )");
+            out.pushIndent();
+            out.printil("throws jakarta.servlet.jsp.JspException");
+            out.popIndent();
+            out.printil("{");
+            out.pushIndent();
+            out.printil("jakarta.servlet.jsp.JspWriter out = null;");
+            out.printil("if( writer != null ) {");
+            out.pushIndent();
+            out.printil("out = this.jspContext.pushBody(writer);");
+            out.popIndent();
+            out.printil("} else {");
+            out.pushIndent();
+            out.printil("out = this.jspContext.getOut();");
+            out.popIndent();
+            out.printil("}");
+            out.printil("try {");
+            out.pushIndent();
+            out.printil("Object _jspx_saved_JspContext = this.jspContext.getELContext().getContext(jakarta.servlet.jsp.JspContext.class);");
+            out.printil("this.jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,this.jspContext);");
+            out.printil("switch( this.discriminator ) {");
+            out.pushIndent();
+            for (int i = 0; i < fragments.size(); i++) {
+                out.printil("case " + i + ":");
+                out.pushIndent();
+                out.printil("invoke" + i + "( out );");
+                out.printil("break;");
+                out.popIndent();
+            }
+            out.popIndent();
+            out.printil("}"); // switch
+
+            // restore nested JspContext on ELContext
+            out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,_jspx_saved_JspContext);");
+
+            out.popIndent();
+            out.printil("}"); // try
+            out.printil("catch( java.lang.Throwable e ) {");
+            out.pushIndent();
+            out.printil("if (e instanceof jakarta.servlet.jsp.SkipPageException)");
+            out.printil("    throw (jakarta.servlet.jsp.SkipPageException) e;");
+            out.printil("throw new jakarta.servlet.jsp.JspException( e );");
+            out.popIndent();
+            out.printil("}"); // catch
+            out.printil("finally {");
+            out.pushIndent();
+
+            out.printil("if( writer != null ) {");
+            out.pushIndent();
+            out.printil("this.jspContext.popBody();");
+            out.popIndent();
+            out.printil("}");
+
+            out.popIndent();
+            out.printil("}"); // finally
+            out.popIndent();
+            out.printil("}"); // invoke method
+            out.popIndent();
+            out.printil("}"); // helper class
+            out.popIndent();
+        }
+
+        @Override
+        public String toString() {
+            return classBuffer.toString();
+        }
+
+        public void adjustJavaLines(int offset) {
+            for (Fragment fragment : fragments) {
+                fragment.getGenBuffer().adjustJavaLines(offset);
+            }
+        }
+
+        private static class Fragment {
+            private final GenBuffer genBuffer;
+
+            private final int id;
+
+            public Fragment(int id, Node node) {
+                this.id = id;
+                genBuffer = new GenBuffer(null, node.getBody());
+            }
+
+            public GenBuffer getGenBuffer() {
+                return this.genBuffer;
+            }
+
+            public int getId() {
+                return this.id;
+            }
+        }
+    }
+
+    /**
      * A visitor that generates codes for the elements in the page.
      */
     private class GenerateVisitor extends Node.Visitor {
 
+        private static final String DOUBLE_QUOTE = "\\\"";
         /*
          * Hashtable containing introspection information on tag handlers:
          * <key>: tag prefix <value>: hashtable containing introspection on tag
          * handlers: <key>: tag short name <value>: introspection info of tag
          * handler for <prefix:shortName> tag
          */
-        private final Hashtable<String,Hashtable<String,TagHandlerInfo>> handlerInfos;
-
-        private final Hashtable<String,Integer> tagVarNumbers;
-
-        private String parent;
-
-        private boolean isSimpleTagParent; // Is parent a SimpleTag?
-
-        private String pushBodyCountVar;
-
-        private String simpleTagHandlerVar;
-
-        private boolean isSimpleTagHandler;
-
-        private boolean isFragment;
-
+        private final Hashtable<String, Hashtable<String, TagHandlerInfo>> handlerInfos;
+        private final Hashtable<String, Integer> tagVarNumbers;
         private final boolean isTagFile;
-
-        private ServletWriter out;
-
         private final ArrayList<GenBuffer> methodsBuffered;
-
         private final FragmentHelperClass fragmentHelperClass;
-
-        private int methodNesting;
-
-        private int charArrayCount;
-
-        private HashMap<String,String> textMap;
-
         private final boolean useInstanceManagerForTags;
+        private String parent;
+        private boolean isSimpleTagParent; // Is parent a SimpleTag?
+        private String pushBodyCountVar;
+        private String simpleTagHandlerVar;
+        private boolean isSimpleTagHandler;
+        private boolean isFragment;
+        private ServletWriter out;
+        private int methodNesting;
+        private int charArrayCount;
+        private HashMap<String, String> textMap;
 
         public GenerateVisitor(boolean isTagFile, ServletWriter out,
-                ArrayList<GenBuffer> methodsBuffered,
-                FragmentHelperClass fragmentHelperClass,
-                boolean useInstanceManagerForTags) {
+                               ArrayList<GenBuffer> methodsBuffered,
+                               FragmentHelperClass fragmentHelperClass,
+                               boolean useInstanceManagerForTags) {
 
             this.isTagFile = isTagFile;
             this.out = out;
@@ -953,16 +1901,13 @@ class Generator {
          * generated variable name. Otherwise the result is a string literal,
          * quoted and escaped.
          *
-         * @param attr
-         *            An JspAttribute object
-         * @param encode
-         *            true if to be URL encoded
-         * @param expectedType
-         *            the expected type for an EL evaluation (ignored for
-         *            attributes that aren't EL expressions)
+         * @param attr         An JspAttribute object
+         * @param encode       true if to be URL encoded
+         * @param expectedType the expected type for an EL evaluation (ignored for
+         *                     attributes that aren't EL expressions)
          */
         private String attributeValue(Node.JspAttribute attr, boolean encode,
-                Class<?> expectedType) {
+                                      Class<?> expectedType) {
             String v = attr.getValue();
             if (attr.isExpression()) {
                 if (encode) {
@@ -970,7 +1915,8 @@ class Generator {
                             + v + "), request.getCharacterEncoding())";
                 }
                 return v;
-            } else if (attr.isELInterpreterInput()) {
+            }
+            else if (attr.isELInterpreterInput()) {
                 v = elInterpreter.interpreterCall(ctxt, this.isTagFile, v,
                         expectedType, attr.getEL().getMapName());
                 if (encode) {
@@ -978,9 +1924,11 @@ class Generator {
                             + v + ", request.getCharacterEncoding())";
                 }
                 return v;
-            } else if (attr.isNamedAttribute()) {
+            }
+            else if (attr.isNamedAttribute()) {
                 return attr.getNamedAttributeNode().getTemporaryVariableName();
-            } else {
+            }
+            else {
                 if (encode) {
                     return "org.apache.jasper.runtime.JspRuntimeLibrary.URLEncode("
                             + quote(v) + ", request.getCharacterEncoding())";
@@ -989,13 +1937,11 @@ class Generator {
             }
         }
 
-
         /**
          * Prints the attribute value specified in the param action, in the form
          * of name=value string.
          *
-         * @param n
-         *            the parent node for the param action nodes.
+         * @param n the parent node for the param action nodes.
          */
         private void printParams(Node n, String pageParam, boolean literal)
                 throws JasperException {
@@ -1027,7 +1973,8 @@ class Generator {
             String sep;
             if (literal) {
                 sep = pageParam.indexOf('?') > 0 ? "\"&\"" : "\"?\"";
-            } else {
+            }
+            else {
                 sep = "((" + pageParam + ").indexOf('?')>0? '&': '?')";
             }
             if (n.getBody() != null) {
@@ -1057,8 +2004,8 @@ class Generator {
             n.setBeginJavaLine(out.getJavaLine());
             out.printil("out.write("
                     + elInterpreter.interpreterCall(ctxt, this.isTagFile,
-                            n.getType() + "{" + n.getText() + "}",
-                            String.class, n.getEL().getMapName()) +
+                    n.getType() + "{" + n.getText() + "}",
+                    String.class, n.getEL().getMapName()) +
                     ");");
             n.setEndJavaLine(out.getJavaLine());
         }
@@ -1080,7 +2027,8 @@ class Generator {
                 // that body.
                 pageParam = generateNamedAttributeValue(page
                         .getNamedAttributeNode());
-            } else {
+            }
+            else {
                 pageParam = attributeValue(page, false, String.class);
             }
 
@@ -1089,7 +2037,8 @@ class Generator {
             Node jspBody = findJspBody(n);
             if (jspBody != null) {
                 prepareParams(jspBody);
-            } else {
+            }
+            else {
                 prepareParams(n);
             }
 
@@ -1162,7 +2111,8 @@ class Generator {
                 // jsp:attribute, first generate code to evaluate
                 // that body.
                 pageParam = generateNamedAttributeValue(page.getNamedAttributeNode());
-            } else {
+            }
+            else {
                 pageParam = attributeValue(page, false, String.class);
             }
 
@@ -1171,7 +2121,8 @@ class Generator {
             Node jspBody = findJspBody(n);
             if (jspBody != null) {
                 prepareParams(jspBody);
-            } else {
+            }
+            else {
                 prepareParams(n);
             }
 
@@ -1181,7 +2132,8 @@ class Generator {
             out.println(");");
             if (isTagFile || isFragment) {
                 out.printil("throw new jakarta.servlet.jsp.SkipPageException();");
-            } else {
+            }
+            else {
                 out.printil((methodNesting > 0) ? "return true;" : "return;");
             }
             out.popIndent();
@@ -1211,7 +2163,8 @@ class Generator {
                         + ")_jspx_page_context.findAttribute("
                         + "\""
                         + name + "\"))." + methodName + "())));");
-            } else if (!ctxt.getOptions().getStrictGetProperty() || varInfoNames.contains(name)) {
+            }
+            else if (!ctxt.getOptions().getStrictGetProperty() || varInfoNames.contains(name)) {
                 // The object is a custom action with an associated
                 // VariableInfo entry for this name.
                 // Get the class name and then introspect at runtime.
@@ -1222,16 +2175,15 @@ class Generator {
                         + "\"), \""
                         + property
                         + "\")));");
-            } else {
-                StringBuilder msg = new StringBuilder();
-                msg.append("file:");
-                msg.append(n.getStart());
-                msg.append(" jsp:getProperty for bean with name '");
-                msg.append(name);
-                msg.append(
-                        "'. Name was not previously introduced as per JSP.5.3");
+            }
+            else {
+                String msg = "file:" +
+                        n.getStart() +
+                        " jsp:getProperty for bean with name '" +
+                        name +
+                        "'. Name was not previously introduced as per JSP.5.3";
 
-                throw new JasperException(msg.toString());
+                throw new JasperException(msg);
             }
 
             n.setEndJavaLine(out.getJavaLine());
@@ -1251,9 +2203,9 @@ class Generator {
                         + "_jspx_page_context.findAttribute("
                         + "\""
                         + name + "\"), request);");
-            } else if (value == null) {
-                if (param == null)
-                 {
+            }
+            else if (value == null) {
+                if (param == null) {
                     param = property; // default to same as property
                 }
                 out.printil("org.apache.jasper.runtime.JspRuntimeLibrary.introspecthelper("
@@ -1267,14 +2219,16 @@ class Generator {
                         + "request, \""
                         + param
                         + "\", false);");
-            } else if (value.isExpression()) {
+            }
+            else if (value.isExpression()) {
                 out.printil("org.apache.jasper.runtime.JspRuntimeLibrary.handleSetProperty("
                         + "_jspx_page_context.findAttribute(\""
                         + name
                         + "\"), \"" + property + "\",");
                 out.print(attributeValue(value, false, null));
                 out.println(");");
-            } else if (value.isELInterpreterInput()) {
+            }
+            else if (value.isELInterpreterInput()) {
                 // We've got to resolve the very call to the interpreter
                 // at runtime since we don't know what type to expect
                 // in the general case; we thus can't hard-wire the call
@@ -1298,7 +2252,8 @@ class Generator {
                         + ", "
                         + "_jspx_page_context, "
                         + value.getEL().getMapName() + ");");
-            } else if (value.isNamedAttribute()) {
+            }
+            else if (value.isNamedAttribute()) {
                 // If the value for setProperty was specified via
                 // jsp:attribute, first generate code to evaluate
                 // that body.
@@ -1312,7 +2267,8 @@ class Generator {
                         + "\", "
                         + valueVarName
                         + ", null, null, false);");
-            } else {
+            }
+            else {
                 out.printin("org.apache.jasper.runtime.JspRuntimeLibrary.introspecthelper("
                         + "_jspx_page_context.findAttribute(\""
                         + name
@@ -1342,11 +2298,12 @@ class Generator {
                     if (klass.indexOf('$') >= 0) {
                         // Obtain the canonical type name
                         canonicalName = bean.getCanonicalName();
-                    } else {
+                    }
+                    else {
                         canonicalName = klass;
                     }
                     // Check that there is a 0 arg constructor
-                    Constructor<?> constructor = bean.getConstructor(new Class[] {});
+                    Constructor<?> constructor = bean.getConstructor();
                     // Check the bean is public, not an interface, not abstract
                     // and (for Java 9+) in an exported module
                     int modifiers = bean.getModifiers();
@@ -1356,7 +2313,7 @@ class Generator {
                     // any interfaces.
                     if (!Modifier.isPublic(modifiers) ||
                             Modifier.isAbstract(modifiers) ||
-                            !jreCompat.canAccess(null, constructor) ) {
+                            !jreCompat.canAccess(null, constructor)) {
                         throw new Exception(Localizer.getMessage("jsp.error.invalid.bean",
                                 Integer.valueOf(modifiers)));
                     }
@@ -1391,10 +2348,12 @@ class Generator {
 
             if ("request".equals(scope)) {
                 scopename = "jakarta.servlet.jsp.PageContext.REQUEST_SCOPE";
-            } else if ("session".equals(scope)) {
+            }
+            else if ("session".equals(scope)) {
                 scopename = "jakarta.servlet.jsp.PageContext.SESSION_SCOPE";
                 lock = "session";
-            } else if ("application".equals(scope)) {
+            }
+            else if ("application".equals(scope)) {
                 scopename = "jakarta.servlet.jsp.PageContext.APPLICATION_SCOPE";
                 lock = "application";
             }
@@ -1441,7 +2400,8 @@ class Generator {
                 out.printin("throw new java.lang.InstantiationException(\"bean ");
                 out.print(name);
                 out.println(" not found within scope\");");
-            } else {
+            }
+            else {
                 /*
                  * Instantiate the bean if it is not in the specified scope.
                  */
@@ -1454,10 +2414,12 @@ class Generator {
                             // that body.
                             binaryName = generateNamedAttributeValue(beanName
                                     .getNamedAttributeNode());
-                        } else {
+                        }
+                        else {
                             binaryName = attributeValue(beanName, false, String.class);
                         }
-                    } else {
+                    }
+                    else {
                         // Implies klass is not null
                         binaryName = quote(klass);
                     }
@@ -1487,7 +2449,8 @@ class Generator {
                     out.println(", exc);");
                     out.popIndent();
                     out.printil("}"); // close of try
-                } else {
+                }
+                else {
                     // Implies klass is not null
                     // Generate codes to instantiate the bean class
                     out.printin(name);
@@ -1553,7 +2516,8 @@ class Generator {
                     String name = n.getTextAttribute("name");
                     if (name.equalsIgnoreCase("object")) {
                         name = "java_object";
-                    } else if (name.equalsIgnoreCase("type")) {
+                    }
+                    else if (name.equalsIgnoreCase("type")) {
                         name = "java_type";
                     }
 
@@ -1574,7 +2538,8 @@ class Generator {
                                         String.class) +
                                 " + \"\\\">\" );");
                         out.printil("out.write(\"\\n\");");
-                    } else {
+                    }
+                    else {
                         // We want something of the form
                         // out.print( " blah=\"" + ... + "\"" );
                         out.printil("out.write( \" " +
@@ -1608,7 +2573,8 @@ class Generator {
                 if (width.isNamedAttribute()) {
                     widthStr = generateNamedAttributeValue(width
                             .getNamedAttributeNode());
-                } else {
+                }
+                else {
                     widthStr = attributeValue(width, false, String.class);
                 }
             }
@@ -1618,7 +2584,8 @@ class Generator {
                 if (height.isNamedAttribute()) {
                     heightStr = generateNamedAttributeValue(height
                             .getNamedAttributeNode());
-                } else {
+                }
+                else {
                     heightStr = attributeValue(height, false, String.class);
                 }
             }
@@ -1702,9 +2669,9 @@ class Generator {
             // <param > for type
             s0 = "<param name=\"type\""
                     + makeAttr("value", "application/x-java-"
-                            + type
-                            + ((jreversion == null) ? "" : ";version="
-                                    + jreversion)) + '>';
+                    + type
+                    + ((jreversion == null) ? "" : ";version="
+                    + jreversion)) + '>';
             out.printil("out.write(" + quote(s0) + ");");
             out.printil("out.write(\"\\n\");");
 
@@ -1722,9 +2689,9 @@ class Generator {
             out.printil("out.write(\"\\n\");");
             s0 = "<EMBED"
                     + makeAttr("type", "application/x-java-"
-                            + type
-                            + ((jreversion == null) ? "" : ";version="
-                                    + jreversion)) + makeAttr("name", name);
+                    + type
+                    + ((jreversion == null) ? "" : ";version="
+                    + jreversion)) + makeAttr("name", name);
 
             // s1 and s2 are the same as before.
 
@@ -1900,7 +2867,8 @@ class Generator {
 
             if (n.implementsSimpleTag()) {
                 generateCustomDoTag(n, handlerInfo, tagHandlerVar);
-            } else {
+            }
+            else {
                 /*
                  * Classic tag handler: Generate code for start element, body,
                  * and end element
@@ -1949,8 +2917,6 @@ class Generator {
 
         }
 
-        private static final String DOUBLE_QUOTE = "\\\"";
-
         @Override
         public void visit(Node.UninterpretedTag n) throws JasperException {
 
@@ -1986,7 +2952,8 @@ class Generator {
                         String debug = attributeValue(jspAttrs[i], false, String.class);
                         out.print(debug);
                         out.print(" + \"\\\"");
-                    } else {
+                    }
+                    else {
                         out.print(DOUBLE_QUOTE);
                         out.print(escape(jspAttrs[i].getValue().replace("\"", "&quot;")));
                         out.print(DOUBLE_QUOTE);
@@ -2006,7 +2973,8 @@ class Generator {
                 out.printin("out.write(\"</");
                 out.print(n.getQName());
                 out.println(">\");");
-            } else {
+            }
+            else {
                 out.println("/>\");");
             }
 
@@ -2020,7 +2988,7 @@ class Generator {
 
             // Compute attribute value string for XML-style and named
             // attributes
-            Hashtable<String,String> map = new Hashtable<>();
+            Hashtable<String, String> map = new Hashtable<>();
             // Validator ensures this is non-null
             Node.JspAttribute[] attrs = n.getJspAttributes();
             for (int i = 0; i < attrs.length; i++) {
@@ -2032,7 +3000,8 @@ class Generator {
                     String omit;
                     if (omitAttr == null) {
                         omit = "false";
-                    } else {
+                    }
+                    else {
                         // String literals returned by attributeValue will be
                         // quoted and escaped.
                         omit = attributeValue(omitAttr, false, boolean.class);
@@ -2045,12 +3014,14 @@ class Generator {
                     if ("\"false\"".equals(omit)) {
                         nvp = " + \" " + attrs[i].getName() + "=\\\"\" + " +
                                 value + " + \"\\\"\"";
-                    } else {
+                    }
+                    else {
                         nvp = " + (java.lang.Boolean.valueOf(" + omit + ")?\"\":\" " +
                                 attrs[i].getName() + "=\\\"\" + " + value +
                                 " + \"\\\"\")";
                     }
-                } else {
+                }
+                else {
                     value = attributeValue(attrs[i], false, Object.class);
                     nvp = " + \" " + attrs[i].getName() + "=\\\"\" + " +
                             value + " + \"\\\"\"";
@@ -2097,7 +3068,8 @@ class Generator {
                 out.printin("out.write(\"</\"");
                 out.print(" + " + elemName);
                 out.println(" + \">\");");
-            } else {
+            }
+            else {
                 out.println(" + \"/>\");");
                 n.setEndJavaLine(out.getJavaLine());
             }
@@ -2153,7 +3125,8 @@ class Generator {
                     caOut = charArrayBuffer.getOut();
                     caOut.pushIndent();
                     textMap = new HashMap<>();
-                } else {
+                }
+                else {
                     caOut = charArrayBuffer.getOut();
                 }
                 // UTF-8 is up to 4 bytes per character
@@ -2165,7 +3138,8 @@ class Generator {
                     int len = 0;
                     if (textLength - textIndex > 16384) {
                         len = 16384;
-                    } else {
+                    }
+                    else {
                         len = textLength - textIndex;
                     }
                     String output = text.substring(textIndex, textIndex + len);
@@ -2200,34 +3174,34 @@ class Generator {
                 char ch = text.charAt(i);
                 --count;
                 switch (ch) {
-                case '"':
-                    sb.append('\\').append('\"');
-                    break;
-                case '\\':
-                    sb.append('\\').append('\\');
-                    break;
-                case '\r':
-                    sb.append('\\').append('r');
-                    break;
-                case '\n':
-                    sb.append('\\').append('n');
-                    srcLine++;
+                    case '"':
+                        sb.append('\\').append('\"');
+                        break;
+                    case '\\':
+                        sb.append('\\').append('\\');
+                        break;
+                    case '\r':
+                        sb.append('\\').append('r');
+                        break;
+                    case '\n':
+                        sb.append('\\').append('n');
+                        srcLine++;
 
-                    if (breakAtLF || count < 0) {
-                        // Generate an out.write() when see a '\n' in template
-                        sb.append("\");");
-                        out.println(sb.toString());
-                        if (i < text.length() - 1) {
-                            out.printin();
+                        if (breakAtLF || count < 0) {
+                            // Generate an out.write() when see a '\n' in template
+                            sb.append("\");");
+                            out.println(sb.toString());
+                            if (i < text.length() - 1) {
+                                out.printin();
+                            }
+                            sb.setLength(initLength);
+                            count = JspUtil.CHUNKSIZE;
                         }
-                        sb.setLength(initLength);
-                        count = JspUtil.CHUNKSIZE;
-                    }
-                    // add a Smap for this line
-                    n.addSmap(srcLine);
-                    break;
-                default:
-                    sb.append(ch);
+                        // add a Smap for this line
+                        n.addSmap(srcLine);
+                        break;
+                    default:
+                        sb.append(ch);
                 }
             }
 
@@ -2247,7 +3221,8 @@ class Generator {
                     out.print(".setJspBody(");
                     generateJspFragment(n, simpleTagHandlerVar);
                     out.println(");");
-                } else {
+                }
+                else {
                     visitBody(n);
                 }
             }
@@ -2265,7 +3240,8 @@ class Generator {
             String varAttr = n.getTextAttribute("var");
             if (varReaderAttr != null || varAttr != null) {
                 out.printil("_jspx_sout = new java.io.StringWriter();");
-            } else {
+            }
+            else {
                 out.printil("_jspx_sout = null;");
             }
 
@@ -2286,7 +3262,8 @@ class Generator {
                 if (varReaderAttr != null) {
                     out.print(quote(varReaderAttr));
                     out.print(", new java.io.StringReader(_jspx_sout.toString())");
-                } else {
+                }
+                else {
                     out.print(quote(varAttr));
                     out.print(", _jspx_sout.toString()");
                 }
@@ -2314,7 +3291,8 @@ class Generator {
             String varAttr = n.getTextAttribute("var");
             if (varReaderAttr != null || varAttr != null) {
                 out.printil("_jspx_sout = new java.io.StringWriter();");
-            } else {
+            }
+            else {
                 out.printil("_jspx_sout = null;");
             }
             out.printil("if (getJspBody() != null)");
@@ -2329,7 +3307,8 @@ class Generator {
                 if (varReaderAttr != null) {
                     out.print(quote(varReaderAttr));
                     out.print(", new java.io.StringReader(_jspx_sout.toString())");
-                } else {
+                }
+                else {
                     out.print(quote(varAttr));
                     out.print(", _jspx_sout.toString()");
                 }
@@ -2363,14 +3342,14 @@ class Generator {
 
         private TagHandlerInfo getTagHandlerInfo(Node.CustomTag n)
                 throws JasperException {
-            Hashtable<String,TagHandlerInfo> handlerInfosByShortName =
-                handlerInfos.get(n.getPrefix());
+            Hashtable<String, TagHandlerInfo> handlerInfosByShortName =
+                    handlerInfos.get(n.getPrefix());
             if (handlerInfosByShortName == null) {
                 handlerInfosByShortName = new Hashtable<>();
                 handlerInfos.put(n.getPrefix(), handlerInfosByShortName);
             }
             TagHandlerInfo handlerInfo =
-                handlerInfosByShortName.get(n.getLocalName());
+                    handlerInfosByShortName.get(n.getLocalName());
             if (handlerInfo == null) {
                 handlerInfo = new TagHandlerInfo(n, n.getTagHandlerClass(), err);
                 handlerInfosByShortName.put(n.getLocalName(), handlerInfo);
@@ -2385,12 +3364,12 @@ class Generator {
         }
 
         private void generateCustomStart(Node.CustomTag n,
-                TagHandlerInfo handlerInfo, String tagHandlerVar,
-                String tagEvalVar, String tagPushBodyCountVar)
+                                         TagHandlerInfo handlerInfo, String tagHandlerVar,
+                                         String tagEvalVar, String tagPushBodyCountVar)
                 throws JasperException {
 
             Class<?> tagHandlerClass =
-                handlerInfo.getTagHandlerClass();
+                    handlerInfo.getTagHandlerClass();
 
             out.printin("//  ");
             out.println(n.getQName());
@@ -2416,7 +3395,8 @@ class Generator {
                 out.printin("boolean ");
                 out.print(tagHandlerVar);
                 out.println("_reused = false;");
-            } else {
+            }
+            else {
                 writeNewInstance(tagHandlerVar, tagHandlerClass);
             }
 
@@ -2464,7 +3444,8 @@ class Generator {
                     if (n.implementsTryCatchFinally()) {
                         out.printin(tagPushBodyCountVar);
                         out.println("[0]++;");
-                    } else if (pushBodyCountVar != null) {
+                    }
+                    else if (pushBodyCountVar != null) {
                         out.printin(pushBodyCountVar);
                         out.println("[0]++;");
                     }
@@ -2479,7 +3460,8 @@ class Generator {
                     syncScriptingVars(n, VariableInfo.AT_BEGIN);
                     syncScriptingVars(n, VariableInfo.NESTED);
 
-                } else {
+                }
+                else {
                     // Synchronize NESTED scripting variables
                     syncScriptingVars(n, VariableInfo.NESTED);
                 }
@@ -2508,7 +3490,8 @@ class Generator {
                 // Need the binary name here, not the canonical name
                 out.print(tagHandlerClass.getName());
                 out.println("\", this.getClass().getClassLoader());");
-            } else {
+            }
+            else {
                 out.print("new ");
                 out.print(tagHandlerClassName);
                 out.println("();");
@@ -2525,7 +3508,7 @@ class Generator {
         }
 
         private void generateCustomEnd(Node.CustomTag n, String tagHandlerVar,
-                String tagEvalVar, String tagPushBodyCountVar) {
+                                       String tagEvalVar, String tagPushBodyCountVar) {
 
             if (!n.hasEmptyBody()) {
                 if (n.implementsIterationTag()) {
@@ -2557,7 +3540,8 @@ class Generator {
                     if (n.implementsTryCatchFinally()) {
                         out.printin(tagPushBodyCountVar);
                         out.println("[0]--;");
-                    } else if (pushBodyCountVar != null) {
+                    }
+                    else if (pushBodyCountVar != null) {
                         out.printin(pushBodyCountVar);
                         out.println("[0]--;");
                     }
@@ -2575,7 +3559,8 @@ class Generator {
             out.pushIndent();
             if (isTagFile || isFragment) {
                 out.printil("throw new jakarta.servlet.jsp.SkipPageException();");
-            } else {
+            }
+            else {
                 out.printil((methodNesting > 0) ? "return true;" : "return;");
             }
             out.popIndent();
@@ -2631,7 +3616,8 @@ class Generator {
             if (isPoolingEnabled && !(n.implementsJspIdConsumer())) {
                 out.print(tagHandlerVar);
                 out.println("_reused);");
-            } else {
+            }
+            else {
                 out.println("false);");
             }
             out.popIndent();
@@ -2646,11 +3632,11 @@ class Generator {
         }
 
         private void generateCustomDoTag(Node.CustomTag n,
-                TagHandlerInfo handlerInfo, String tagHandlerVar)
+                                         TagHandlerInfo handlerInfo, String tagHandlerVar)
                 throws JasperException {
 
             Class<?> tagHandlerClass =
-                handlerInfo.getTagHandlerClass();
+                    handlerInfo.getTagHandlerClass();
 
             n.setBeginJavaLine(out.getJavaLine());
             out.printin("//  ");
@@ -2683,7 +3669,8 @@ class Generator {
                     generateJspFragment(n, tagHandlerVar);
                     out.println(");");
                 }
-            } else {
+            }
+            else {
                 /*
                  * Body of tag is the body of the <jsp:body> element. The visit
                  * method for that element is going to encapsulate that
@@ -2741,13 +3728,15 @@ class Generator {
                         out.print(" ");
                         out.print(varInfo.getVarName());
                         out.println(" = null;");
-                    } else {
+                    }
+                    else {
                         TagVariableInfo tagVarInfo = (TagVariableInfo) elem;
                         String varName = tagVarInfo.getNameGiven();
                         if (varName == null) {
                             varName = n.getTagData().getAttributeString(
                                     tagVarInfo.getNameFromAttribute());
-                        } else if (tagVarInfo.getNameFromAttribute() != null) {
+                        }
+                        else if (tagVarInfo.getNameFromAttribute() != null) {
                             // alias
                             continue;
                         }
@@ -2808,7 +3797,8 @@ class Generator {
                     out.print(varName);
                     out.println(";");
                 }
-            } else {
+            }
+            else {
                 for (TagVariableInfo tagVarInfo : tagVarInfos) {
                     if (tagVarInfo.getScope() != scope) {
                         continue;
@@ -2884,7 +3874,8 @@ class Generator {
                     out.print(tmpVarName);
                     out.println(";");
                 }
-            } else {
+            }
+            else {
                 for (TagVariableInfo tagVarInfo : tagVarInfos) {
                     if (tagVarInfo.getScope() != scope) {
                         continue;
@@ -2946,14 +3937,16 @@ class Generator {
                         out.println(");");
                     }
                 }
-            } else {
+            }
+            else {
                 for (TagVariableInfo tagVarInfo : tagVarInfos) {
                     if (tagVarInfo.getScope() == scope) {
                         String name = tagVarInfo.getNameGiven();
                         if (name == null) {
                             name = n.getTagData().getAttributeString(
                                     tagVarInfo.getNameFromAttribute());
-                        } else if (tagVarInfo.getNameFromAttribute() != null) {
+                        }
+                        else if (tagVarInfo.getNameFromAttribute() != null) {
                             // alias
                             continue;
                         }
@@ -2981,7 +3974,7 @@ class Generator {
          * Identifier.
          */
         private String createTagVarName(String fullName, String prefix,
-                String shortName) {
+                                        String shortName) {
 
             String varName;
             synchronized (tagVarNumbers) {
@@ -2991,7 +3984,8 @@ class Generator {
                     varName = varName + i.intValue();
                     tagVarNumbers.put(fullName,
                             Integer.valueOf(i.intValue() + 1));
-                } else {
+                }
+                else {
                     tagVarNumbers.put(fullName, Integer.valueOf(1));
                     varName = varName + "0";
                 }
@@ -3001,7 +3995,7 @@ class Generator {
 
         @SuppressWarnings("null")
         private String evaluateAttribute(TagHandlerInfo handlerInfo,
-                Node.JspAttribute attr, Node.CustomTag n, String tagHandlerVar)
+                                         Node.JspAttribute attr, Node.CustomTag n, String tagHandlerVar)
                 throws JasperException {
 
             String attrValue = attr.getValue();
@@ -3011,7 +4005,8 @@ class Generator {
                     // XXX - no need to generate temporary variable here
                     attrValue = generateNamedAttributeJspFragment(attr
                             .getNamedAttributeNode(), tagHandlerVar);
-                } else {
+                }
+                else {
                     attrValue = generateNamedAttributeValue(attr
                             .getNamedAttributeNode());
                 }
@@ -3023,7 +4018,8 @@ class Generator {
             Class<?>[] c = null;
             if (attr.isDynamic()) {
                 c = OBJECT_CLASS;
-            } else {
+            }
+            else {
                 m = handlerInfo.getSetterMethod(localName);
                 if (m == null) {
                     err.jspError(n, "jsp.error.unable.to_find_method", attr
@@ -3035,13 +4031,15 @@ class Generator {
 
             if (attr.isExpression()) {
                 // Do nothing
-            } else if (attr.isNamedAttribute()) {
+            }
+            else if (attr.isNamedAttribute()) {
                 if (!n.checkIfAttributeIsJspFragment(attr.getName())
                         && !attr.isDynamic()) {
                     attrValue = stringInterpreter.convertString(c[0], attrValue, localName,
                             handlerInfo.getPropertyEditorClass(localName), true);
                 }
-            } else if (attr.isELInterpreterInput()) {
+            }
+            else if (attr.isELInterpreterInput()) {
 
                 // results buffer
                 StringBuilder sb = new StringBuilder(64);
@@ -3091,10 +4089,8 @@ class Generator {
                     sb.append("))");
                     // should the expression be evaluated before passing to
                     // the setter?
-                    boolean evaluate = false;
-                    if (tai.canBeRequestTime()) {
-                        evaluate = true; // JSP.2.3.2
-                    }
+                    boolean evaluate = tai.canBeRequestTime();
+                    // JSP.2.3.2
                     if (attr.isDeferredInput()) {
                         evaluate = false; // JSP.2.3.3
                     }
@@ -3108,7 +4104,8 @@ class Generator {
                         sb.append(')');
                     }
                     attrValue = sb.toString();
-                } else if (attr.isDeferredMethodInput()
+                }
+                else if (attr.isDeferredMethodInput()
                         || ((tai != null) && MethodExpression.class.getName().equals(tai.getTypeName()))) {
                     sb.append("new org.apache.jasper.el.JspMethodExpression(");
                     sb.append(quote(mark));
@@ -3132,14 +4129,16 @@ class Generator {
 
                     sb.append("}))");
                     attrValue = sb.toString();
-                } else {
+                }
+                else {
                     // Must be EL
                     // run attrValue through the expression interpreter
                     String mapName = attr.getEL().getMapName();
                     attrValue = elInterpreter.interpreterCall(ctxt,
                             this.isTagFile, attrValue, c[0], mapName);
                 }
-            } else {
+            }
+            else {
                 attrValue = stringInterpreter.convertString(c[0], attrValue, localName,
                         handlerInfo.getPropertyEditorClass(localName), false);
             }
@@ -3152,7 +4151,7 @@ class Generator {
          * @return the name of the map
          */
         private String generateAliasMap(Node.CustomTag n,
-                String tagHandlerVar) {
+                                        String tagHandlerVar) {
 
             TagVariableInfo[] tagVars = n.getTagVariableInfos();
             String aliasMapVar = null;
@@ -3182,7 +4181,7 @@ class Generator {
         }
 
         private void generateSetters(Node.CustomTag n, String tagHandlerVar,
-                TagHandlerInfo handlerInfo, boolean simpleTag)
+                                     TagHandlerInfo handlerInfo, boolean simpleTag)
                 throws JasperException {
 
             // Set context
@@ -3195,12 +4194,14 @@ class Generator {
                 out.printin(tagHandlerVar);
                 if (aliasMapVar == null) {
                     out.println(".setJspContext(_jspx_page_context);");
-                } else {
+                }
+                else {
                     out.print(".setJspContext(_jspx_page_context, ");
                     out.print(aliasMapVar);
                     out.println(");");
                 }
-            } else {
+            }
+            else {
                 out.printin(tagHandlerVar);
                 out.println(".setPageContext(_jspx_page_context);");
             }
@@ -3211,7 +4212,8 @@ class Generator {
                 out.print(".setParent(");
                 out.print("new jakarta.servlet.jsp.tagext.TagAdapter(");
                 out.println("(jakarta.servlet.jsp.tagext.SimpleTag) this ));");
-            } else if (!simpleTag) {
+            }
+            else if (!simpleTag) {
                 out.printin(tagHandlerVar);
                 out.print(".setParent(");
                 if (parent != null) {
@@ -3220,15 +4222,18 @@ class Generator {
                         out.print("(jakarta.servlet.jsp.tagext.SimpleTag) ");
                         out.print(parent);
                         out.println("));");
-                    } else {
+                    }
+                    else {
                         out.print("(jakarta.servlet.jsp.tagext.Tag) ");
                         out.print(parent);
                         out.println(");");
                     }
-                } else {
+                }
+                else {
                     out.println("null);");
                 }
-            } else {
+            }
+            else {
                 // The setParent() method need not be called if the value being
                 // passed is null, since SimpleTag instances are not reused
                 if (parent != null) {
@@ -3246,7 +4251,7 @@ class Generator {
                         tagHandlerVar);
 
                 Mark m = n.getStart();
-                out.printil("// "+m.getFile()+"("+m.getLineNumber()+","+m.getColumnNumber()+") "+ attrs[i].getTagAttributeInfo());
+                out.printil("// " + m.getFile() + "(" + m.getLineNumber() + "," + m.getColumnNumber() + ") " + attrs[i].getTagAttributeInfo());
                 if (attrs[i].isDynamic()) {
                     out.printin(tagHandlerVar);
                     out.print(".");
@@ -3254,7 +4259,8 @@ class Generator {
                     String uri = attrs[i].getURI();
                     if ("".equals(uri) || (uri == null)) {
                         out.print("null");
-                    } else {
+                    }
+                    else {
                         out.print("\"" + attrs[i].getURI() + "\"");
                     }
                     out.print(", \"");
@@ -3262,7 +4268,8 @@ class Generator {
                     out.print("\", ");
                     out.print(attrValue);
                     out.println(");");
-                } else {
+                }
+                else {
                     out.printin(tagHandlerVar);
                     out.print(".");
                     out.print(handlerInfo.getSetterMethod(
@@ -3292,9 +4299,11 @@ class Generator {
 
             if ("request".equals(scope)) {
                 scopeName = "jakarta.servlet.jsp.PageContext.REQUEST_SCOPE";
-            } else if ("session".equals(scope)) {
+            }
+            else if ("session".equals(scope)) {
                 scopeName = "jakarta.servlet.jsp.PageContext.SESSION_SCOPE";
-            } else if ("application".equals(scope)) {
+            }
+            else if ("application".equals(scope)) {
                 scopeName = "jakarta.servlet.jsp.PageContext.APPLICATION_SCOPE";
             }
 
@@ -3347,9 +4356,7 @@ class Generator {
          * named attribute.
          *
          * @param n The named attribute node whose value is required
-         *
          * @return The name of the temporary variable the result is stored in.
-         *
          * @throws JasperException If an error
          */
         public String generateNamedAttributeValue(Node.NamedAttribute n)
@@ -3387,7 +4394,8 @@ class Generator {
                             + "out).getString();");
                     out.printil("out = _jspx_page_context.popBody();");
                 }
-            } else {
+            }
+            else {
                 // Empty body must be treated as ""
                 out.printil("java.lang.String " + varName + " = \"\";");
             }
@@ -3399,18 +4407,15 @@ class Generator {
          * Similar to generateNamedAttributeValue, but create a JspFragment
          * instead.
          *
-         * @param n
-         *            The parent node of the named attribute
-         * @param tagHandlerVar
-         *            The variable the tag handler is stored in, so the fragment
-         *            knows its parent tag.
+         * @param n             The parent node of the named attribute
+         * @param tagHandlerVar The variable the tag handler is stored in, so the fragment
+         *                      knows its parent tag.
          * @return The name of the temporary variable the fragment is stored in.
-         *
          * @throws JasperException If an error occurs trying to generate the
-         *         fragment
+         *                         fragment
          */
         public String generateNamedAttributeJspFragment(Node.NamedAttribute n,
-                String tagHandlerVar) throws JasperException {
+                                                        String tagHandlerVar) throws JasperException {
             String varName = n.getTemporaryVariableName();
 
             out.printin("jakarta.servlet.jsp.tagext.JspFragment " + varName
@@ -3419,977 +4424,6 @@ class Generator {
             out.println(";");
 
             return varName;
-        }
-    }
-
-    private static void generateLocalVariables(ServletWriter out, ChildInfoBase n) {
-        Node.ChildInfo ci = n.getChildInfo();
-
-        if (ci.hasUseBean()) {
-            out.printil("jakarta.servlet.http.HttpSession session = _jspx_page_context.getSession();");
-            out.printil("jakarta.servlet.ServletContext application = _jspx_page_context.getServletContext();");
-        }
-        if (ci.hasUseBean() || ci.hasIncludeAction() || ci.hasSetProperty()
-                || ci.hasParamAction()) {
-            out.printil("jakarta.servlet.http.HttpServletRequest request = (jakarta.servlet.http.HttpServletRequest)_jspx_page_context.getRequest();");
-        }
-        if (ci.hasIncludeAction()) {
-            out.printil("jakarta.servlet.http.HttpServletResponse response = (jakarta.servlet.http.HttpServletResponse)_jspx_page_context.getResponse();");
-        }
-    }
-
-    /**
-     * Common part of postamble, shared by both servlets and tag files.
-     */
-    private void genCommonPostamble() {
-        // Append any methods that were generated in the buffer.
-        for (GenBuffer methodBuffer : methodsBuffered) {
-            methodBuffer.adjustJavaLines(out.getJavaLine() - 1);
-            out.printMultiLn(methodBuffer.toString());
-        }
-
-        // Append the helper class
-        if (fragmentHelperClass.isUsed()) {
-            fragmentHelperClass.generatePostamble();
-            fragmentHelperClass.adjustJavaLines(out.getJavaLine() - 1);
-            out.printMultiLn(fragmentHelperClass.toString());
-        }
-
-        // Append char array declarations
-        if (charArrayBuffer != null) {
-            out.printMultiLn(charArrayBuffer.toString());
-        }
-
-        // Close the class definition
-        out.popIndent();
-        out.printil("}");
-    }
-
-    /**
-     * Generates the ending part of the static portion of the servlet.
-     */
-    private void generatePostamble() {
-        out.popIndent();
-        out.printil("} catch (java.lang.Throwable t) {");
-        out.pushIndent();
-        out.printil("if (!(t instanceof jakarta.servlet.jsp.SkipPageException)){");
-        out.pushIndent();
-        out.printil("out = _jspx_out;");
-        out.printil("if (out != null && out.getBufferSize() != 0)");
-        out.pushIndent();
-        out.printil("try {");
-        out.pushIndent();
-        out.printil("if (response.isCommitted()) {");
-        out.pushIndent();
-        out.printil("out.flush();");
-        out.popIndent();
-        out.printil("} else {");
-        out.pushIndent();
-        out.printil("out.clearBuffer();");
-        out.popIndent();
-        out.printil("}");
-        out.popIndent();
-        out.printil("} catch (java.io.IOException e) {}");
-        out.popIndent();
-        out.printil("if (_jspx_page_context != null) _jspx_page_context.handlePageException(t);");
-        out.printil("else throw new ServletException(t);");
-        out.popIndent();
-        out.printil("}");
-        out.popIndent();
-        out.printil("} finally {");
-        out.pushIndent();
-        out.printil("_jspxFactory.releasePageContext(_jspx_page_context);");
-        out.popIndent();
-        out.printil("}");
-
-        // Close the service method
-        out.popIndent();
-        out.printil("}");
-
-        // Generated methods, helper classes, etc.
-        genCommonPostamble();
-    }
-
-    /**
-     * Constructor.
-     */
-    Generator(ServletWriter out, Compiler compiler) throws JasperException {
-        this.out = out;
-        methodsBuffered = new ArrayList<>();
-        charArrayBuffer = null;
-        err = compiler.getErrorDispatcher();
-        ctxt = compiler.getCompilationContext();
-        fragmentHelperClass = new FragmentHelperClass("Helper");
-        pageInfo = compiler.getPageInfo();
-
-        ELInterpreter elInterpreter = null;
-        try {
-            elInterpreter = ELInterpreterFactory.getELInterpreter(
-                    compiler.getCompilationContext().getServletContext());
-        } catch (Exception e) {
-            err.jspError("jsp.error.el_interpreter_class.instantiation",
-                    e.getMessage());
-        }
-        this.elInterpreter = elInterpreter;
-
-        StringInterpreter stringInterpreter = null;
-        try {
-            stringInterpreter = StringInterpreterFactory.getStringInterpreter(
-                    compiler.getCompilationContext().getServletContext());
-        } catch (Exception e) {
-            err.jspError("jsp.error.string_interpreter_class.instantiation",
-                    e.getMessage());
-        }
-        this.stringInterpreter = stringInterpreter;
-
-        /*
-         * Temporary hack. If a JSP page uses the "extends" attribute of the
-         * page directive, the _jspInit() method of the generated servlet class
-         * will not be called (it is only called for those generated servlets
-         * that extend HttpJspBase, the default), causing the tag handler pools
-         * not to be initialized and resulting in a NPE. The JSP spec needs to
-         * clarify whether containers can override init() and destroy(). For
-         * now, we just disable tag pooling for pages that use "extends".
-         */
-        if (pageInfo.getExtends(false) == null || ctxt.getOptions().getPoolTagsWithExtends()) {
-            isPoolingEnabled = ctxt.getOptions().isPoolingEnabled();
-        } else {
-            isPoolingEnabled = false;
-        }
-        beanInfo = pageInfo.getBeanRepository();
-        varInfoNames = pageInfo.getVarInfoNames();
-        breakAtLF = ctxt.getOptions().getMappedFile();
-        if (isPoolingEnabled) {
-            tagHandlerPoolNames = new Vector<>();
-        } else {
-            tagHandlerPoolNames = null;
-        }
-        timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        timestampFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
-
-    /**
-     * The main entry for Generator.
-     *
-     * @param out
-     *            The servlet output writer
-     * @param compiler
-     *            The compiler
-     * @param page
-     *            The input page
-     *
-     * @throws JasperException If something goes wrong during generation
-     */
-    public static void generate(ServletWriter out, Compiler compiler,
-            Node.Nodes page) throws JasperException {
-
-        Generator gen = new Generator(out, compiler);
-
-        if (gen.isPoolingEnabled) {
-            gen.compileTagHandlerPoolList(page);
-        }
-        gen.generateCommentHeader();
-        if (gen.ctxt.isTagFile()) {
-            JasperTagInfo tagInfo = (JasperTagInfo) gen.ctxt.getTagInfo();
-            gen.generateTagHandlerPreamble(tagInfo, page);
-
-            if (gen.ctxt.isPrototypeMode()) {
-                return;
-            }
-
-            gen.generateXmlProlog(page);
-            gen.fragmentHelperClass.generatePreamble();
-            page.visit(gen.new GenerateVisitor(gen.ctxt.isTagFile(), out,
-                    gen.methodsBuffered, gen.fragmentHelperClass,
-                    gen.ctxt.getOptions().getUseInstanceManagerForTags()));
-            gen.generateTagHandlerPostamble(tagInfo);
-        } else {
-            gen.generatePreamble(page);
-            gen.generateXmlProlog(page);
-            gen.fragmentHelperClass.generatePreamble();
-            page.visit(gen.new GenerateVisitor(gen.ctxt.isTagFile(), out,
-                    gen.methodsBuffered, gen.fragmentHelperClass,
-                    gen.ctxt.getOptions().getUseInstanceManagerForTags()));
-            gen.generatePostamble();
-        }
-    }
-
-    private void generateCommentHeader() {
-        out.println("/*");
-        out.println(" * Generated by the Jasper component of Apache Tomcat");
-        out.println(" * Version: " + ctxt.getServletContext().getServerInfo());
-        if (ctxt.getOptions().getGeneratedJavaAddTimestamp()) {
-            out.println(" * Generated at: " + timestampFormat.format(new Date()) +
-                    " UTC");
-        }
-        out.println(" * Note: The last modified time of this file was set to");
-        out.println(" *       the last modified time of the source file after");
-        out.println(" *       generation to assist with modification tracking.");
-        out.println(" */");
-    }
-
-    /*
-     * Generates tag handler preamble.
-     */
-    private void generateTagHandlerPreamble(JasperTagInfo tagInfo,
-            Node.Nodes tag) throws JasperException {
-
-        // Generate package declaration
-        String className = tagInfo.getTagClassName();
-        int lastIndex = className.lastIndexOf('.');
-        String packageName = className.substring(0, lastIndex);
-        genPreamblePackage(packageName);
-        className = className.substring(lastIndex + 1);
-
-        // Generate imports
-        genPreambleImports();
-
-        // Generate class declaration
-        out.printin("public final class ");
-        out.println(className);
-        out.printil("    extends jakarta.servlet.jsp.tagext.SimpleTagSupport");
-        out.printin("    implements org.apache.jasper.runtime.JspSourceDependent,");
-        out.println();
-        out.printin("                 org.apache.jasper.runtime.JspSourceImports");
-        if (tagInfo.hasDynamicAttributes()) {
-            out.println(",");
-            out.printin("               jakarta.servlet.jsp.tagext.DynamicAttributes");
-        }
-        out.println(" {");
-        out.pushIndent();
-
-        /*
-         * Class body begins here
-         */
-        generateDeclarations(tag);
-
-        // Static initializations here
-        genPreambleStaticInitializers();
-
-        out.printil("private jakarta.servlet.jsp.JspContext jspContext;");
-
-        // Declare writer used for storing result of fragment/body invocation
-        // if 'varReader' or 'var' attribute is specified
-        out.printil("private java.io.Writer _jspx_sout;");
-
-        // Class variable declarations
-        genPreambleClassVariableDeclarations();
-
-        generateSetJspContext(tagInfo);
-
-        // Tag-handler specific declarations
-        generateTagHandlerAttributes(tagInfo);
-        if (tagInfo.hasDynamicAttributes()) {
-            generateSetDynamicAttribute();
-        }
-
-        // Methods here
-        genPreambleMethods();
-
-        // Now the doTag() method
-        out.printil("public void doTag() throws jakarta.servlet.jsp.JspException, java.io.IOException {");
-
-        if (ctxt.isPrototypeMode()) {
-            out.printil("}");
-            out.popIndent();
-            out.printil("}");
-            return;
-        }
-
-        out.pushIndent();
-
-        /*
-         * According to the spec, 'pageContext' must not be made available as an
-         * implicit object in tag files. Declare _jspx_page_context, so we can
-         * share the code generator with JSPs.
-         */
-        out.printil("jakarta.servlet.jsp.PageContext _jspx_page_context = (jakarta.servlet.jsp.PageContext)jspContext;");
-
-        // Declare implicit objects.
-        out.printil("jakarta.servlet.http.HttpServletRequest request = "
-                + "(jakarta.servlet.http.HttpServletRequest) _jspx_page_context.getRequest();");
-        out.printil("jakarta.servlet.http.HttpServletResponse response = "
-                + "(jakarta.servlet.http.HttpServletResponse) _jspx_page_context.getResponse();");
-        out.printil("jakarta.servlet.http.HttpSession session = _jspx_page_context.getSession();");
-        out.printil("jakarta.servlet.ServletContext application = _jspx_page_context.getServletContext();");
-        out.printil("jakarta.servlet.ServletConfig config = _jspx_page_context.getServletConfig();");
-        out.printil("jakarta.servlet.jsp.JspWriter out = jspContext.getOut();");
-        out.printil("_jspInit(config);");
-
-        // set current JspContext on ELContext
-        out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,jspContext);");
-
-        generatePageScopedVariables(tagInfo);
-
-        declareTemporaryScriptingVars(tag);
-        out.println();
-
-        out.printil("try {");
-        out.pushIndent();
-    }
-
-    private void generateTagHandlerPostamble(TagInfo tagInfo) {
-        out.popIndent();
-
-        // Have to catch Throwable because a classic tag handler
-        // helper method is declared to throw Throwable.
-        out.printil("} catch( java.lang.Throwable t ) {");
-        out.pushIndent();
-        out.printil("if( t instanceof jakarta.servlet.jsp.SkipPageException )");
-        out.printil("    throw (jakarta.servlet.jsp.SkipPageException) t;");
-        out.printil("if( t instanceof java.io.IOException )");
-        out.printil("    throw (java.io.IOException) t;");
-        out.printil("if( t instanceof java.lang.IllegalStateException )");
-        out.printil("    throw (java.lang.IllegalStateException) t;");
-        out.printil("if( t instanceof jakarta.servlet.jsp.JspException )");
-        out.printil("    throw (jakarta.servlet.jsp.JspException) t;");
-        out.printil("throw new jakarta.servlet.jsp.JspException(t);");
-        out.popIndent();
-        out.printil("} finally {");
-        out.pushIndent();
-
-        // handle restoring VariableMapper
-        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
-        for (int i = 0; i < attrInfos.length; i++) {
-            if (attrInfos[i].isDeferredMethod() || attrInfos[i].isDeferredValue()) {
-                out.printin("_el_variablemapper.setVariable(");
-                out.print(quote(attrInfos[i].getName()));
-                out.print(",_el_ve");
-                out.print(i);
-                out.println(");");
-            }
-        }
-
-        // restore nested JspContext on ELContext
-        out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,super.getJspContext());");
-
-        out.printil("((org.apache.jasper.runtime.JspContextWrapper) jspContext).syncEndTagFile();");
-        if (isPoolingEnabled && !tagHandlerPoolNames.isEmpty()) {
-            out.printil("_jspDestroy();");
-        }
-        out.popIndent();
-        out.printil("}");
-
-        // Close the doTag method
-        out.popIndent();
-        out.printil("}");
-
-        // Generated methods, helper classes, etc.
-        genCommonPostamble();
-    }
-
-    /**
-     * Generates declarations for tag handler attributes, and defines the getter
-     * and setter methods for each.
-     */
-    private void generateTagHandlerAttributes(TagInfo tagInfo) {
-
-        if (tagInfo.hasDynamicAttributes()) {
-            out.printil("private java.util.HashMap _jspx_dynamic_attrs = new java.util.HashMap();");
-        }
-
-        // Declare attributes
-        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
-        for (TagAttributeInfo info : attrInfos) {
-            out.printin("private ");
-            if (info.isFragment()) {
-                out.print("jakarta.servlet.jsp.tagext.JspFragment ");
-            } else {
-                out.print(JspUtil.toJavaSourceType(info.getTypeName()));
-                out.print(" ");
-            }
-            out.print(JspUtil.makeJavaIdentifierForAttribute(
-                    info.getName()));
-            out.println(";");
-        }
-        out.println();
-
-        // Define attribute getter and setter methods
-        for (TagAttributeInfo attrInfo : attrInfos) {
-            String javaName =
-                    JspUtil.makeJavaIdentifierForAttribute(attrInfo.getName());
-
-            // getter method
-            out.printin("public ");
-            if (attrInfo.isFragment()) {
-                out.print("jakarta.servlet.jsp.tagext.JspFragment ");
-            } else {
-                out.print(JspUtil.toJavaSourceType(attrInfo.getTypeName()));
-                out.print(" ");
-            }
-            out.print(toGetterMethod(attrInfo.getName()));
-            out.println(" {");
-            out.pushIndent();
-            out.printin("return this.");
-            out.print(javaName);
-            out.println(";");
-            out.popIndent();
-            out.printil("}");
-            out.println();
-
-            // setter method
-            out.printin("public void ");
-            out.print(toSetterMethodName(attrInfo.getName()));
-            if (attrInfo.isFragment()) {
-                out.print("(jakarta.servlet.jsp.tagext.JspFragment ");
-            } else {
-                out.print("(");
-                out.print(JspUtil.toJavaSourceType(attrInfo.getTypeName()));
-                out.print(" ");
-            }
-            out.print(javaName);
-            out.println(") {");
-            out.pushIndent();
-            out.printin("this.");
-            out.print(javaName);
-            out.print(" = ");
-            out.print(javaName);
-            out.println(";");
-            // Tag files should also set jspContext attributes
-            // Only called for tag files so always set the jspContext
-            out.printin("jspContext.setAttribute(\"");
-            out.print(attrInfo.getName());
-            out.print("\", ");
-            out.print(javaName);
-            out.println(");");
-            out.popIndent();
-            out.printil("}");
-            out.println();
-        }
-    }
-
-    /*
-     * Generate setter for JspContext so we can create a wrapper and store both
-     * the original and the wrapper. We need the wrapper to mask the page
-     * context from the tag file and simulate a fresh page context. We need the
-     * original to do things like sync AT_BEGIN and AT_END scripting variables.
-     */
-    private void generateSetJspContext(TagInfo tagInfo) {
-
-        boolean nestedSeen = false;
-        boolean atBeginSeen = false;
-        boolean atEndSeen = false;
-
-        // Determine if there are any aliases
-        boolean aliasSeen = false;
-        TagVariableInfo[] tagVars = tagInfo.getTagVariableInfos();
-        for (TagVariableInfo var : tagVars) {
-            // If a tag file uses a named attribute, the TagFileDirectiveVisitor
-            // will ensure that an alias is configured.
-            if (var.getNameFromAttribute() != null) {
-                aliasSeen = true;
-                break;
-            }
-        }
-
-        if (aliasSeen) {
-            out.printil("public void setJspContext(jakarta.servlet.jsp.JspContext ctx, java.util.Map aliasMap) {");
-        } else {
-            out.printil("public void setJspContext(jakarta.servlet.jsp.JspContext ctx) {");
-        }
-        out.pushIndent();
-        out.printil("super.setJspContext(ctx);");
-        out.printil("java.util.ArrayList _jspx_nested = null;");
-        out.printil("java.util.ArrayList _jspx_at_begin = null;");
-        out.printil("java.util.ArrayList _jspx_at_end = null;");
-
-        for (TagVariableInfo tagVar : tagVars) {
-
-            switch (tagVar.getScope()) {
-                case VariableInfo.NESTED:
-                    if (!nestedSeen) {
-                        out.printil("_jspx_nested = new java.util.ArrayList();");
-                        nestedSeen = true;
-                    }
-                    out.printin("_jspx_nested.add(");
-                    break;
-
-                case VariableInfo.AT_BEGIN:
-                    if (!atBeginSeen) {
-                        out.printil("_jspx_at_begin = new java.util.ArrayList();");
-                        atBeginSeen = true;
-                    }
-                    out.printin("_jspx_at_begin.add(");
-                    break;
-
-                case VariableInfo.AT_END:
-                    if (!atEndSeen) {
-                        out.printil("_jspx_at_end = new java.util.ArrayList();");
-                        atEndSeen = true;
-                    }
-                    out.printin("_jspx_at_end.add(");
-                    break;
-            } // switch
-
-            out.print(quote(tagVar.getNameGiven()));
-            out.println(");");
-        }
-        if (aliasSeen) {
-            out.printil("this.jspContext = new org.apache.jasper.runtime.JspContextWrapper(this, ctx, _jspx_nested, _jspx_at_begin, _jspx_at_end, aliasMap);");
-        } else {
-            out.printil("this.jspContext = new org.apache.jasper.runtime.JspContextWrapper(this, ctx, _jspx_nested, _jspx_at_begin, _jspx_at_end, null);");
-        }
-        out.popIndent();
-        out.printil("}");
-        out.println();
-        out.printil("public jakarta.servlet.jsp.JspContext getJspContext() {");
-        out.pushIndent();
-        out.printil("return this.jspContext;");
-        out.popIndent();
-        out.printil("}");
-    }
-
-    /*
-     * Generates implementation of
-     * jakarta.servlet.jsp.tagext.DynamicAttributes.setDynamicAttribute() method,
-     * which saves each dynamic attribute that is passed in so that a scoped
-     * variable can later be created for it.
-     */
-    public void generateSetDynamicAttribute() {
-        out.printil("public void setDynamicAttribute(java.lang.String uri, java.lang.String localName, java.lang.Object value) throws jakarta.servlet.jsp.JspException {");
-        out.pushIndent();
-        /*
-         * According to the spec, only dynamic attributes with no uri are to be
-         * present in the Map; all other dynamic attributes are ignored.
-         */
-        out.printil("if (uri == null)");
-        out.pushIndent();
-        out.printil("_jspx_dynamic_attrs.put(localName, value);");
-        out.popIndent();
-        out.popIndent();
-        out.printil("}");
-    }
-
-    /*
-     * Creates a page-scoped variable for each declared tag attribute. Also, if
-     * the tag accepts dynamic attributes, a page-scoped variable is made
-     * available for each dynamic attribute that was passed in.
-     */
-    private void generatePageScopedVariables(JasperTagInfo tagInfo) {
-
-        // "normal" attributes
-        TagAttributeInfo[] attrInfos = tagInfo.getAttributes();
-        boolean variableMapperVar = false;
-        for (int i = 0; i < attrInfos.length; i++) {
-            String attrName = attrInfos[i].getName();
-
-            // handle assigning deferred vars to VariableMapper, storing
-            // previous values under '_el_ve[i]' for later re-assignment
-            if (attrInfos[i].isDeferredValue() || attrInfos[i].isDeferredMethod()) {
-
-                // we need to scope the modified VariableMapper for consistency and performance
-                if (!variableMapperVar) {
-                    out.printil("jakarta.el.VariableMapper _el_variablemapper = jspContext.getELContext().getVariableMapper();");
-                    variableMapperVar = true;
-                }
-
-                out.printin("jakarta.el.ValueExpression _el_ve");
-                out.print(i);
-                out.print(" = _el_variablemapper.setVariable(");
-                out.print(quote(attrName));
-                out.print(',');
-                if (attrInfos[i].isDeferredMethod()) {
-                    out.print("_jsp_getExpressionFactory().createValueExpression(");
-                    out.print(toGetterMethod(attrName));
-                    out.print(",jakarta.el.MethodExpression.class)");
-                } else {
-                    out.print(toGetterMethod(attrName));
-                }
-                out.println(");");
-            } else {
-                out.printil("if( " + toGetterMethod(attrName) + " != null ) ");
-                out.pushIndent();
-                out.printin("_jspx_page_context.setAttribute(");
-                out.print(quote(attrName));
-                out.print(", ");
-                out.print(toGetterMethod(attrName));
-                out.println(");");
-                out.popIndent();
-            }
-        }
-
-        // Expose the Map containing dynamic attributes as a page-scoped var
-        if (tagInfo.hasDynamicAttributes()) {
-            out.printin("_jspx_page_context.setAttribute(\"");
-            out.print(tagInfo.getDynamicAttributesMapName());
-            out.print("\", _jspx_dynamic_attrs);");
-        }
-    }
-
-    /*
-     * Generates the getter method for the given attribute name.
-     */
-    private String toGetterMethod(String attrName) {
-        char[] attrChars = attrName.toCharArray();
-        attrChars[0] = Character.toUpperCase(attrChars[0]);
-        return "get" + new String(attrChars) + "()";
-    }
-
-    /*
-     * Generates the setter method name for the given attribute name.
-     */
-    private String toSetterMethodName(String attrName) {
-        char[] attrChars = attrName.toCharArray();
-        attrChars[0] = Character.toUpperCase(attrChars[0]);
-        return "set" + new String(attrChars);
-    }
-
-    /**
-     * Class storing the result of introspecting a custom tag handler.
-     */
-    private static class TagHandlerInfo {
-
-        private Hashtable<String, Method> methodMaps;
-
-        private Hashtable<String, Class<?>> propertyEditorMaps;
-
-        private Class<?> tagHandlerClass;
-
-        /**
-         * Constructor.
-         *
-         * @param n
-         *            The custom tag whose tag handler class is to be
-         *            introspected
-         * @param tagHandlerClass
-         *            Tag handler class
-         * @param err
-         *            Error dispatcher
-         */
-        TagHandlerInfo(Node n, Class<?> tagHandlerClass,
-                ErrorDispatcher err) throws JasperException {
-            this.tagHandlerClass = tagHandlerClass;
-            this.methodMaps = new Hashtable<>();
-            this.propertyEditorMaps = new Hashtable<>();
-
-            try {
-                BeanInfo tagClassInfo = Introspector.getBeanInfo(tagHandlerClass);
-                PropertyDescriptor[] pd = tagClassInfo.getPropertyDescriptors();
-                for (PropertyDescriptor propertyDescriptor : pd) {
-                    /*
-                     * FIXME: should probably be checking for things like
-                     * pageContext, bodyContent, and parent here -akv
-                     */
-                    if (propertyDescriptor.getWriteMethod() != null) {
-                        methodMaps.put(propertyDescriptor.getName(), propertyDescriptor.getWriteMethod());
-                    }
-                    if (propertyDescriptor.getPropertyEditorClass() != null) {
-                        propertyEditorMaps.put(propertyDescriptor.getName(), propertyDescriptor
-                                .getPropertyEditorClass());
-                    }
-                }
-            } catch (IntrospectionException ie) {
-                // Likely unreachable code
-                // When last checked (May 2021), current versions of Java only
-                // throw IntrospectionException for the 2-arg version of
-                // getBeanInfo if the stop class is not a super class of the
-                // bean class. That does not apply here.
-                err.jspError(n, ie, "jsp.error.introspect.taghandler", tagHandlerClass.getName());
-            }
-        }
-
-        public Method getSetterMethod(String attrName) {
-            return methodMaps.get(attrName);
-        }
-
-        public Class<?> getPropertyEditorClass(String attrName) {
-            return propertyEditorMaps.get(attrName);
-        }
-
-        public Class<?> getTagHandlerClass() {
-            return tagHandlerClass;
-        }
-    }
-
-    /**
-     * A class for generating codes to a buffer. Included here are some support
-     * for tracking source to Java lines mapping.
-     */
-    private static class GenBuffer {
-
-        /*
-         * For a CustomTag, the codes that are generated at the beginning of the
-         * tag may not be in the same buffer as those for the body of the tag.
-         * Two fields are used here to keep this straight. For codes that do not
-         * corresponds to any JSP lines, they should be null.
-         */
-        private Node node;
-
-        private Node.Nodes body;
-
-        private java.io.CharArrayWriter charWriter;
-
-        protected ServletWriter out;
-
-        GenBuffer() {
-            this(null, null);
-        }
-
-        GenBuffer(Node n, Node.Nodes b) {
-            node = n;
-            body = b;
-            if (body != null) {
-                body.setGeneratedInBuffer(true);
-            }
-            charWriter = new java.io.CharArrayWriter();
-            out = new ServletWriter(new java.io.PrintWriter(charWriter));
-        }
-
-        public ServletWriter getOut() {
-            return out;
-        }
-
-        @Override
-        public String toString() {
-            return charWriter.toString();
-        }
-
-        /**
-         * Adjust the Java Lines. This is necessary because the Java lines
-         * stored with the nodes are relative the beginning of this buffer and
-         * need to be adjusted when this buffer is inserted into the source.
-         *
-         * @param offset The offset to apply to the start line and end line of
-         *        and Java lines of nodes in this buffer
-         */
-        public void adjustJavaLines(final int offset) {
-
-            if (node != null) {
-                adjustJavaLine(node, offset);
-            }
-
-            if (body != null) {
-                try {
-                    body.visit(new Node.Visitor() {
-
-                        @Override
-                        public void doVisit(Node n) {
-                            adjustJavaLine(n, offset);
-                        }
-
-                        @Override
-                        public void visit(Node.CustomTag n)
-                                throws JasperException {
-                            Node.Nodes b = n.getBody();
-                            if (b != null && !b.isGeneratedInBuffer()) {
-                                // Don't adjust lines for the nested tags that
-                                // are also generated in buffers, because the
-                                // adjustments will be done elsewhere.
-                                b.visit(this);
-                            }
-                        }
-                    });
-                } catch (JasperException ex) {
-                    // Ignore
-                }
-            }
-        }
-
-        private static void adjustJavaLine(Node n, int offset) {
-            if (n.getBeginJavaLine() > 0) {
-                n.setBeginJavaLine(n.getBeginJavaLine() + offset);
-                n.setEndJavaLine(n.getEndJavaLine() + offset);
-            }
-        }
-    }
-
-    /**
-     * Keeps track of the generated Fragment Helper Class
-     */
-    private static class FragmentHelperClass {
-
-        private static class Fragment {
-            private GenBuffer genBuffer;
-
-            private int id;
-
-            public Fragment(int id, Node node) {
-                this.id = id;
-                genBuffer = new GenBuffer(null, node.getBody());
-            }
-
-            public GenBuffer getGenBuffer() {
-                return this.genBuffer;
-            }
-
-            public int getId() {
-                return this.id;
-            }
-        }
-
-        // True if the helper class should be generated.
-        private boolean used = false;
-
-        private List<Fragment> fragments = new ArrayList<>();
-
-        private String className;
-
-        // Buffer for entire helper class
-        private GenBuffer classBuffer = new GenBuffer();
-
-        public FragmentHelperClass(String className) {
-            this.className = className;
-        }
-
-        public String getClassName() {
-            return this.className;
-        }
-
-        public boolean isUsed() {
-            return this.used;
-        }
-
-        public void generatePreamble() {
-            ServletWriter out = this.classBuffer.getOut();
-            out.println();
-            out.pushIndent();
-            // Note: cannot be static, as we need to reference things like
-            // _jspx_meth_*
-            out.printil("private class " + className);
-            out.printil("    extends "
-                    + "org.apache.jasper.runtime.JspFragmentHelper");
-            out.printil("{");
-            out.pushIndent();
-            out.printil("private jakarta.servlet.jsp.tagext.JspTag _jspx_parent;");
-            out.printil("private int[] _jspx_push_body_count;");
-            out.println();
-            out.printil("public " + className
-                    + "( int discriminator, jakarta.servlet.jsp.JspContext jspContext, "
-                    + "jakarta.servlet.jsp.tagext.JspTag _jspx_parent, "
-                    + "int[] _jspx_push_body_count ) {");
-            out.pushIndent();
-            out.printil("super( discriminator, jspContext, _jspx_parent );");
-            out.printil("this._jspx_parent = _jspx_parent;");
-            out.printil("this._jspx_push_body_count = _jspx_push_body_count;");
-            out.popIndent();
-            out.printil("}");
-        }
-
-        public Fragment openFragment(ChildInfoBase parent, int methodNesting) {
-            Fragment result = new Fragment(fragments.size(), parent);
-            fragments.add(result);
-            this.used = true;
-            parent.setInnerClassName(className);
-
-            ServletWriter out = result.getGenBuffer().getOut();
-            out.pushIndent();
-            out.pushIndent();
-            // XXX - Returns boolean because if a tag is invoked from
-            // within this fragment, the Generator sometimes might
-            // generate code like "return true". This is ignored for now,
-            // meaning only the fragment is skipped. The JSR-152
-            // expert group is currently discussing what to do in this case.
-            // See comment in closeFragment()
-            if (methodNesting > 0) {
-                out.printin("public boolean invoke");
-            } else {
-                out.printin("public void invoke");
-            }
-            out.println(result.getId() + "( " + "jakarta.servlet.jsp.JspWriter out ) ");
-            out.pushIndent();
-            // Note: Throwable required because methods like _jspx_meth_*
-            // throw Throwable.
-            out.printil("throws java.lang.Throwable");
-            out.popIndent();
-            out.printil("{");
-            out.pushIndent();
-            generateLocalVariables(out, parent);
-
-            return result;
-        }
-
-        public void closeFragment(Fragment fragment, int methodNesting) {
-            ServletWriter out = fragment.getGenBuffer().getOut();
-            // XXX - See comment in openFragment()
-            if (methodNesting > 0) {
-                out.printil("return false;");
-            } else {
-                out.printil("return;");
-            }
-            out.popIndent();
-            out.printil("}");
-        }
-
-        public void generatePostamble() {
-            ServletWriter out = this.classBuffer.getOut();
-            // Generate all fragment methods:
-            for (Fragment fragment : fragments) {
-                fragment.getGenBuffer().adjustJavaLines(out.getJavaLine() - 1);
-                out.printMultiLn(fragment.getGenBuffer().toString());
-            }
-
-            // Generate postamble:
-            out.printil("public void invoke( java.io.Writer writer )");
-            out.pushIndent();
-            out.printil("throws jakarta.servlet.jsp.JspException");
-            out.popIndent();
-            out.printil("{");
-            out.pushIndent();
-            out.printil("jakarta.servlet.jsp.JspWriter out = null;");
-            out.printil("if( writer != null ) {");
-            out.pushIndent();
-            out.printil("out = this.jspContext.pushBody(writer);");
-            out.popIndent();
-            out.printil("} else {");
-            out.pushIndent();
-            out.printil("out = this.jspContext.getOut();");
-            out.popIndent();
-            out.printil("}");
-            out.printil("try {");
-            out.pushIndent();
-            out.printil("Object _jspx_saved_JspContext = this.jspContext.getELContext().getContext(jakarta.servlet.jsp.JspContext.class);");
-            out.printil("this.jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,this.jspContext);");
-            out.printil("switch( this.discriminator ) {");
-            out.pushIndent();
-            for (int i = 0; i < fragments.size(); i++) {
-                out.printil("case " + i + ":");
-                out.pushIndent();
-                out.printil("invoke" + i + "( out );");
-                out.printil("break;");
-                out.popIndent();
-            }
-            out.popIndent();
-            out.printil("}"); // switch
-
-            // restore nested JspContext on ELContext
-            out.printil("jspContext.getELContext().putContext(jakarta.servlet.jsp.JspContext.class,_jspx_saved_JspContext);");
-
-            out.popIndent();
-            out.printil("}"); // try
-            out.printil("catch( java.lang.Throwable e ) {");
-            out.pushIndent();
-            out.printil("if (e instanceof jakarta.servlet.jsp.SkipPageException)");
-            out.printil("    throw (jakarta.servlet.jsp.SkipPageException) e;");
-            out.printil("throw new jakarta.servlet.jsp.JspException( e );");
-            out.popIndent();
-            out.printil("}"); // catch
-            out.printil("finally {");
-            out.pushIndent();
-
-            out.printil("if( writer != null ) {");
-            out.pushIndent();
-            out.printil("this.jspContext.popBody();");
-            out.popIndent();
-            out.printil("}");
-
-            out.popIndent();
-            out.printil("}"); // finally
-            out.popIndent();
-            out.printil("}"); // invoke method
-            out.popIndent();
-            out.printil("}"); // helper class
-            out.popIndent();
-        }
-
-        @Override
-        public String toString() {
-            return classBuffer.toString();
-        }
-
-        public void adjustJavaLines(int offset) {
-            for (Fragment fragment : fragments) {
-                fragment.getGenBuffer().adjustJavaLines(offset);
-            }
         }
     }
 }

@@ -16,15 +16,14 @@
  */
 package org.apache.tomcat.websocket;
 
-import javax.naming.NamingException;
-
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Endpoint;
-
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.pojo.PojoEndpointClient;
+
+import javax.naming.NamingException;
 
 public class PojoClassHolder implements ClientEndpointHolder {
 
@@ -51,7 +50,8 @@ public class PojoClassHolder implements ClientEndpointHolder {
             Object pojo;
             if (instanceManager == null) {
                 pojo = pojoClazz.getConstructor().newInstance();
-            } else {
+            }
+            else {
                 pojo = instanceManager.newInstance(pojoClazz);
             }
             return new PojoEndpointClient(pojo, clientEndpointConfig.getDecoders(), instanceManager);

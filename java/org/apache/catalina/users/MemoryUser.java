@@ -53,6 +53,7 @@ public class MemoryUser extends GenericUser<MemoryUserDatabase> {
      * the reader that processes this entry will accept either
      * <code>username</code> or <code>name</code> for the username
      * property.</p>
+     *
      * @return the XML representation
      */
     public String toXml() {

@@ -16,14 +16,13 @@
  */
 package org.apache.tomcat.util.descriptor.web;
 
+import jakarta.servlet.DispatcherType;
+import org.apache.tomcat.util.buf.UDecoder;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import jakarta.servlet.DispatcherType;
-
-import org.apache.tomcat.util.buf.UDecoder;
 
 /**
  * 过滤器映射
@@ -40,8 +39,6 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     // ------------------------------------------------------------- Properties
 
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * The name of this filter to be executed when this mapping matches
      * a particular request.
@@ -52,7 +49,7 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     public static final int INCLUDE = 4;
     public static final int REQUEST = 8;
     public static final int ASYNC = 16;
-
+    private static final long serialVersionUID = 1L;
     // represents nothing having been set. This will be seen
     // as equal to a REQUEST
     private static final int NOT_SET = 0;
@@ -60,6 +57,22 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     private int dispatcherMapping = NOT_SET;
 
     private String filterName = null;
+    /**
+     * The servlet name this mapping matches.
+     */
+    private String[] servletNames = new String[0];
+    /**
+     * The flag that indicates this mapping will match all url-patterns
+     */
+    private boolean matchAllUrlPatterns = false;
+    /**
+     * The flag that indicates this mapping will match all servlet-names
+     */
+    private boolean matchAllServletNames = false;
+    /**
+     * The URL pattern this mapping matches.
+     */
+    private String[] urlPatterns = new String[0];
 
     public String getFilterName() {
         return this.filterName;
@@ -69,16 +82,11 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
         this.filterName = filterName;
     }
 
-
-    /**
-     * The servlet name this mapping matches.
-     */
-    private String[] servletNames = new String[0];
-
     public String[] getServletNames() {
         if (matchAllServletNames) {
-            return new String[] {};
-        } else {
+            return new String[]{};
+        }
+        else {
             return this.servletNames;
         }
     }
@@ -86,7 +94,8 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     public void addServletName(String servletName) {
         if ("*".equals(servletName)) {
             this.matchAllServletNames = true;
-        } else {
+        }
+        else {
             String[] results = new String[servletNames.length + 1];
             System.arraycopy(servletNames, 0, results, 0, servletNames.length);
             results[servletNames.length] = servletName;
@@ -94,36 +103,19 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
         }
     }
 
-
-    /**
-     * The flag that indicates this mapping will match all url-patterns
-     */
-    private boolean matchAllUrlPatterns = false;
-
     public boolean getMatchAllUrlPatterns() {
         return matchAllUrlPatterns;
     }
-
-
-    /**
-     * The flag that indicates this mapping will match all servlet-names
-     */
-    private boolean matchAllServletNames = false;
 
     public boolean getMatchAllServletNames() {
         return matchAllServletNames;
     }
 
-
-    /**
-     * The URL pattern this mapping matches.
-     */
-    private String[] urlPatterns = new String[0];
-
     public String[] getURLPatterns() {
         if (matchAllUrlPatterns) {
-            return new String[] {};
-        } else {
+            return new String[]{};
+        }
+        else {
             return this.urlPatterns;
         }
     }
@@ -131,10 +123,12 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     public void addURLPattern(String urlPattern) {
         addURLPatternDecoded(UDecoder.URLDecode(urlPattern, getCharset()));
     }
+
     public void addURLPatternDecoded(String urlPattern) {
         if ("*".equals(urlPattern)) {
             this.matchAllUrlPatterns = true;
-        } else {
+        }
+        else {
             String[] results = new String[urlPatterns.length + 1];
             System.arraycopy(urlPatterns, 0, results, 0, urlPatterns.length);
             results[urlPatterns.length] = UDecoder.URLDecode(urlPattern, getCharset());
@@ -145,8 +139,9 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
     /**
      * This method will be used to set the current state of the FilterMap
      * representing the state of when filters should be applied.
+     *
      * @param dispatcherString the dispatcher type which should
-     *  match this filter
+     *                         match this filter
      */
     public void setDispatcher(String dispatcherString) {
         String dispatcher = dispatcherString.toUpperCase(Locale.ENGLISH);
@@ -154,16 +149,20 @@ public class FilterMap extends XmlEncodingBase implements Serializable {
         if (dispatcher.equals(DispatcherType.FORWARD.name())) {
             // apply FORWARD to the global dispatcherMapping.
             dispatcherMapping |= FORWARD;
-        } else if (dispatcher.equals(DispatcherType.INCLUDE.name())) {
+        }
+        else if (dispatcher.equals(DispatcherType.INCLUDE.name())) {
             // apply INCLUDE to the global dispatcherMapping.
             dispatcherMapping |= INCLUDE;
-        } else if (dispatcher.equals(DispatcherType.REQUEST.name())) {
+        }
+        else if (dispatcher.equals(DispatcherType.REQUEST.name())) {
             // apply REQUEST to the global dispatcherMapping.
             dispatcherMapping |= REQUEST;
-        }  else if (dispatcher.equals(DispatcherType.ERROR.name())) {
+        }
+        else if (dispatcher.equals(DispatcherType.ERROR.name())) {
             // apply ERROR to the global dispatcherMapping.
             dispatcherMapping |= ERROR;
-        }  else if (dispatcher.equals(DispatcherType.ASYNC.name())) {
+        }
+        else if (dispatcher.equals(DispatcherType.ASYNC.name())) {
             // apply ERROR to the global dispatcherMapping.
             dispatcherMapping |= ASYNC;
         }

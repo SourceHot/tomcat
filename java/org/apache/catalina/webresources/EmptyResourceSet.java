@@ -16,17 +16,13 @@
  */
 package org.apache.catalina.webresources;
 
+import org.apache.catalina.*;
+import org.apache.catalina.util.LifecycleBase;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
-
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.WebResourceSet;
-import org.apache.catalina.util.LifecycleBase;
 
 /**
  * A {@link WebResourceSet} implementation that is not backed by a file system
@@ -134,22 +130,22 @@ public class EmptyResourceSet extends LifecycleBase implements WebResourceSet {
     /**
      * {@inheritDoc}
      * <p>
+     * This implementation always returns true.
+     */
+    @Override
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Calls to this method will be ignored as this implementation always read
      * only.
      */
     @Override
     public void setReadOnly(boolean readOnly) {
 
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation always returns true.
-     */
-    @Override
-    public boolean isReadOnly() {
-        return true;
     }
 
     @Override

@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 
 public @interface PersistenceUnit {
     String name() default "";
+
     String unitName() default "";
 }

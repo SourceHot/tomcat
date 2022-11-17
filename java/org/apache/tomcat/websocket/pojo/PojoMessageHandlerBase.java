@@ -16,22 +16,21 @@
  */
 package org.apache.tomcat.websocket.pojo;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-
 import jakarta.websocket.EncodeException;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.RemoteEndpoint;
 import jakarta.websocket.Session;
-
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.websocket.WrappedMessageHandler;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 
 /**
  * Common implementation code for the POJO message handlers.
  *
- * @param <T>   The type of message to handle
+ * @param <T> The type of message to handle
  */
 public abstract class PojoMessageHandlerBase<T>
         implements WrappedMessageHandler {
@@ -46,8 +45,8 @@ public abstract class PojoMessageHandlerBase<T>
     protected final long maxMessageSize;
 
     public PojoMessageHandlerBase(Object pojo, Method method,
-            Session session, Object[] params, int indexPayload, boolean convert,
-            int indexSession, long maxMessageSize) {
+                                  Session session, Object[] params, int indexPayload, boolean convert,
+                                  int indexSession, long maxMessageSize) {
         this.pojo = pojo;
         this.method = method;
         // TODO: The method should already be accessible here but the following
@@ -76,11 +75,14 @@ public abstract class PojoMessageHandlerBase<T>
         try {
             if (result instanceof String) {
                 remoteEndpoint.sendText((String) result);
-            } else if (result instanceof ByteBuffer) {
+            }
+            else if (result instanceof ByteBuffer) {
                 remoteEndpoint.sendBinary((ByteBuffer) result);
-            } else if (result instanceof byte[]) {
+            }
+            else if (result instanceof byte[]) {
                 remoteEndpoint.sendBinary(ByteBuffer.wrap((byte[]) result));
-            } else {
+            }
+            else {
                 remoteEndpoint.sendObject(result);
             }
         } catch (IOException | EncodeException ioe) {
@@ -98,7 +100,8 @@ public abstract class PojoMessageHandlerBase<T>
     public final MessageHandler getWrappedHandler() {
         if (pojo instanceof MessageHandler) {
             return (MessageHandler) pojo;
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -115,7 +118,8 @@ public abstract class PojoMessageHandlerBase<T>
         ExceptionUtils.handleThrowable(t);
         if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
-        } else {
+        }
+        else {
             throw new RuntimeException(t.getMessage(), t);
         }
     }

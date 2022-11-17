@@ -73,8 +73,8 @@ public final class StringUtils {
     }
 
 
-    public static <T> void join(T[] array, char separator, Function<T,String> function,
-            StringBuilder sb) {
+    public static <T> void join(T[] array, char separator, Function<T, String> function,
+                                StringBuilder sb) {
         if (array == null) {
             return;
         }
@@ -82,8 +82,8 @@ public final class StringUtils {
     }
 
 
-    public static <T> void join(Iterable<T> iterable, char separator, Function<T,String> function,
-            StringBuilder sb) {
+    public static <T> void join(Iterable<T> iterable, char separator, Function<T, String> function,
+                                StringBuilder sb) {
         if (iterable == null) {
             return;
         }
@@ -91,7 +91,8 @@ public final class StringUtils {
         for (T value : iterable) {
             if (first) {
                 first = false;
-            } else {
+            }
+            else {
                 sb.append(separator);
             }
             sb.append(function.apply(value));

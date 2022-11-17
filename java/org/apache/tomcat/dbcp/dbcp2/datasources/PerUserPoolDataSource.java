@@ -16,6 +16,17 @@
  */
 package org.apache.tomcat.dbcp.dbcp2.datasources;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.dbcp.dbcp2.SwallowedExceptionLogger;
+import org.apache.tomcat.dbcp.dbcp2.Utils;
+import org.apache.tomcat.dbcp.pool2.ObjectPool;
+import org.apache.tomcat.dbcp.pool2.impl.GenericObjectPool;
+
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.StringRefAddr;
+import javax.sql.ConnectionPoolDataSource;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.sql.Connection;
@@ -24,18 +35,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.StringRefAddr;
-import javax.sql.ConnectionPoolDataSource;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.dbcp.dbcp2.SwallowedExceptionLogger;
-import org.apache.tomcat.dbcp.dbcp2.Utils;
-import org.apache.tomcat.dbcp.pool2.ObjectPool;
-import org.apache.tomcat.dbcp.pool2.impl.GenericObjectPool;
 
 /**
  * <p>
@@ -172,8 +171,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Gets the number of active connections in the pool for a given user.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getNumActive(final String userName) {
@@ -193,8 +191,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Gets the number of idle connections in the pool for a given user.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getNumIdle(final String userName) {
@@ -206,8 +203,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getBlockWhenExhausted()} for the specified user's pool
      * or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserBlockWhenExhausted(final String userName) {
@@ -224,8 +220,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Gets the user specific default value for {@link Connection#setAutoCommit(boolean)} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public Boolean getPerUserDefaultAutoCommit(final String userName) {
@@ -239,8 +234,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Gets the user specific default value for {@link Connection#setReadOnly(boolean)} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public Boolean getPerUserDefaultReadOnly(final String userName) {
@@ -255,8 +249,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific default value for {@link Connection#setTransactionIsolation(int)} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public Integer getPerUserDefaultTransactionIsolation(final String userName) {
@@ -271,8 +264,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getDurationBetweenEvictionRuns()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @since 2.10.0
      */
@@ -291,8 +283,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getEvictionPolicyClassName()} for the specified user's
      * pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public String getPerUserEvictionPolicyClassName(final String userName) {
@@ -310,8 +301,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getLifo()} for the specified user's pool or the default
      * if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserLifo(final String userName) {
@@ -329,8 +319,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMaxIdle()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getPerUserMaxIdle(final String userName) {
@@ -348,8 +337,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMaxTotal()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getPerUserMaxTotal(final String userName) {
@@ -367,8 +355,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMaxWaitDuration()} for the specified user's pool or
      * the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @since 2.10.0
      */
@@ -387,8 +374,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMaxWaitDuration()} for the specified user's pool or
      * the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @deprecated Use {@link #getPerUserMaxWaitDuration}.
      */
@@ -401,8 +387,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMinEvictableIdleDuration()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value, never null.
      * @since 2.10.0
      */
@@ -421,8 +406,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMinEvictableIdleDuration()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @deprecated Use {@link #getPerUserMinEvictableIdleDuration(String)}.
      */
@@ -435,8 +419,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getMinIdle()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getPerUserMinIdle(final String userName) {
@@ -454,8 +437,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getNumTestsPerEvictionRun()} for the specified user's
      * pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public int getPerUserNumTestsPerEvictionRun(final String userName) {
@@ -473,8 +455,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getSoftMinEvictableIdleDuration()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @since 2.10.0
      */
@@ -493,8 +474,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getSoftMinEvictableIdleDuration()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @deprecated Use {@link #getPerUserSoftMinEvictableIdleDuration(String)}.
      */
@@ -507,8 +487,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getTestOnBorrow()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserTestOnBorrow(final String userName) {
@@ -526,8 +505,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getTestOnCreate()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserTestOnCreate(final String userName) {
@@ -545,8 +523,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getTestOnReturn()} for the specified user's pool or the
      * default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserTestOnReturn(final String userName) {
@@ -564,8 +541,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getTestWhileIdle()} for the specified user's pool or
      * the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      */
     public boolean getPerUserTestWhileIdle(final String userName) {
@@ -583,8 +559,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Gets the user specific value for {@link GenericObjectPool#getDurationBetweenEvictionRuns()} for the specified
      * user's pool or the default if no user specific value is defined.
      *
-     * @param userName
-     *            The user name key.
+     * @param userName The user name key.
      * @return The user specific value.
      * @deprecated Use {@link #getPerUserDurationBetweenEvictionRuns(String)}.
      */
@@ -596,8 +571,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Returns the object pool associated with the given PoolKey.
      *
-     * @param poolKey
-     *            PoolKey identifying the pool
+     * @param poolKey PoolKey identifying the pool
      * @return the GenericObjectPool pooling connections for the userName and datasource specified by the PoolKey
      */
     private ObjectPool<PooledConnectionAndInfo> getPool(final PoolKey poolKey) {
@@ -660,8 +634,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Creates a pool key from the provided parameters.
      *
-     * @param userName
-     *            User name
+     * @param userName User name
      * @return The pool key
      */
     private PoolKey getPoolKey(final String userName) {
@@ -691,12 +664,9 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Supports Serialization interface.
      *
-     * @param in
-     *            a <code>java.io.ObjectInputStream</code> value
-     * @throws IOException
-     *             if an error occurs
-     * @throws ClassNotFoundException
-     *             if an error occurs
+     * @param in a <code>java.io.ObjectInputStream</code> value
+     * @throws IOException            if an error occurs
+     * @throws ClassNotFoundException if an error occurs
      */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         try {
@@ -710,7 +680,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     }
 
     private synchronized void registerPool(final String userName, final String password)
-        throws NamingException, SQLException {
+            throws NamingException, SQLException {
 
         final ConnectionPoolDataSource cpds = testCPDS(userName, password);
 
@@ -718,7 +688,7 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         // the factory with the pool, so we do not have to do so
         // explicitly)
         final CPDSConnectionFactory factory = new CPDSConnectionFactory(cpds, getValidationQuery(), getValidationQueryTimeoutDuration(),
-            isRollbackAfterValidation(), userName, password);
+                isRollbackAfterValidation(), userName, password);
         factory.setMaxConn(getMaxConnDuration());
 
         // Create an object pool to contain our PooledConnections
@@ -752,7 +722,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserBlockWhenExhausted == null) {
             perUserBlockWhenExhausted = createMap();
-        } else {
+        }
+        else {
             perUserBlockWhenExhausted.clear();
         }
         perUserBlockWhenExhausted.putAll(userDefaultBlockWhenExhausted);
@@ -761,10 +732,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getBlockWhenExhausted()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserBlockWhenExhausted(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -778,7 +747,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserDefaultAutoCommit == null) {
             perUserDefaultAutoCommit = createMap();
-        } else {
+        }
+        else {
             perUserDefaultAutoCommit.clear();
         }
         perUserDefaultAutoCommit.putAll(userDefaultAutoCommit);
@@ -787,10 +757,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific default value for {@link Connection#setAutoCommit(boolean)} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserDefaultAutoCommit(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -804,7 +772,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserDefaultReadOnly == null) {
             perUserDefaultReadOnly = createMap();
-        } else {
+        }
+        else {
             perUserDefaultReadOnly.clear();
         }
         perUserDefaultReadOnly.putAll(userDefaultReadOnly);
@@ -813,10 +782,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific default value for {@link Connection#setReadOnly(boolean)} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserDefaultReadOnly(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -830,7 +797,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserDefaultTransactionIsolation == null) {
             perUserDefaultTransactionIsolation = new HashMap<>();
-        } else {
+        }
+        else {
             perUserDefaultTransactionIsolation.clear();
         }
         perUserDefaultTransactionIsolation.putAll(userDefaultTransactionIsolation);
@@ -840,10 +808,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific default value for {@link Connection#setTransactionIsolation(int)} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserDefaultTransactionIsolation(final String userName, final Integer value) {
         assertInitializationAllowed();
@@ -862,10 +828,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getDurationBetweenEvictionRuns()} for the specified
      * user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @since 2.10.0
      */
     public void setPerUserDurationBetweenEvictionRuns(final String userName, final Duration value) {
@@ -880,7 +844,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserEvictionPolicyClassName == null) {
             perUserEvictionPolicyClassName = new HashMap<>();
-        } else {
+        }
+        else {
             perUserEvictionPolicyClassName.clear();
         }
         perUserEvictionPolicyClassName.putAll(userDefaultEvictionPolicyClassName);
@@ -890,10 +855,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getEvictionPolicyClassName()} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserEvictionPolicyClassName(final String userName, final String value) {
         assertInitializationAllowed();
@@ -907,7 +870,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserLifo == null) {
             perUserLifo = createMap();
-        } else {
+        }
+        else {
             perUserLifo.clear();
         }
         perUserLifo.putAll(userDefaultLifo);
@@ -916,10 +880,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getLifo()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserLifo(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -933,7 +895,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserMaxIdle == null) {
             perUserMaxIdle = new HashMap<>();
-        } else {
+        }
+        else {
             perUserMaxIdle.clear();
         }
         perUserMaxIdle.putAll(userDefaultMaxIdle);
@@ -942,10 +905,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getMaxIdle()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserMaxIdle(final String userName, final Integer value) {
         assertInitializationAllowed();
@@ -959,7 +920,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserMaxTotal == null) {
             perUserMaxTotal = new HashMap<>();
-        } else {
+        }
+        else {
             perUserMaxTotal.clear();
         }
         perUserMaxTotal.putAll(userDefaultMaxTotal);
@@ -968,10 +930,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getMaxTotal()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserMaxTotal(final String userName, final Integer value) {
         assertInitializationAllowed();
@@ -989,10 +949,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getMaxWaitDuration()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @since 2.10.0
      */
     public void setPerUserMaxWait(final String userName, final Duration value) {
@@ -1011,10 +969,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getMaxWaitDuration()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @deprecated Use {@link #setPerUserMaxWait(String, Duration)}.
      */
     @Deprecated
@@ -1031,10 +987,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getMinEvictableIdleDuration()} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @since 2.10.0
      */
     public void setPerUserMinEvictableIdle(final String userName, final Duration value) {
@@ -1049,10 +1003,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getMinEvictableIdleDuration()} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @deprecated Use {@link #setPerUserMinEvictableIdle(String, Duration)}.
      */
     @Deprecated
@@ -1064,7 +1016,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserMinIdle == null) {
             perUserMinIdle = new HashMap<>();
-        } else {
+        }
+        else {
             perUserMinIdle.clear();
         }
         perUserMinIdle.putAll(userDefaultMinIdle);
@@ -1073,10 +1026,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getMinIdle()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserMinIdle(final String userName, final Integer value) {
         assertInitializationAllowed();
@@ -1090,7 +1041,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserNumTestsPerEvictionRun == null) {
             perUserNumTestsPerEvictionRun = new HashMap<>();
-        } else {
+        }
+        else {
             perUserNumTestsPerEvictionRun.clear();
         }
         perUserNumTestsPerEvictionRun.putAll(userDefaultNumTestsPerEvictionRun);
@@ -1100,10 +1052,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getNumTestsPerEvictionRun()} for the specified user's
      * pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserNumTestsPerEvictionRun(final String userName, final Integer value) {
         assertInitializationAllowed();
@@ -1122,10 +1072,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getSoftMinEvictableIdleDuration()} for the specified
      * user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @since 2.10.0
      */
     public void setPerUserSoftMinEvictableIdle(final String userName, final Duration value) {
@@ -1140,10 +1088,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getSoftMinEvictableIdleDuration()} for the specified
      * user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @deprecated Use {@link #setPerUserSoftMinEvictableIdle(String, Duration)}.
      */
     @Deprecated
@@ -1155,7 +1101,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserTestOnBorrow == null) {
             perUserTestOnBorrow = createMap();
-        } else {
+        }
+        else {
             perUserTestOnBorrow.clear();
         }
         perUserTestOnBorrow.putAll(userDefaultTestOnBorrow);
@@ -1164,10 +1111,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getTestOnBorrow()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserTestOnBorrow(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -1181,7 +1126,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserTestOnCreate == null) {
             perUserTestOnCreate = createMap();
-        } else {
+        }
+        else {
             perUserTestOnCreate.clear();
         }
         perUserTestOnCreate.putAll(userDefaultTestOnCreate);
@@ -1190,10 +1136,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getTestOnCreate()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserTestOnCreate(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -1207,7 +1151,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserTestOnReturn == null) {
             perUserTestOnReturn = createMap();
-        } else {
+        }
+        else {
             perUserTestOnReturn.clear();
         }
         perUserTestOnReturn.putAll(userDefaultTestOnReturn);
@@ -1216,10 +1161,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getTestOnReturn()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserTestOnReturn(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -1233,7 +1176,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
         assertInitializationAllowed();
         if (perUserTestWhileIdle == null) {
             perUserTestWhileIdle = createMap();
-        } else {
+        }
+        else {
             perUserTestWhileIdle.clear();
         }
         perUserTestWhileIdle.putAll(userDefaultTestWhileIdle);
@@ -1242,10 +1186,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
     /**
      * Sets a user specific value for {@link GenericObjectPool#getTestWhileIdle()} for the specified user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      */
     public void setPerUserTestWhileIdle(final String userName, final Boolean value) {
         assertInitializationAllowed();
@@ -1259,10 +1201,8 @@ public class PerUserPoolDataSource extends InstanceKeyDataSource {
      * Sets a user specific value for {@link GenericObjectPool#getDurationBetweenEvictionRuns()} for the specified
      * user's pool.
      *
-     * @param userName
-     *            The user name key.
-     * @param value
-     *            The user specific value.
+     * @param userName The user name key.
+     * @param value    The user specific value.
      * @deprecated Use {@link #setPerUserDurationBetweenEvictionRuns(String, Duration)}.
      */
     @Deprecated

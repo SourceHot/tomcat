@@ -27,6 +27,7 @@ class HpackException extends Exception {
     HpackException(String message) {
         super(message);
     }
+
     HpackException() {
         super();
     }

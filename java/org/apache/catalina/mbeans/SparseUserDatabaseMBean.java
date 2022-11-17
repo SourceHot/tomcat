@@ -16,14 +16,6 @@
  */
 package org.apache.catalina.mbeans;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
 import org.apache.catalina.Group;
 import org.apache.catalina.Role;
 import org.apache.catalina.User;
@@ -32,6 +24,13 @@ import org.apache.tomcat.util.modeler.BaseModelMBean;
 import org.apache.tomcat.util.modeler.ManagedBean;
 import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <p>A <strong>ModelMBean</strong> implementation for the
@@ -137,7 +136,7 @@ public class SparseUserDatabaseMBean extends BaseModelMBean {
     /**
      * Create a new Group and return the corresponding MBean Name.
      *
-     * @param groupname Group name of the new group
+     * @param groupname   Group name of the new group
      * @param description Description of the new group
      * @return the new group object name
      */
@@ -156,7 +155,7 @@ public class SparseUserDatabaseMBean extends BaseModelMBean {
     /**
      * Create a new Role and return the corresponding MBean Name.
      *
-     * @param rolename Group name of the new group
+     * @param rolename    Group name of the new group
      * @param description Description of the new group
      * @return the new role object name
      */

@@ -19,22 +19,7 @@ package org.apache.tomcat.dbcp.dbcp2;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLType;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 
 /**
@@ -54,10 +39,8 @@ public class DelegatingPreparedStatement extends DelegatingStatement implements 
      * Create a wrapper for the Statement which traces this Statement to the Connection which created it and the code
      * which created it.
      *
-     * @param statement
-     *            the {@link PreparedStatement} to delegate all calls to.
-     * @param connection
-     *            the {@link DelegatingConnection} that created this statement.
+     * @param statement  the {@link PreparedStatement} to delegate all calls to.
+     * @param connection the {@link DelegatingConnection} that created this statement.
      */
     public DelegatingPreparedStatement(final DelegatingConnection<?> connection, final PreparedStatement statement) {
         super(connection, statement);
@@ -658,7 +641,9 @@ public class DelegatingPreparedStatement extends DelegatingStatement implements 
         }
     }
 
-    /** @deprecated Use setAsciiStream(), setCharacterStream() or setNCharacterStream() */
+    /**
+     * @deprecated Use setAsciiStream(), setCharacterStream() or setNCharacterStream()
+     */
     @Deprecated
     @Override
     public void setUnicodeStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {

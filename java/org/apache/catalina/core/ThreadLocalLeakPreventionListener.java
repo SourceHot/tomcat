@@ -16,22 +16,15 @@
  */
 package org.apache.catalina.core;
 
-import java.util.concurrent.Executor;
-
-import org.apache.catalina.ContainerEvent;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import org.apache.catalina.*;
 import org.apache.catalina.connector.Connector;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+
+import java.util.concurrent.Executor;
 
 /**
  * A {@link LifecycleListener} that triggers the renewal of threads in Executor
@@ -46,15 +39,13 @@ import org.apache.tomcat.util.threads.ThreadPoolExecutor;
  */
 public class ThreadLocalLeakPreventionListener extends FrameworkListener {
 
-    private static final Log log =
-        LogFactory.getLog(ThreadLocalLeakPreventionListener.class);
-
-    private volatile boolean serverStopping = false;
-
     /**
      * The string manager for this package.
      */
     protected static final StringManager sm = StringManager.getManager(ThreadLocalLeakPreventionListener.class);
+    private static final Log log =
+            LogFactory.getLog(ThreadLocalLeakPreventionListener.class);
+    private volatile boolean serverStopping = false;
 
     /**
      * Listens for {@link LifecycleEvent} for the start of the {@link Server} to
@@ -79,9 +70,9 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
             }
         } catch (Exception e) {
             String msg =
-                sm.getString(
-                    "threadLocalLeakPreventionListener.lifecycleEvent.error",
-                    event);
+                    sm.getString(
+                            "threadLocalLeakPreventionListener.lifecycleEvent.error",
+                            event);
             log.error(msg, e);
         }
     }
@@ -92,9 +83,9 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
             super.containerEvent(event);
         } catch (Exception e) {
             String msg =
-                sm.getString(
-                    "threadLocalLeakPreventionListener.containerEvent.error",
-                    event);
+                    sm.getString(
+                            "threadLocalLeakPreventionListener.containerEvent.error",
+                            event);
             log.error(msg, e);
         }
 
@@ -104,9 +95,8 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
      * Updates each ThreadPoolExecutor with the current time, which is the time
      * when a context is being stopped.
      *
-     * @param context
-     *            the context being stopped, used to discover all the Connectors
-     *            of its parent Service.
+     * @param context the context being stopped, used to discover all the Connectors
+     *                of its parent Service.
      */
     private void stopIdleThreads(Context context) {
         if (serverStopping) {
@@ -114,9 +104,9 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
         }
 
         if (!(context instanceof StandardContext) ||
-            !((StandardContext) context).getRenewThreadsWhenStoppingContext()) {
+                !((StandardContext) context).getRenewThreadsWhenStoppingContext()) {
             log.debug("Not renewing threads when the context is stopping. "
-                + "It is not configured to do it.");
+                    + "It is not configured to do it.");
             return;
         }
 
@@ -133,11 +123,12 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
 
                 if (executor instanceof ThreadPoolExecutor) {
                     ThreadPoolExecutor threadPoolExecutor =
-                        (ThreadPoolExecutor) executor;
+                            (ThreadPoolExecutor) executor;
                     threadPoolExecutor.contextStopping();
-                } else if (executor instanceof StandardThreadExecutor) {
+                }
+                else if (executor instanceof StandardThreadExecutor) {
                     StandardThreadExecutor stdThreadExecutor =
-                        (StandardThreadExecutor) executor;
+                            (StandardThreadExecutor) executor;
                     stdThreadExecutor.contextStopping();
                 }
 

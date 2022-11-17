@@ -16,11 +16,10 @@
  */
 package org.apache.naming;
 
-import java.util.Enumeration;
-
 import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
+import java.util.Enumeration;
 
 public abstract class AbstractRef extends Reference {
 
@@ -46,11 +45,13 @@ public abstract class AbstractRef extends Reference {
         String factory = super.getFactoryClassName();
         if (factory != null) {
             return factory;
-        } else {
+        }
+        else {
             factory = System.getProperty(Context.OBJECT_FACTORIES);
             if (factory != null) {
                 return null;
-            } else {
+            }
+            else {
                 return getDefaultFactoryClassName();
             }
         }

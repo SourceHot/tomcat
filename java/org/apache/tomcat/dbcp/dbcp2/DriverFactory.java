@@ -41,7 +41,8 @@ class DriverFactory {
                     try {
                         if (driverClassLoader == null) {
                             driverFromCCL = Class.forName(driverClassName);
-                        } else {
+                        }
+                        else {
                             driverFromCCL = Class.forName(driverClassName, true, driverClassLoader);
                         }
                     } catch (final ClassNotFoundException cnfe) {
@@ -57,7 +58,8 @@ class DriverFactory {
             try {
                 if (driverFromCCL == null) {
                     driverToUse = DriverManager.getDriver(url);
-                } else {
+                }
+                else {
                     // Usage of DriverManager is not possible, as it does not
                     // respect the ContextClassLoader
                     // N.B. This cast may cause ClassCastException which is

@@ -16,6 +16,11 @@
  */
 package org.apache.tomcat.util.net;
 
+import org.apache.tomcat.util.compat.JreCompat;
+import org.apache.tomcat.util.net.openssl.ciphers.Cipher;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -25,13 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-
-import org.apache.tomcat.util.compat.JreCompat;
-import org.apache.tomcat.util.net.openssl.ciphers.Cipher;
-
-public abstract class AbstractJsseEndpoint<S,U> extends AbstractEndpoint<S,U> {
+public abstract class AbstractJsseEndpoint<S, U> extends AbstractEndpoint<S, U> {
 
     private String sslImplementationName = null;
     private int sniParseLimit = 64 * 1024;
@@ -113,7 +112,7 @@ public abstract class AbstractJsseEndpoint<S,U> extends AbstractEndpoint<S,U> {
 
 
     protected SSLEngine createSSLEngine(String sniHostName, List<Cipher> clientRequestedCiphers,
-            List<String> clientRequestedApplicationProtocols) {
+                                        List<String> clientRequestedApplicationProtocols) {
         SSLHostConfig sslHostConfig = getSSLHostConfig(sniHostName);
 
         SSLHostConfigCertificate certificate = selectCertificate(sslHostConfig, clientRequestedCiphers);
@@ -146,17 +145,17 @@ public abstract class AbstractJsseEndpoint<S,U> extends AbstractEndpoint<S,U> {
             }
         }
         switch (sslHostConfig.getCertificateVerification()) {
-        case NONE:
-            sslParameters.setNeedClientAuth(false);
-            sslParameters.setWantClientAuth(false);
-            break;
-        case OPTIONAL:
-        case OPTIONAL_NO_CA:
-            sslParameters.setWantClientAuth(true);
-            break;
-        case REQUIRED:
-            sslParameters.setNeedClientAuth(true);
-            break;
+            case NONE:
+                sslParameters.setNeedClientAuth(false);
+                sslParameters.setWantClientAuth(false);
+                break;
+            case OPTIONAL:
+            case OPTIONAL_NO_CA:
+                sslParameters.setWantClientAuth(true);
+                break;
+            case REQUIRED:
+                sslParameters.setNeedClientAuth(true);
+                break;
         }
         // The getter (at least in OpenJDK and derivatives) returns a defensive copy
         engine.setSSLParameters(sslParameters);
@@ -179,7 +178,8 @@ public abstract class AbstractJsseEndpoint<S,U> extends AbstractEndpoint<S,U> {
         if (sslHostConfig.getHonorCipherOrder()) {
             candidateCiphers.addAll(serverCiphers);
             candidateCiphers.retainAll(clientCiphers);
-        } else {
+        }
+        else {
             candidateCiphers.addAll(clientCiphers);
             candidateCiphers.retainAll(serverCiphers);
         }

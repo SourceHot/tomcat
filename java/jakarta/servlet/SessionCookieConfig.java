@@ -25,48 +25,36 @@ package jakarta.servlet;
 public interface SessionCookieConfig {
 
     /**
-     * Sets the session cookie name.
-     *
-     * @param name The name of the session cookie
-     *
-     * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
-     */
-    public void setName(String name);
-
-    /**
      * Obtain the name to use for the session cookies.
      *
      * @return the name to use for session cookies.
      */
-    public String getName();
+    String getName();
 
     /**
-     * Sets the domain for the session cookie
+     * Sets the session cookie name.
      *
-     * @param domain The session cookie domain
-     *
+     * @param name The name of the session cookie
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setDomain(String domain);
+    void setName(String name);
 
     /**
      * Obtain the domain to use for session cookies.
      *
      * @return the domain to use for session cookies.
      */
-    public String getDomain();
+    String getDomain();
 
     /**
-     * Sets the path of the session cookie.
+     * Sets the domain for the session cookie
      *
-     * @param path The session cookie path
-     *
+     * @param domain The session cookie domain
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setPath(String path);
+    void setDomain(String domain);
 
     /**
      * Obtain the path to use for session cookies. This is normally the context
@@ -74,72 +62,78 @@ public interface SessionCookieConfig {
      *
      * @return The path to use for session cookies.
      */
-    public String getPath();
+    String getPath();
 
     /**
-     * Sets the comment for the session cookie
+     * Sets the path of the session cookie.
      *
-     * @param comment The session cookie comment
-     *
+     * @param path The session cookie path
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setComment(String comment);
+    void setPath(String path);
 
     /**
      * Obtain the comment to use for session cookies.
      *
      * @return the comment to use for session cookies.
      */
-    public String getComment();
+    String getComment();
 
     /**
-     * Sets the httpOnly flag for the session cookie.
+     * Sets the comment for the session cookie
      *
-     * @param httpOnly The httpOnly setting to use for session cookies
-     *
+     * @param comment The session cookie comment
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setHttpOnly(boolean httpOnly);
+    void setComment(String comment);
 
     /**
      * Will session cookies be created with the httpOnly flag set?
      *
      * @return {@code true} if the flag should be set, otherwise {@code false}
      */
-    public boolean isHttpOnly();
+    boolean isHttpOnly();
 
     /**
-     * Sets the secure flag for the session cookie.
+     * Sets the httpOnly flag for the session cookie.
      *
-     * @param secure The secure setting to use for session cookies
-     *
+     * @param httpOnly The httpOnly setting to use for session cookies
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setSecure(boolean secure);
+    void setHttpOnly(boolean httpOnly);
 
     /**
      * Will session cookies be created with the secure flag set?
      *
      * @return {@code true} if the flag should be set, otherwise {@code false}
      */
-    public boolean isSecure();
+    boolean isSecure();
 
     /**
-     * Sets the maximum age.
+     * Sets the secure flag for the session cookie.
      *
-     * @param MaxAge the maximum age to set
+     * @param secure The secure setting to use for session cookies
      * @throws IllegalStateException if the associated ServletContext has
-     *         already been initialised
+     *                               already been initialised
      */
-    public void setMaxAge(int MaxAge);
+    void setSecure(boolean secure);
 
     /**
      * Obtain the maximum age to set for a session cookie.
      *
      * @return the maximum age in seconds
      */
-    public int getMaxAge();
+    int getMaxAge();
+
+    /**
+     * Sets the maximum age.
+     *
+     * @param MaxAge the maximum age to set
+     * @throws IllegalStateException if the associated ServletContext has
+     *                               already been initialised
+     */
+    void setMaxAge(int MaxAge);
 }

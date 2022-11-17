@@ -16,11 +16,11 @@
  */
 package org.apache.tomcat.dbcp.pool2.impl;
 
+import org.apache.tomcat.dbcp.pool2.PooledObject;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-
-import org.apache.tomcat.dbcp.pool2.PooledObject;
 
 /**
  * Implementation of object that is used to provide information on pooled
@@ -105,10 +105,9 @@ public class DefaultPooledObjectInfo implements DefaultPooledObjectInfoMBean {
      */
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("DefaultPooledObjectInfo [pooledObject=");
-        builder.append(pooledObject);
-        builder.append("]");
-        return builder.toString();
+        String builder = "DefaultPooledObjectInfo [pooledObject=" +
+                pooledObject +
+                "]";
+        return builder;
     }
 }

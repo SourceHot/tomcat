@@ -17,6 +17,8 @@
 package org.apache.catalina.ssi;
 
 
+import org.apache.catalina.util.IOTools;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -25,7 +27,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
-import org.apache.catalina.util.IOTools;
 /**
  * The entry point to SSI processing. This class does the actual parsing,
  * delegating to the SSIMediator, SSICommand, and SSIExternalResolver as
@@ -35,18 +36,22 @@ import org.apache.catalina.util.IOTools;
  * @author David Becker
  */
 public class SSIProcessor {
-    /** The start pattern */
+    /**
+     * The start pattern
+     */
     protected static final String COMMAND_START = "<!--#";
-    /** The end pattern */
+    /**
+     * The end pattern
+     */
     protected static final String COMMAND_END = "-->";
     protected final SSIExternalResolver ssiExternalResolver;
-    protected final HashMap<String,SSICommand> commands = new HashMap<>();
+    protected final HashMap<String, SSICommand> commands = new HashMap<>();
     protected final int debug;
     protected final boolean allowExec;
 
 
     public SSIProcessor(SSIExternalResolver ssiExternalResolver, int debug,
-            boolean allowExec) {
+                        boolean allowExec) {
         this.ssiExternalResolver = ssiExternalResolver;
         this.debug = debug;
         this.allowExec = allowExec;
@@ -83,18 +88,15 @@ public class SSIProcessor {
      * writing the processed version to writer. NOTE: We really should be doing
      * this in a streaming way rather than converting it to an array first.
      *
-     * @param reader
-     *            the reader to read the file containing SSIs from
+     * @param reader           the reader to read the file containing SSIs from
      * @param lastModifiedDate resource last modification date
-     * @param writer
-     *            the writer to write the file with the SSIs processed.
+     * @param writer           the writer to write the file with the SSIs processed.
      * @return the most current modified date resulting from any SSI commands
-     * @throws IOException
-     *             when things go horribly awry. Should be unlikely since the
-     *             SSICommand usually catches 'normal' IOExceptions.
+     * @throws IOException when things go horribly awry. Should be unlikely since the
+     *                     SSICommand usually catches 'normal' IOExceptions.
      */
     public long process(Reader reader, long lastModifiedDate,
-            PrintWriter writer) throws IOException {
+                        PrintWriter writer) throws IOException {
         SSIMediator ssiMediator = new SSIMediator(ssiExternalResolver,
                 lastModifiedDate);
         StringWriter stringWriter = new StringWriter();
@@ -113,13 +115,15 @@ public class SSIProcessor {
                         inside = true;
                         index += COMMAND_START.length();
                         command.setLength(0); //clear the command string
-                    } else {
+                    }
+                    else {
                         if (!ssiMediator.getConditionalState().processConditionalCommandsOnly) {
                             writer.write(c);
                         }
                         index++;
                     }
-                } else {
+                }
+                else {
                     if (c == COMMAND_END.charAt(0)
                             && charCmp(fileContents, index, COMMAND_END)) {
                         inside = false;
@@ -139,16 +143,19 @@ public class SSIProcessor {
                         // during the loop
                         String configErrMsg = ssiMediator.getConfigErrMsg();
                         SSICommand ssiCommand =
-                            commands.get(strCmd.toLowerCase(Locale.ENGLISH));
+                                commands.get(strCmd.toLowerCase(Locale.ENGLISH));
                         String errorMessage = null;
                         if (ssiCommand == null) {
                             errorMessage = "Unknown command: " + strCmd;
-                        } else if (paramValues == null) {
+                        }
+                        else if (paramValues == null) {
                             errorMessage = "Error parsing directive parameters.";
-                        } else if (paramNames.length != paramValues.length) {
+                        }
+                        else if (paramNames.length != paramValues.length) {
                             errorMessage = "Parameter names count does not match parameter values count on command: "
                                     + strCmd;
-                        } else {
+                        }
+                        else {
                             // don't process the command if we are processing
                             // conditional
                             // commands only and the
@@ -156,7 +163,7 @@ public class SSIProcessor {
                             if (!ssiMediator.getConditionalState().processConditionalCommandsOnly
                                     || ssiCommand instanceof SSIConditional) {
                                 long lmd = ssiCommand.process(ssiMediator, strCmd,
-                                               paramNames, paramValues, writer);
+                                        paramNames, paramValues, writer);
                                 if (lmd > lastModifiedDate) {
                                     lastModifiedDate = lmd;
                                 }
@@ -166,7 +173,8 @@ public class SSIProcessor {
                             ssiExternalResolver.log(errorMessage, null);
                             writer.write(configErrMsg);
                         }
-                    } else {
+                    }
+                    else {
                         command.append(c);
                         index++;
                     }
@@ -184,8 +192,7 @@ public class SSIProcessor {
      * Parse a StringBuilder and take out the param type token. Called from
      * <code>requestHandler</code>
      *
-     * @param cmd
-     *            a value of type 'StringBuilder'
+     * @param cmd   a value of type 'StringBuilder'
      * @param start index on which parsing will start
      * @return an array with the parameter names
      */
@@ -204,7 +211,8 @@ public class SSIProcessor {
                     break;
                 }
                 inside = !inside;
-            } else {
+            }
+            else {
                 while (bIdx < cmd.length() && cmd.charAt(bIdx) != '=') {
                     retBuf.append(cmd.charAt(bIdx));
                     bIdx++;
@@ -240,8 +248,7 @@ public class SSIProcessor {
      * Parse a StringBuilder and take out the param token. Called from
      * <code>requestHandler</code>
      *
-     * @param cmd
-     *            a value of type 'StringBuilder'
+     * @param cmd   a value of type 'StringBuilder'
      * @param start index on which parsing will start
      * @param count number of values which should be parsed
      * @return an array with the parameter values
@@ -262,7 +269,8 @@ public class SSIProcessor {
                 }
                 inside = !inside;
                 endQuote = cmd.charAt(bIdx);
-            } else {
+            }
+            else {
                 boolean escaped = false;
                 for (; bIdx < cmd.length(); bIdx++) {
                     char c = cmd.charAt(bIdx);
@@ -302,8 +310,7 @@ public class SSIProcessor {
      * Parse a StringBuilder and take out the command token. Called from
      * <code>requestHandler</code>
      *
-     * @param cmd
-     *            a value of type 'StringBuilder'
+     * @param cmd a value of type 'StringBuilder'
      * @return a value of type 'String', or null if there is none
      */
     private String parseCmd(StringBuilder cmd) {
@@ -316,17 +323,20 @@ public class SSIProcessor {
                     firstLetter = i;
                 }
                 lastLetter = i;
-            } else if (isSpace(c)) {
+            }
+            else if (isSpace(c)) {
                 if (lastLetter > -1) {
                     break;
                 }
-            } else {
+            }
+            else {
                 break;
             }
         }
         if (firstLetter == -1) {
             return "";
-        } else {
+        }
+        else {
             return cmd.substring(firstLetter, lastLetter + 1);
         }
     }

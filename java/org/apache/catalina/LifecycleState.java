@@ -72,11 +72,11 @@ public enum LifecycleState {
 
     private final boolean available;
     /**
-     *时间名称
+     * 时间名称
      */
     private final String lifecycleEvent;
 
-    private LifecycleState(boolean available, String lifecycleEvent) {
+    LifecycleState(boolean available, String lifecycleEvent) {
         this.available = available;
         this.lifecycleEvent = lifecycleEvent;
     }
@@ -93,7 +93,7 @@ public enum LifecycleState {
      * </ul>
      *
      * @return <code>true</code> if the component is available for use,
-     *         otherwise <code>false</code>
+     * otherwise <code>false</code>
      */
     public boolean isAvailable() {
         return available;

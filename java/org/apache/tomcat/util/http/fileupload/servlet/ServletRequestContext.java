@@ -16,13 +16,12 @@
  */
 package org.apache.tomcat.util.http.fileupload.servlet;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.tomcat.util.http.fileupload.FileUploadBase;
 import org.apache.tomcat.util.http.fileupload.UploadContext;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 
 /**
@@ -94,7 +93,6 @@ public class ServletRequestContext implements UploadContext {
      * Retrieve the input stream for the request.
      *
      * @return The input stream for the request.
-     *
      * @throws IOException if a problem occurs.
      */
     @Override

@@ -36,7 +36,9 @@ public class Http11Nio2Protocol extends AbstractHttp11JsseProtocol<Nio2Channel> 
 
 
     @Override
-    protected Log getLog() { return log; }
+    protected Log getLog() {
+        return log;
+    }
 
 
     // ----------------------------------------------------- JMX related methods
@@ -44,8 +46,9 @@ public class Http11Nio2Protocol extends AbstractHttp11JsseProtocol<Nio2Channel> 
     @Override
     protected String getNamePrefix() {
         if (isSSLEnabled()) {
-            return "https-" + getSslImplementationShortName()+ "-nio2";
-        } else {
+            return "https-" + getSslImplementationShortName() + "-nio2";
+        }
+        else {
             return "http-nio2";
         }
     }

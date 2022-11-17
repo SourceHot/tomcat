@@ -16,6 +16,10 @@
  */
 package org.apache.tomcat.util.descriptor.web;
 
+import org.apache.tomcat.Jar;
+import org.apache.tomcat.JarScannerCallback;
+import org.xml.sax.InputSource;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,25 +28,21 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.JarScannerCallback;
-import org.xml.sax.InputSource;
-
 /**
-* Callback handling a web-fragment.xml descriptor.
-*/
+ * Callback handling a web-fragment.xml descriptor.
+ */
 public class FragmentJarScannerCallback implements JarScannerCallback {
 
     private static final String FRAGMENT_LOCATION =
-        "META-INF/web-fragment.xml";
+            "META-INF/web-fragment.xml";
     private final WebXmlParser webXmlParser;
     private final boolean delegate;
     private final boolean parseRequired;
-    private final Map<String,WebXml> fragments = new HashMap<>();
-    private boolean ok  = true;
+    private final Map<String, WebXml> fragments = new HashMap<>();
+    private boolean ok = true;
 
     public FragmentJarScannerCallback(WebXmlParser webXmlParser, boolean delegate,
-            boolean parseRequired) {
+                                      boolean parseRequired) {
         this.webXmlParser = webXmlParser;
         this.delegate = delegate;
         this.parseRequired = parseRequired;
@@ -70,7 +70,8 @@ public class FragmentJarScannerCallback implements JarScannerCallback {
                 // If there is no web.xml, normal JAR no impact on
                 // distributable
                 fragment.setDistributable(true);
-            } else {
+            }
+            else {
                 String fragmentUrl = jar.getURL(FRAGMENT_LOCATION);
                 InputSource source = new InputSource(fragmentUrl);
                 source.setByteStream(is);
@@ -108,13 +109,14 @@ public class FragmentJarScannerCallback implements JarScannerCallback {
             if (fragmentFile.isFile()) {
                 try (InputStream stream = new FileInputStream(fragmentFile)) {
                     InputSource source =
-                        new InputSource(fragmentFile.toURI().toURL().toString());
+                            new InputSource(fragmentFile.toURI().toURL().toString());
                     source.setByteStream(stream);
                     if (!webXmlParser.parseWebXml(source, fragment, true)) {
                         ok = false;
                     }
                 }
-            } else {
+            }
+            else {
                 // If there is no web.xml, normal folder no impact on
                 // distributable
                 fragment.setDistributable(true);
@@ -155,7 +157,7 @@ public class FragmentJarScannerCallback implements JarScannerCallback {
         return ok;
     }
 
-    public Map<String,WebXml> getFragments() {
+    public Map<String, WebXml> getFragments() {
         return fragments;
     }
 }

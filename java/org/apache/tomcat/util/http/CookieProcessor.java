@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.util.http;
 
-import java.nio.charset.Charset;
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.nio.charset.Charset;
 
 /**
  * cookie处理器
@@ -46,11 +46,9 @@ public interface CookieProcessor {
      * Chromium project</a>.
      *
      * @param request The servlet request
-     *
-     * @param cookie The cookie for which the header will be generated
-     *
+     * @param cookie  The cookie for which the header will be generated
      * @return The header value in a form that can be added directly to the
-     *         response
+     * response
      */
     String generateHeader(Cookie cookie, HttpServletRequest request);
 

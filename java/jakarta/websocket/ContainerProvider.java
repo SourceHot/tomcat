@@ -52,7 +52,7 @@ public abstract class ContainerProvider {
                                 DEFAULT_PROVIDER_CLASS_NAME);
                 result = clazz.getConstructor().newInstance();
             } catch (ReflectiveOperationException | IllegalArgumentException |
-                    SecurityException e) {
+                     SecurityException e) {
                 // No options left. Just return null.
             }
         }

@@ -16,27 +16,25 @@
  */
 package org.apache.catalina.authenticator.jaspic;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.UnsupportedCallbackException;
-
 import jakarta.security.auth.message.callback.CallerPrincipalCallback;
 import jakarta.security.auth.message.callback.GroupPrincipalCallback;
 import jakarta.security.auth.message.callback.PasswordValidationCallback;
-
 import org.apache.catalina.Contained;
 import org.apache.catalina.Container;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Default implementation of a JASPIC CallbackHandler.
@@ -67,23 +65,28 @@ public class CallbackHandlerImpl implements CallbackHandler, Contained {
                     name = cpc.getName();
                     principal = cpc.getPrincipal();
                     subject = cpc.getSubject();
-                } else if (callback instanceof GroupPrincipalCallback) {
+                }
+                else if (callback instanceof GroupPrincipalCallback) {
                     GroupPrincipalCallback gpc = (GroupPrincipalCallback) callback;
                     groups = gpc.getGroups();
-                } else if (callback instanceof PasswordValidationCallback) {
+                }
+                else if (callback instanceof PasswordValidationCallback) {
                     if (container == null) {
                         log.warn(sm.getString("callbackHandlerImpl.containerMissing", callback.getClass().getName()));
-                    } else if (container.getRealm() == null) {
+                    }
+                    else if (container.getRealm() == null) {
                         log.warn(sm.getString("callbackHandlerImpl.realmMissing",
                                 callback.getClass().getName(), container.getName()));
-                    } else {
+                    }
+                    else {
                         PasswordValidationCallback pvc = (PasswordValidationCallback) callback;
                         principal = container.getRealm().authenticate(pvc.getUsername(),
                                 String.valueOf(pvc.getPassword()));
                         pvc.setResult(principal != null);
                         subject = pvc.getSubject();
                     }
-                } else {
+                }
+                else {
                     log.error(sm.getString("callbackHandlerImpl.jaspicCallbackMissing",
                             callback.getClass().getName()));
                 }
@@ -112,7 +115,8 @@ public class CallbackHandlerImpl implements CallbackHandler, Contained {
         List<String> roles;
         if (groups == null || groups.length == 0) {
             roles = Collections.emptyList();
-        } else {
+        }
+        else {
             roles = Arrays.asList(groups);
         }
 

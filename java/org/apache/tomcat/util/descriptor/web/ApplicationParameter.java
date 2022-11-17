@@ -40,6 +40,19 @@ public class ApplicationParameter implements Serializable {
      * The description of this environment entry.
      */
     private String description = null;
+    /**
+     * The name of this application parameter.
+     */
+    private String name = null;
+    /**
+     * Does this application parameter allow overrides by the application
+     * deployment descriptor?
+     */
+    private boolean override = true;
+    /**
+     * The value of this application parameter.
+     */
+    private String value = null;
 
     public String getDescription() {
         return this.description;
@@ -49,12 +62,6 @@ public class ApplicationParameter implements Serializable {
         this.description = description;
     }
 
-
-    /**
-     * The name of this application parameter.
-     */
-    private String name = null;
-
     public String getName() {
         return this.name;
     }
@@ -63,13 +70,6 @@ public class ApplicationParameter implements Serializable {
         this.name = name;
     }
 
-
-    /**
-     * Does this application parameter allow overrides by the application
-     * deployment descriptor?
-     */
-    private boolean override = true;
-
     public boolean getOverride() {
         return this.override;
     }
@@ -77,12 +77,6 @@ public class ApplicationParameter implements Serializable {
     public void setOverride(boolean override) {
         this.override = override;
     }
-
-
-    /**
-     * The value of this application parameter.
-     */
-    private String value = null;
 
     public String getValue() {
         return this.value;

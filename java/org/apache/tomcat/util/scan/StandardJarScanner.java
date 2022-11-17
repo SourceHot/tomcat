@@ -16,34 +16,24 @@
  */
 package org.apache.tomcat.util.scan;
 
+import jakarta.servlet.ServletContext;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.*;
+import org.apache.tomcat.util.ExceptionUtils;
+import org.apache.tomcat.util.buf.UriUtil;
+import org.apache.tomcat.util.compat.JreCompat;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-
-import jakarta.servlet.ServletContext;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.Jar;
-import org.apache.tomcat.JarScanFilter;
-import org.apache.tomcat.JarScanType;
-import org.apache.tomcat.JarScanner;
-import org.apache.tomcat.JarScannerCallback;
-import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.buf.UriUtil;
-import org.apache.tomcat.util.compat.JreCompat;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * The default {@link JarScanner} implementation scans the WEB-INF/lib directory
@@ -61,13 +51,10 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class StandardJarScanner implements JarScanner {
 
-    private final Log log = LogFactory.getLog(StandardJarScanner.class); // must not be static
-
     /**
      * The string resources for this package.
      */
     private static final StringManager sm = StringManager.getManager(Constants.Package);
-
     private static final Set<ClassLoader> CLASSLOADER_HIERARCHY;
 
     static {
@@ -82,71 +69,97 @@ public class StandardJarScanner implements JarScanner {
         CLASSLOADER_HIERARCHY = Collections.unmodifiableSet(cls);
     }
 
+    private final Log log = LogFactory.getLog(StandardJarScanner.class); // must not be static
     /**
      * Controls the classpath scanning extension.
      */
     private boolean scanClassPath = true;
-    public boolean isScanClassPath() {
-        return scanClassPath;
-    }
-    public void setScanClassPath(boolean scanClassPath) {
-        this.scanClassPath = scanClassPath;
-    }
-
     /**
      * Controls the JAR file Manifest scanning extension.
      */
     private boolean scanManifest = true;
-    public boolean isScanManifest() {
-        return scanManifest;
-    }
-    public void setScanManifest(boolean scanManifest) {
-        this.scanManifest = scanManifest;
-    }
-
     /**
      * Controls the testing all files to see of they are JAR files extension.
      */
     private boolean scanAllFiles = false;
-    public boolean isScanAllFiles() {
-        return scanAllFiles;
-    }
-    public void setScanAllFiles(boolean scanAllFiles) {
-        this.scanAllFiles = scanAllFiles;
-    }
-
     /**
      * Controls the testing all directories to see of they are exploded JAR
      * files extension.
      */
     private boolean scanAllDirectories = true;
-    public boolean isScanAllDirectories() {
-        return scanAllDirectories;
-    }
-    public void setScanAllDirectories(boolean scanAllDirectories) {
-        this.scanAllDirectories = scanAllDirectories;
-    }
-
     /**
      * Controls the testing of the bootstrap classpath which consists of the
      * runtime classes provided by the JVM and any installed system extensions.
      */
     private boolean scanBootstrapClassPath = false;
-    public boolean isScanBootstrapClassPath() {
-        return scanBootstrapClassPath;
-    }
-    public void setScanBootstrapClassPath(boolean scanBootstrapClassPath) {
-        this.scanBootstrapClassPath = scanBootstrapClassPath;
-    }
-
     /**
      * Controls the filtering of the results from the scan for JARs
      */
     private JarScanFilter jarScanFilter = new StandardJarScanFilter();
+
+    /*
+     * Since class loader hierarchies can get complicated, this method attempts
+     * to apply the following rule: A class loader is a web application class
+     * loader unless it loaded this class (StandardJarScanner) or is a parent
+     * of the class loader that loaded this class.
+     *
+     * This should mean:
+     *   the webapp class loader is an application class loader
+     *   the shared class loader is an application class loader
+     *   the server class loader is not an application class loader
+     *   the common class loader is not an application class loader
+     *   the system class loader is not an application class loader
+     *   the bootstrap class loader is not an application class loader
+     */
+    private static boolean isWebappClassLoader(ClassLoader classLoader) {
+        return !CLASSLOADER_HIERARCHY.contains(classLoader);
+    }
+
+    public boolean isScanClassPath() {
+        return scanClassPath;
+    }
+
+    public void setScanClassPath(boolean scanClassPath) {
+        this.scanClassPath = scanClassPath;
+    }
+
+    public boolean isScanManifest() {
+        return scanManifest;
+    }
+
+    public void setScanManifest(boolean scanManifest) {
+        this.scanManifest = scanManifest;
+    }
+
+    public boolean isScanAllFiles() {
+        return scanAllFiles;
+    }
+
+    public void setScanAllFiles(boolean scanAllFiles) {
+        this.scanAllFiles = scanAllFiles;
+    }
+
+    public boolean isScanAllDirectories() {
+        return scanAllDirectories;
+    }
+
+    public void setScanAllDirectories(boolean scanAllDirectories) {
+        this.scanAllDirectories = scanAllDirectories;
+    }
+
+    public boolean isScanBootstrapClassPath() {
+        return scanBootstrapClassPath;
+    }
+
+    public void setScanBootstrapClassPath(boolean scanBootstrapClassPath) {
+        this.scanBootstrapClassPath = scanBootstrapClassPath;
+    }
+
     @Override
     public JarScanFilter getJarScanFilter() {
         return jarScanFilter;
     }
+
     @Override
     public void setJarScanFilter(JarScanFilter jarScanFilter) {
         this.jarScanFilter = jarScanFilter;
@@ -156,16 +169,16 @@ public class StandardJarScanner implements JarScanner {
      * Scan the provided ServletContext and class loader for JAR files. Each JAR
      * file found will be passed to the callback handler to be processed.
      *
-     * @param scanType      The type of JAR scan to perform. This is passed to
-     *                          the filter which uses it to determine how to
-     *                          filter the results
-     * @param context       The ServletContext - used to locate and access
-     *                      WEB-INF/lib
-     * @param callback      The handler to process any JARs found
+     * @param scanType The type of JAR scan to perform. This is passed to
+     *                 the filter which uses it to determine how to
+     *                 filter the results
+     * @param context  The ServletContext - used to locate and access
+     *                 WEB-INF/lib
+     * @param callback The handler to process any JARs found
      */
     @Override
     public void scan(JarScanType scanType, ServletContext context,
-            JarScannerCallback callback) {
+                     JarScannerCallback callback) {
 
         if (log.isTraceEnabled()) {
             log.trace(sm.getString("jarScan.webinflibStart"));
@@ -183,7 +196,7 @@ public class StandardJarScanner implements JarScanner {
             for (String path : dirList) {
                 if (path.endsWith(Constants.JAR_EXT) &&
                         getJarScanFilter().check(scanType,
-                                path.substring(path.lastIndexOf('/')+1))) {
+                                path.substring(path.lastIndexOf('/') + 1))) {
                     // Need to scan this JAR
                     if (log.isDebugEnabled()) {
                         log.debug(sm.getString("jarScan.webinflibJarScan", path));
@@ -196,7 +209,8 @@ public class StandardJarScanner implements JarScanner {
                     } catch (IOException e) {
                         log.warn(sm.getString("jarScan.webinflibFail", url), e);
                     }
-                } else {
+                }
+                else {
                     if (log.isTraceEnabled()) {
                         log.trace(sm.getString("jarScan.webinflibJarNoScan", path));
                     }
@@ -234,9 +248,8 @@ public class StandardJarScanner implements JarScanner {
         }
     }
 
-
     protected void doScanClassPath(JarScanType scanType, ServletContext context,
-            JarScannerCallback callback, Set<URL> processedURLs) {
+                                   JarScannerCallback callback, Set<URL> processedURLs) {
         if (log.isTraceEnabled()) {
             log.trace(sm.getString("jarScan.classloaderStart"));
         }
@@ -283,9 +296,8 @@ public class StandardJarScanner implements JarScanner {
         }
     }
 
-
     protected void processURLs(JarScanType scanType, JarScannerCallback callback,
-            Set<URL> processedURLs, boolean isWebapp, Deque<URL> classPathUrlsToProcess) {
+                               Set<URL> processedURLs, boolean isWebapp, Deque<URL> classPathUrlsToProcess) {
 
         if (jarScanFilter.isSkipAll()) {
             return;
@@ -308,8 +320,8 @@ public class StandardJarScanner implements JarScanner {
             if ((cpe.isJar() ||
                     scanType == JarScanType.PLUGGABILITY ||
                     isScanAllDirectories()) &&
-                            getJarScanFilter().check(scanType,
-                                    cpe.getName())) {
+                    getJarScanFilter().check(scanType,
+                            cpe.getName())) {
                 if (log.isDebugEnabled()) {
                     log.debug(sm.getString("jarScan.classloaderJarScan", url));
                 }
@@ -319,7 +331,8 @@ public class StandardJarScanner implements JarScanner {
                 } catch (IOException ioe) {
                     log.warn(sm.getString("jarScan.classloaderFail", url), ioe);
                 }
-            } else {
+            }
+            else {
                 // JAR / directory has been skipped
                 if (log.isTraceEnabled()) {
                     log.trace(sm.getString("jarScan.classloaderJarNoScan", url));
@@ -327,7 +340,6 @@ public class StandardJarScanner implements JarScanner {
             }
         }
     }
-
 
     protected void addClassPath(Deque<URL> classPathUrlsToProcess) {
         String classPath = System.getProperty("java.class.path");
@@ -347,32 +359,12 @@ public class StandardJarScanner implements JarScanner {
         }
     }
 
-
-    /*
-     * Since class loader hierarchies can get complicated, this method attempts
-     * to apply the following rule: A class loader is a web application class
-     * loader unless it loaded this class (StandardJarScanner) or is a parent
-     * of the class loader that loaded this class.
-     *
-     * This should mean:
-     *   the webapp class loader is an application class loader
-     *   the shared class loader is an application class loader
-     *   the server class loader is not an application class loader
-     *   the common class loader is not an application class loader
-     *   the system class loader is not an application class loader
-     *   the bootstrap class loader is not an application class loader
-     */
-    private static boolean isWebappClassLoader(ClassLoader classLoader) {
-        return !CLASSLOADER_HIERARCHY.contains(classLoader);
-    }
-
-
     /*
      * Scan a URL for JARs with the optional extensions to look at all files
      * and all directories.
      */
     protected void process(JarScanType scanType, JarScannerCallback callback,
-            URL url, String webappPath, boolean isWebapp, Deque<URL> classPathUrlsToProcess)
+                           URL url, String webappPath, boolean isWebapp, Deque<URL> classPathUrlsToProcess)
             throws IOException {
 
         if (log.isTraceEnabled()) {
@@ -386,7 +378,8 @@ public class StandardJarScanner implements JarScanner {
                 }
                 callback.scan(jar, webappPath, isWebapp);
             }
-        } else if ("file".equals(url.getProtocol())) {
+        }
+        else if ("file".equals(url.getProtocol())) {
             File f;
             try {
                 f = new File(url.toURI());
@@ -399,10 +392,12 @@ public class StandardJarScanner implements JarScanner {
                         }
                         callback.scan(jar, webappPath, isWebapp);
                     }
-                } else if (f.isDirectory()) {
+                }
+                else if (f.isDirectory()) {
                     if (scanType == JarScanType.PLUGGABILITY) {
                         callback.scan(f, webappPath, isWebapp);
-                    } else {
+                    }
+                    else {
                         File metainf = new File(f.getAbsoluteFile() + File.separator + "META-INF");
                         if (metainf.isDirectory()) {
                             callback.scan(f, webappPath, isWebapp);
@@ -419,7 +414,7 @@ public class StandardJarScanner implements JarScanner {
 
 
     private void processManifest(Jar jar, boolean isWebapp,
-            Deque<URL> classPathUrlsToProcess) throws IOException {
+                                 Deque<URL> classPathUrlsToProcess) throws IOException {
 
         // Not processed for web application JARs nor if the caller did not
         // provide a Deque of URLs to append to.
@@ -480,7 +475,8 @@ public class StandardJarScanner implements JarScanner {
                 jar = true;
                 int start = path.lastIndexOf('/', end);
                 name = path.substring(start + 1, end + 4);
-            } else {
+            }
+            else {
                 jar = false;
                 if (path.endsWith("/")) {
                     path = path.substring(0, path.length() - 1);

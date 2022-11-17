@@ -16,6 +16,13 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
+import org.apache.catalina.tribes.Member;
+import org.apache.catalina.tribes.MembershipService;
+import org.apache.catalina.tribes.membership.MemberImpl;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.json.JSONParser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,16 +37,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.apache.catalina.tribes.Member;
-import org.apache.catalina.tribes.MembershipService;
-import org.apache.catalina.tribes.membership.MemberImpl;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.json.JSONParser;
-
 /**
  * A {@link org.apache.catalina.tribes.MembershipProvider} that uses Kubernetes API to retrieve the members of a cluster.<br>
- *
  */
 
 public class KubernetesMembershipProvider extends CloudMembershipProvider {
@@ -84,7 +83,8 @@ public class KubernetesMembershipProvider extends CloudMembershipProvider {
             } catch (IOException e) {
                 log.error(sm.getString("kubernetesMembershipProvider.streamError"), e);
             }
-        } else {
+        }
+        else {
             if (protocol == null) {
                 protocol = "http";
             }
@@ -134,7 +134,7 @@ public class KubernetesMembershipProvider extends CloudMembershipProvider {
         List<MemberImpl> members = new ArrayList<>();
 
         try (InputStream stream = streamProvider.openStream(url, headers, connectionTimeout, readTimeout);
-                InputStreamReader reader = new InputStreamReader(stream, "UTF-8")) {
+             InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
             parsePods(reader, members);
         } catch (IOException e) {
             log.error(sm.getString("kubernetesMembershipProvider.streamError"), e);

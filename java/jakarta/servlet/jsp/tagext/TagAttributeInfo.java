@@ -32,23 +32,38 @@ public class TagAttributeInfo {
      * something else IDREFs are not handled any differently.
      */
     public static final String ID = "id";
+    /*
+     * private fields
+     */
+    private final String name;
+    private final String type;
+    private final boolean reqTime;
+    private final boolean required;
+    /*
+     * private fields for JSP 2.0
+     */
+    private final boolean fragment;
+    /*
+     * private fields for JSP 2.1
+     */
+    private final String description;
+    private final boolean deferredValue;
+    private final boolean deferredMethod;
+    private final String expectedTypeName;
+    private final String methodSignature;
 
     /**
      * Constructor for TagAttributeInfo. This class is to be instantiated only
      * from the TagLibrary code under request from some JSP code that is parsing
      * a TLD (Tag Library Descriptor).
      *
-     * @param name
-     *            The name of the attribute.
-     * @param required
-     *            If this attribute is required in tag instances.
-     * @param type
-     *            The name of the type of the attribute.
-     * @param reqTime
-     *            Whether this attribute holds a request-time Attribute.
+     * @param name     The name of the attribute.
+     * @param required If this attribute is required in tag instances.
+     * @param type     The name of the type of the attribute.
+     * @param reqTime  Whether this attribute holds a request-time Attribute.
      */
     public TagAttributeInfo(String name, boolean required, String type,
-            boolean reqTime) {
+                            boolean reqTime) {
         this(name, required, type, reqTime, false);
     }
 
@@ -57,21 +72,15 @@ public class TagAttributeInfo {
      * instantiated only from the TagLibrary code under request from some JSP
      * code that is parsing a TLD (Tag Library Descriptor).
      *
-     * @param name
-     *            The name of the attribute.
-     * @param required
-     *            If this attribute is required in tag instances.
-     * @param type
-     *            The name of the type of the attribute.
-     * @param reqTime
-     *            Whether this attribute holds a request-time Attribute.
-     * @param fragment
-     *            Whether this attribute is of type JspFragment
-     *
+     * @param name     The name of the attribute.
+     * @param required If this attribute is required in tag instances.
+     * @param type     The name of the type of the attribute.
+     * @param reqTime  Whether this attribute holds a request-time Attribute.
+     * @param fragment Whether this attribute is of type JspFragment
      * @since JSP 2.0
      */
     public TagAttributeInfo(String name, boolean required, String type,
-            boolean reqTime, boolean fragment) {
+                            boolean reqTime, boolean fragment) {
         this(name, required, type, reqTime, fragment, null, false, false, null, null);
     }
 
@@ -80,37 +89,26 @@ public class TagAttributeInfo {
      * instantiated only from the TagLibrary code under request from some JSP
      * code that is parsing a TLD (Tag Library Descriptor).
      *
-     * @param name
-     *            The name of the attribute.
-     * @param required
-     *            If this attribute is required in tag instances.
-     * @param type
-     *            The name of the type of the attribute.
-     * @param reqTime
-     *            Whether this attribute holds a request-time Attribute.
-     * @param fragment
-     *            Whether this attribute is of type JspFragment
-     * @param description
-     *            Description of this attribute
-     * @param deferredValue
-     *            Does this attribute accept value expressions (written as
-     *            Strings) as attribute values the evaluation of which is
-     *            deferred until calculated by the tag
-     * @param deferredMethod
-     *            Does this attribute accept method expressions (written as
-     *            Strings) as attribute values the evaluation of which is
-     *            deferred until calculated by the tag
-     * @param expectedTypeName
-     *            The expected type when the deferred value is evaluated
-     * @param methodSignature
-     *            The expected method signature if a deferred method
-     *
+     * @param name             The name of the attribute.
+     * @param required         If this attribute is required in tag instances.
+     * @param type             The name of the type of the attribute.
+     * @param reqTime          Whether this attribute holds a request-time Attribute.
+     * @param fragment         Whether this attribute is of type JspFragment
+     * @param description      Description of this attribute
+     * @param deferredValue    Does this attribute accept value expressions (written as
+     *                         Strings) as attribute values the evaluation of which is
+     *                         deferred until calculated by the tag
+     * @param deferredMethod   Does this attribute accept method expressions (written as
+     *                         Strings) as attribute values the evaluation of which is
+     *                         deferred until calculated by the tag
+     * @param expectedTypeName The expected type when the deferred value is evaluated
+     * @param methodSignature  The expected method signature if a deferred method
      * @since JSP 2.1
      */
     public TagAttributeInfo(String name, boolean required, String type,
-            boolean reqTime, boolean fragment, String description,
-            boolean deferredValue, boolean deferredMethod,
-            String expectedTypeName, String methodSignature) {
+                            boolean reqTime, boolean fragment, String description,
+                            boolean deferredValue, boolean deferredMethod,
+                            String expectedTypeName, String methodSignature) {
         this.name = name;
         this.required = required;
         this.type = type;
@@ -121,6 +119,22 @@ public class TagAttributeInfo {
         this.deferredMethod = deferredMethod;
         this.expectedTypeName = expectedTypeName;
         this.methodSignature = methodSignature;
+    }
+
+    /**
+     * Convenience static method that goes through an array of TagAttributeInfo
+     * objects and looks for "id".
+     *
+     * @param tagAttributeInfos An array of TagAttributeInfo
+     * @return The TagAttributeInfo reference with name "id"
+     */
+    public static TagAttributeInfo getIdAttribute(TagAttributeInfo[] tagAttributeInfos) {
+        for (TagAttributeInfo tagAttributeInfo : tagAttributeInfos) {
+            if (tagAttributeInfo.getName().equals(ID)) {
+                return tagAttributeInfo;
+            }
+        }
+        return null; // no such attribute
     }
 
     /**
@@ -160,27 +174,9 @@ public class TagAttributeInfo {
     }
 
     /**
-     * Convenience static method that goes through an array of TagAttributeInfo
-     * objects and looks for "id".
-     *
-     * @param tagAttributeInfos
-     *            An array of TagAttributeInfo
-     * @return The TagAttributeInfo reference with name "id"
-     */
-    public static TagAttributeInfo getIdAttribute(TagAttributeInfo[] tagAttributeInfos) {
-        for (TagAttributeInfo tagAttributeInfo : tagAttributeInfos) {
-            if (tagAttributeInfo.getName().equals(ID)) {
-                return tagAttributeInfo;
-            }
-        }
-        return null; // no such attribute
-    }
-
-    /**
      * Whether this attribute is of type JspFragment.
      *
      * @return if the attribute is of type JspFragment
-     *
      * @since JSP 2.0
      */
     public boolean isFragment() {
@@ -195,53 +191,23 @@ public class TagAttributeInfo {
      */
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder(64);
-        b.append("name = " + name + " ");
-        b.append("type = " + type + " ");
-        b.append("reqTime = " + reqTime + " ");
-        b.append("required = " + required + " ");
-        b.append("fragment = " + fragment + " ");
-        b.append("deferredValue = " + deferredValue + " ");
-        b.append("expectedTypeName = " + expectedTypeName + " ");
-        b.append("deferredMethod = " + deferredMethod + " ");
-        b.append("methodSignature = " + methodSignature);
-        return b.toString();
+        String b = "name = " + name + " " +
+                "type = " + type + " " +
+                "reqTime = " + reqTime + " " +
+                "required = " + required + " " +
+                "fragment = " + fragment + " " +
+                "deferredValue = " + deferredValue + " " +
+                "expectedTypeName = " + expectedTypeName + " " +
+                "deferredMethod = " + deferredMethod + " " +
+                "methodSignature = " + methodSignature;
+        return b;
     }
-
-    /*
-     * private fields
-     */
-    private final String name;
-
-    private final String type;
-
-    private final boolean reqTime;
-
-    private final boolean required;
-
-    /*
-     * private fields for JSP 2.0
-     */
-    private final boolean fragment;
-
-    /*
-     * private fields for JSP 2.1
-     */
-    private final String description;
-
-    private final boolean deferredValue;
-
-    private final boolean deferredMethod;
-
-    private final String expectedTypeName;
-
-    private final String methodSignature;
 
     /**
      * Does the attribute expect to be passed a deferred method?
      *
      * @return {@code true} if a deferred method expression is expected,
-     *         otherwise {@code false}
+     * otherwise {@code false}
      */
     public boolean isDeferredMethod() {
         return deferredMethod;
@@ -251,7 +217,7 @@ public class TagAttributeInfo {
      * Does the attribute expect to be passed a deferred value?
      *
      * @return {@code true} if a deferred value expression is expected,
-     *         otherwise {@code false}
+     * otherwise {@code false}
      */
     public boolean isDeferredValue() {
         return deferredValue;
@@ -280,7 +246,7 @@ public class TagAttributeInfo {
      * signature.
      *
      * @return The expected method signature or {@code null} if this attribute
-     *         is not a deferred method attribute
+     * is not a deferred method attribute
      */
     public String getMethodSignature() {
         return methodSignature;

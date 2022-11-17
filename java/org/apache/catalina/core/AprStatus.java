@@ -33,33 +33,33 @@ public class AprStatus {
         return aprInitialized;
     }
 
+    public static void setAprInitialized(boolean aprInitialized) {
+        AprStatus.aprInitialized = aprInitialized;
+    }
+
     /**
      * 是否可用
+     *
      * @return
      */
     public static boolean isAprAvailable() {
         return aprAvailable;
     }
 
-    public static boolean getUseOpenSSL() {
-        return useOpenSSL;
-    }
-
-
-    public static boolean isInstanceCreated() {
-        return instanceCreated;
-    }
-
-    public static void setAprInitialized(boolean aprInitialized) {
-        AprStatus.aprInitialized = aprInitialized;
-    }
-
     public static void setAprAvailable(boolean aprAvailable) {
         AprStatus.aprAvailable = aprAvailable;
     }
 
+    public static boolean getUseOpenSSL() {
+        return useOpenSSL;
+    }
+
     public static void setUseOpenSSL(boolean useOpenSSL) {
         AprStatus.useOpenSSL = useOpenSSL;
+    }
+
+    public static boolean isInstanceCreated() {
+        return instanceCreated;
     }
 
     public static void setInstanceCreated(boolean instanceCreated) {

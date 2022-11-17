@@ -16,16 +16,10 @@
  */
 package org.apache.tomcat.util.http.fileupload.util;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import org.apache.tomcat.util.http.fileupload.FileItemHeaders;
+
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * Default implementation of the {@link FileItemHeaders} interface.
@@ -82,7 +76,7 @@ public class FileItemHeadersImpl implements FileItemHeaders, Serializable {
     /**
      * Method to add header values to this instance.
      *
-     * @param name name of this header
+     * @param name  name of this header
      * @param value value of this header
      */
     public synchronized void addHeader(final String name, final String value) {

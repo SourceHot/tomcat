@@ -16,13 +16,6 @@
  */
 package org.apache.catalina.mbeans;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 import org.apache.catalina.Group;
 import org.apache.catalina.Role;
 import org.apache.catalina.User;
@@ -30,6 +23,12 @@ import org.apache.tomcat.util.modeler.BaseModelMBean;
 import org.apache.tomcat.util.modeler.ManagedBean;
 import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * <p>A <strong>ModelMBean</strong> implementation for the
@@ -71,7 +70,7 @@ public class UserMBean extends BaseModelMBean {
             try {
                 group = groups.next();
                 ObjectName oname =
-                    MBeanUtils.createObjectName(managed.getDomain(), group);
+                        MBeanUtils.createObjectName(managed.getDomain(), group);
                 results.add(oname.toString());
             } catch (MalformedObjectNameException e) {
                 throw new IllegalArgumentException(sm.getString("userMBean.createError.group", group), e);
@@ -94,7 +93,7 @@ public class UserMBean extends BaseModelMBean {
             try {
                 role = roles.next();
                 ObjectName oname =
-                    MBeanUtils.createObjectName(managed.getDomain(), role);
+                        MBeanUtils.createObjectName(managed.getDomain(), role);
                 results.add(oname.toString());
             } catch (MalformedObjectNameException e) {
                 throw new IllegalArgumentException(sm.getString("userMBean.createError.role", role), e);

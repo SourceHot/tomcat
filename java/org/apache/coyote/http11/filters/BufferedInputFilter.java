@@ -16,16 +16,16 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.IOException;
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.http11.InputFilter;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
+
+import java.io.IOException;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Input filter responsible for reading and buffering the request body, so that
@@ -41,22 +41,21 @@ public class BufferedInputFilter implements InputFilter, ApplicationBufferHandle
 
     // ----------------------------------------------------- Instance Variables
 
-    private ByteBuffer buffered;
-    private ByteBuffer tempRead;
-    private InputBuffer buffer;
-    private boolean hasRead = false;
-
-
-    // ----------------------------------------------------- Static Initializer
-
     static {
         ENCODING.setBytes(ENCODING_NAME.getBytes(StandardCharsets.ISO_8859_1),
                 0, ENCODING_NAME.length());
     }
 
+    private ByteBuffer buffered;
+    private ByteBuffer tempRead;
+    private InputBuffer buffer;
+
+
+    // ----------------------------------------------------- Static Initializer
+    private boolean hasRead = false;
+
 
     // --------------------------------------------------------- Public Methods
-
 
     /**
      * Set the buffering limit. This should be reset every time the buffer is
@@ -88,7 +87,7 @@ public class BufferedInputFilter implements InputFilter, ApplicationBufferHandle
                 buffered.limit(buffered.position()).reset();
                 tempRead = null;
             }
-        } catch(IOException | BufferOverflowException ioe) {
+        } catch (IOException | BufferOverflowException ioe) {
             // No need for i18n - this isn't going to get logged anywhere
             throw new IllegalStateException(
                     "Request body too large for buffer");
@@ -119,7 +118,8 @@ public class BufferedInputFilter implements InputFilter, ApplicationBufferHandle
         if (buffered != null) {
             if (buffered.capacity() > 65536) {
                 buffered = null;
-            } else {
+            }
+            else {
                 buffered.position(0).limit(0);
             }
         }
@@ -143,7 +143,8 @@ public class BufferedInputFilter implements InputFilter, ApplicationBufferHandle
         if (available == 0) {
             // No data buffered here. Try the next filter in the chain.
             return buffer.available();
-        } else {
+        }
+        else {
             return available;
         }
     }
@@ -154,18 +155,15 @@ public class BufferedInputFilter implements InputFilter, ApplicationBufferHandle
         return hasRead || buffered.remaining() <= 0;
     }
 
-
-    @Override
-    public void setByteBuffer(ByteBuffer buffer) {
-        tempRead = buffer;
-    }
-
-
     @Override
     public ByteBuffer getByteBuffer() {
         return tempRead;
     }
 
+    @Override
+    public void setByteBuffer(ByteBuffer buffer) {
+        tempRead = buffer;
+    }
 
     @Override
     public void expand(int size) {

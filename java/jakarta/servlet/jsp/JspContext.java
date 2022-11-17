@@ -1,24 +1,24 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package jakarta.servlet.jsp;
 
-import java.util.Enumeration;
-
 import jakarta.el.ELContext;
+
+import java.util.Enumeration;
 
 /**
  * <p>
@@ -83,9 +83,9 @@ public abstract class JspContext {
      * effect as calling
      * <code>removeAttribute( name, PageContext.PAGE_SCOPE )</code>.
      *
-     * @param name the name of the attribute to set
+     * @param name  the name of the attribute to set
      * @param value the value to associate with the name, or null if the
-     *     attribute is to be removed from the page scope.
+     *              attribute is to be removed from the page scope.
      * @throws NullPointerException if the name is null
      */
 
@@ -97,17 +97,16 @@ public abstract class JspContext {
      * this has the same effect as calling
      * <code>removeAttribute( name, scope )</code>.
      *
-     * @param name the name of the attribute to set
+     * @param name  the name of the attribute to set
      * @param value the object to associate with the name, or null if
-     *     the attribute is to be removed from the specified scope.
+     *              the attribute is to be removed from the specified scope.
      * @param scope the scope with which to associate the name/object
-     *
-     * @throws NullPointerException if the name is null
+     * @throws NullPointerException     if the name is null
      * @throws IllegalArgumentException if the scope is invalid
-     * @throws IllegalStateException if the scope is
-     *     PageContext.SESSION_SCOPE but the page that was requested
-     *     does not participate in a session or the session has been
-     *     invalidated.
+     * @throws IllegalStateException    if the scope is
+     *                                  PageContext.SESSION_SCOPE but the page that was requested
+     *                                  does not participate in a session or the session has been
+     *                                  invalidated.
      */
 
     public abstract void setAttribute(String name, Object value, int scope);
@@ -118,8 +117,7 @@ public abstract class JspContext {
      *
      * @param name the name of the attribute to get
      * @return the object associated with the name in the page scope
-     *     or null if not found.
-     *
+     * or null if not found.
      * @throws NullPointerException if the name is null
      */
 
@@ -129,17 +127,16 @@ public abstract class JspContext {
      * Return the object associated with the name in the specified
      * scope or null if not found.
      *
-     * @param name the name of the attribute to set
+     * @param name  the name of the attribute to set
      * @param scope the scope with which to associate the name/object
      * @return the object associated with the name in the specified
-     *     scope or null if not found.
-     *
-     * @throws NullPointerException if the name is null
+     * scope or null if not found.
+     * @throws NullPointerException     if the name is null
      * @throws IllegalArgumentException if the scope is invalid
-     * @throws IllegalStateException if the scope is
-     *     PageContext.SESSION_SCOPE but the page that was requested
-     *     does not participate in a session or the session has been
-     *     invalidated.
+     * @throws IllegalStateException    if the scope is
+     *                                  PageContext.SESSION_SCOPE but the page that was requested
+     *                                  does not participate in a session or the session has been
+     *                                  invalidated.
      */
 
     public abstract Object getAttribute(String name, int scope);
@@ -170,14 +167,14 @@ public abstract class JspContext {
      * Remove the object reference associated with the specified name
      * in the given scope.  Does nothing if there is no such object.
      *
-     * @param name The name of the object to remove.
+     * @param name  The name of the object to remove.
      * @param scope The scope where to look.
      * @throws IllegalArgumentException if the scope is invalid
-     * @throws IllegalStateException if the scope is
-     *     PageContext.SESSION_SCOPE but the page that was requested
-     *     does not participate in a session or the session has been
-     *     invalidated.
-     * @throws NullPointerException if the name is null
+     * @throws IllegalStateException    if the scope is
+     *                                  PageContext.SESSION_SCOPE but the page that was requested
+     *                                  does not participate in a session or the session has been
+     *                                  invalidated.
+     * @throws NullPointerException     if the name is null
      */
 
     public abstract void removeAttribute(String name, int scope);
@@ -197,12 +194,12 @@ public abstract class JspContext {
      *
      * @param scope the scope to enumerate all the attributes for
      * @return an enumeration of names (java.lang.String) of all the
-     *     attributes the specified scope
+     * attributes the specified scope
      * @throws IllegalArgumentException if the scope is invalid
-     * @throws IllegalStateException if the scope is
-     *     PageContext.SESSION_SCOPE but the page that was requested
-     *     does not participate in a session or the session has been
-     *     invalidated.
+     * @throws IllegalStateException    if the scope is
+     *                                  PageContext.SESSION_SCOPE but the page that was requested
+     *                                  does not participate in a session or the session has been
+     *                                  invalidated.
      */
 
     public abstract Enumeration<String> getAttributeNamesInScope(int scope);
@@ -222,7 +219,7 @@ public abstract class JspContext {
      * @return A valid instance of an ExpressionEvaluator.
      * @since JSP 2.0
      * @deprecated As of JSP 2.1, replaced by
-     *             JspApplicationContext.getExpressionFactory()
+     * JspApplicationContext.getExpressionFactory()
      */
     @Deprecated
     public abstract jakarta.servlet.jsp.el.ExpressionEvaluator getExpressionEvaluator();
@@ -243,9 +240,9 @@ public abstract class JspContext {
      * @return A valid instance of a VariableResolver.
      * @since JSP 2.0
      * @deprecated As of JSP 2.1,
-     *             replaced by jakarta.el.ELContext.getELResolver()
-     *             which can be obtained by
-     *             jspContext.getELContext().getELResolver()
+     * replaced by jakarta.el.ELContext.getELResolver()
+     * which can be obtained by
+     * jspContext.getELContext().getELResolver()
      */
     @Deprecated
     public abstract jakarta.servlet.jsp.el.VariableResolver getVariableResolver();
@@ -266,11 +263,11 @@ public abstract class JspContext {
      * </ul>
      *
      * @param writer The Writer for the returned JspWriter to send
-     *     output to.
+     *               output to.
      * @return a new JspWriter that writes to the given Writer.
      * @since JSP 2.0
      */
-    public JspWriter pushBody( java.io.Writer writer ) {
+    public JspWriter pushBody(java.io.Writer writer) {
         return null; // XXX to implement
     }
 

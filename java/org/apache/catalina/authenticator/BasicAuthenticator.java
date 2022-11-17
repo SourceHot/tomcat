@@ -16,20 +16,19 @@
  */
 package org.apache.catalina.authenticator;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.connector.Request;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.codec.binary.Base64;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 
 /**
  * An <b>Authenticator</b> and <b>Valve</b> implementation of HTTP BASIC
@@ -56,14 +55,15 @@ public class BasicAuthenticator extends AuthenticatorBase {
         // Only acceptable options are null, "" or "UTF-8" (case insensitive)
         if (charsetString == null || charsetString.isEmpty()) {
             charset = StandardCharsets.ISO_8859_1;
-        } else if ("UTF-8".equalsIgnoreCase(charsetString)) {
+        }
+        else if ("UTF-8".equalsIgnoreCase(charsetString)) {
             charset = StandardCharsets.UTF_8;
-        } else {
+        }
+        else {
             throw new IllegalArgumentException(sm.getString("basicAuthenticator.invalidCharset"));
         }
         this.charsetString = charsetString;
     }
-
 
 
     public boolean getTrimCredentials() {
@@ -86,8 +86,8 @@ public class BasicAuthenticator extends AuthenticatorBase {
 
         // Validate any credentials already included with this request
         MessageBytes authorization =
-            request.getCoyoteRequest().getMimeHeaders()
-            .getValue("authorization");
+                request.getCoyoteRequest().getMimeHeaders()
+                        .getValue("authorization");
 
         if (authorization != null) {
             authorization.toBytes();
@@ -101,11 +101,10 @@ public class BasicAuthenticator extends AuthenticatorBase {
                 Principal principal = context.getRealm().authenticate(username, password);
                 if (principal != null) {
                     register(request, response, principal,
-                        HttpServletRequest.BASIC_AUTH, username, password);
+                            HttpServletRequest.BASIC_AUTH, username, password);
                     return true;
                 }
-            }
-            catch (IllegalArgumentException iae) {
+            } catch (IllegalArgumentException iae) {
                 if (log.isDebugEnabled()) {
                     log.debug("Invalid Authorization" + iae.getMessage());
                 }
@@ -172,7 +171,6 @@ public class BasicAuthenticator extends AuthenticatorBase {
          *                        to a string
          * @param trimCredentials Should leading and trailing whitespace be
          *                        removed from the parsed credentials
-         *
          * @throws IllegalArgumentException If the header does not conform
          *                                  to RFC 2617
          */
@@ -191,8 +189,8 @@ public class BasicAuthenticator extends AuthenticatorBase {
         /**
          * Trivial accessor.
          *
-         * @return  the decoded username token as a String, which is
-         *          never be <code>null</code>, but can be empty.
+         * @return the decoded username token as a String, which is
+         * never be <code>null</code>, but can be empty.
          */
         public String getUsername() {
             return username;
@@ -201,8 +199,8 @@ public class BasicAuthenticator extends AuthenticatorBase {
         /**
          * Trivial accessor.
          *
-         * @return  the decoded password token as a String, or <code>null</code>
-         *          if no password was found in the credentials.
+         * @return the decoded password token as a String, or <code>null</code>
+         * if no password was found in the credentials.
          */
         public String getPassword() {
             return password;
@@ -217,12 +215,14 @@ public class BasicAuthenticator extends AuthenticatorBase {
                 // step past the auth method name
                 base64blobOffset = initialOffset + METHOD.length();
                 base64blobLength = authorization.getLength() - METHOD.length();
-            } else {
+            }
+            else {
                 // is this possible, or permitted?
                 throw new IllegalArgumentException(
                         "Authorization header method is not \"Basic\"");
             }
         }
+
         /*
          * Decode the base64-user-pass token, which RFC 2617 states
          * can be longer than the 76 characters per line limit defined
@@ -231,8 +231,8 @@ public class BasicAuthenticator extends AuthenticatorBase {
          */
         private byte[] parseBase64() throws IllegalArgumentException {
             byte[] decoded = Base64.decodeBase64(
-                        authorization.getBuffer(),
-                        base64blobOffset, base64blobLength);
+                    authorization.getBuffer(),
+                    base64blobOffset, base64blobLength);
             //  restore original offset
             authorization.setOffset(initialOffset);
             if (decoded == null) {
@@ -260,7 +260,8 @@ public class BasicAuthenticator extends AuthenticatorBase {
             if (colon < 0) {
                 username = new String(decoded, charset);
                 // password will remain null!
-            } else {
+            }
+            else {
                 username = new String(decoded, 0, colon, charset);
                 password = new String(decoded, colon + 1, decoded.length - colon - 1, charset);
                 // tolerate surplus white space around credentials

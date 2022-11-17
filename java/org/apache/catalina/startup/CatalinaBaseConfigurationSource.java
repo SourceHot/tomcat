@@ -16,6 +16,10 @@
  */
 package org.apache.catalina.startup;
 
+import org.apache.tomcat.util.buf.UriUtil;
+import org.apache.tomcat.util.file.ConfigurationSource;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,10 +28,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-
-import org.apache.tomcat.util.buf.UriUtil;
-import org.apache.tomcat.util.file.ConfigurationSource;
-import org.apache.tomcat.util.res.StringManager;
 
 public class CatalinaBaseConfigurationSource implements ConfigurationSource {
 
@@ -50,7 +50,8 @@ public class CatalinaBaseConfigurationSource implements ConfigurationSource {
         try {
             if (serverXmlPath == null || serverXmlPath.equals(Catalina.SERVER_XML)) {
                 result = ConfigurationSource.super.getServerXml();
-            } else {
+            }
+            else {
                 result = getResource(serverXmlPath);
             }
         } catch (IOException e) {
@@ -70,7 +71,8 @@ public class CatalinaBaseConfigurationSource implements ConfigurationSource {
 
         if (result == null && ioe != null) {
             throw ioe;
-        } else {
+        }
+        else {
             return result;
         }
     }
@@ -157,7 +159,8 @@ public class CatalinaBaseConfigurationSource implements ConfigurationSource {
         URI uri;
         if (catalinaBaseUri != null) {
             uri = catalinaBaseUri.resolve(name);
-        } else {
+        }
+        else {
             uri = URI.create(name);
         }
         return uri;

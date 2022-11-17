@@ -50,7 +50,41 @@ public final class Extension {
      * The name of the optional package being made available, or required.
      */
     private String extensionName = null;
-
+    /**
+     * The URL from which the most recent version of this optional package
+     * can be obtained if it is not already installed.
+     */
+    private String implementationURL = null;
+    /**
+     * The name of the company or organization that produced this
+     * implementation of this optional package.
+     */
+    private String implementationVendor = null;
+    /**
+     * The unique identifier of the company that produced the optional
+     * package contained in this JAR file.
+     */
+    private String implementationVendorId = null;
+    /**
+     * The version number (dotted decimal notation) for this implementation
+     * of the optional package.
+     */
+    private String implementationVersion = null;
+    /**
+     * The name of the company or organization that originated the
+     * specification to which this optional package conforms.
+     */
+    private String specificationVendor = null;
+    /**
+     * The version number (dotted decimal notation) of the specification
+     * to which this optional package conforms.
+     */
+    private String specificationVersion = null;
+    /**
+     * fulfilled is true if all the required extension dependencies have been
+     * satisfied
+     */
+    private boolean fulfilled = false;
 
     public String getExtensionName() {
         return this.extensionName;
@@ -60,12 +94,6 @@ public final class Extension {
         this.extensionName = extensionName;
     }
 
-    /**
-     * The URL from which the most recent version of this optional package
-     * can be obtained if it is not already installed.
-     */
-    private String implementationURL = null;
-
     public String getImplementationURL() {
         return this.implementationURL;
     }
@@ -73,13 +101,6 @@ public final class Extension {
     public void setImplementationURL(String implementationURL) {
         this.implementationURL = implementationURL;
     }
-
-
-    /**
-     * The name of the company or organization that produced this
-     * implementation of this optional package.
-     */
-    private String implementationVendor = null;
 
     public String getImplementationVendor() {
         return this.implementationVendor;
@@ -89,13 +110,6 @@ public final class Extension {
         this.implementationVendor = implementationVendor;
     }
 
-
-    /**
-     * The unique identifier of the company that produced the optional
-     * package contained in this JAR file.
-     */
-    private String implementationVendorId = null;
-
     public String getImplementationVendorId() {
         return this.implementationVendorId;
     }
@@ -103,13 +117,6 @@ public final class Extension {
     public void setImplementationVendorId(String implementationVendorId) {
         this.implementationVendorId = implementationVendorId;
     }
-
-
-    /**
-     * The version number (dotted decimal notation) for this implementation
-     * of the optional package.
-     */
-    private String implementationVersion = null;
 
     public String getImplementationVersion() {
         return this.implementationVersion;
@@ -119,13 +126,6 @@ public final class Extension {
         this.implementationVersion = implementationVersion;
     }
 
-
-    /**
-     * The name of the company or organization that originated the
-     * specification to which this optional package conforms.
-     */
-    private String specificationVendor = null;
-
     public String getSpecificationVendor() {
         return this.specificationVendor;
     }
@@ -133,13 +133,6 @@ public final class Extension {
     public void setSpecificationVendor(String specificationVendor) {
         this.specificationVendor = specificationVendor;
     }
-
-
-    /**
-     * The version number (dotted decimal notation) of the specification
-     * to which this optional package conforms.
-     */
-    private String specificationVersion = null;
 
     public String getSpecificationVersion() {
         return this.specificationVersion;
@@ -149,19 +142,12 @@ public final class Extension {
         this.specificationVersion = specificationVersion;
     }
 
-
-    /**
-     * fulfilled is true if all the required extension dependencies have been
-     * satisfied
-     */
-    private boolean fulfilled = false;
+    public boolean isFulfilled() {
+        return fulfilled;
+    }
 
     public void setFulfilled(boolean fulfilled) {
         this.fulfilled = fulfilled;
-    }
-
-    public boolean isFulfilled() {
-        return fulfilled;
     }
 
     // --------------------------------------------------------- Public Methods
@@ -189,7 +175,7 @@ public final class Extension {
         // If specified, available specification version must be >= required
         if (required.getSpecificationVersion() != null) {
             if (!isNewer(specificationVersion,
-                         required.getSpecificationVersion())) {
+                    required.getSpecificationVersion())) {
                 return false;
             }
         }
@@ -207,10 +193,8 @@ public final class Extension {
 
         // If specified, Implementation version must be >= required
         if (required.getImplementationVersion() != null) {
-            if (!isNewer(implementationVersion,
-                         required.getImplementationVersion())) {
-                return false;
-            }
+            return isNewer(implementationVersion,
+                    required.getImplementationVersion());
         }
 
         // This available optional package satisfies the requirements
@@ -254,18 +238,16 @@ public final class Extension {
     // -------------------------------------------------------- Private Methods
 
 
-
     /**
      * Return <code>true</code> if the first version number is greater than
      * or equal to the second; otherwise return <code>false</code>.
      *
-     * @param first First version number (dotted decimal)
+     * @param first  First version number (dotted decimal)
      * @param second Second version number (dotted decimal)
-     *
-     * @exception NumberFormatException on a malformed version number
+     * @throws NumberFormatException on a malformed version number
      */
     private boolean isNewer(String first, String second)
-        throws NumberFormatException {
+            throws NumberFormatException {
 
         if ((first == null) || (second == null)) {
             return false;
@@ -281,17 +263,20 @@ public final class Extension {
         while (fTok.hasMoreTokens() || sTok.hasMoreTokens()) {
             if (fTok.hasMoreTokens()) {
                 fVersion = Integer.parseInt(fTok.nextToken());
-            } else {
+            }
+            else {
                 fVersion = 0;
             }
             if (sTok.hasMoreTokens()) {
                 sVersion = Integer.parseInt(sTok.nextToken());
-            } else {
+            }
+            else {
                 sVersion = 0;
             }
             if (fVersion < sVersion) {
                 return false;
-            } else if (fVersion > sVersion) {
+            }
+            else if (fVersion > sVersion) {
                 return true;
             }
             if (fTok.hasMoreTokens()) {

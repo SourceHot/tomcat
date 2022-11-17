@@ -16,12 +16,6 @@
  */
 package org.apache.catalina.realm;
 
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.catalina.LifecycleException;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -29,6 +23,12 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
+
+import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class extends the CombinedRealm (hence it can wrap other Realms) to
@@ -76,7 +76,7 @@ public class LockOutRealm extends CombinedRealm {
      * Users whose last authentication attempt failed. Entries will be ordered
      * in access order from least recent to most recent.
      */
-    protected Map<String,LockRecord> failedUsers = null;
+    protected Map<String, LockRecord> failedUsers = null;
 
 
     /**
@@ -84,8 +84,8 @@ public class LockOutRealm extends CombinedRealm {
      * component and implement the requirements of
      * {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -94,13 +94,14 @@ public class LockOutRealm extends CombinedRealm {
         failedUsers = new LinkedHashMap<String, LockRecord>(cacheSize, 0.75f,
                 true) {
             private static final long serialVersionUID = 1L;
+
             @Override
             protected boolean removeEldestEntry(
                     Map.Entry<String, LockRecord> eldest) {
                 if (size() > cacheSize) {
                     // Check to see if this element has been removed too quickly
                     long timeInCache = (System.currentTimeMillis() -
-                            eldest.getValue().getLastFailureTime())/1000;
+                            eldest.getValue().getLastFailureTime()) / 1000;
 
                     if (timeInCache < cacheRemovalWarningTime) {
                         log.warn(sm.getString("lockOutRealm.removeWarning",
@@ -121,18 +122,18 @@ public class LockOutRealm extends CombinedRealm {
      * matches the digest calculated using the given parameters using the
      * method described in RFC 2069; otherwise return <code>null</code>.
      *
-     * @param username Username of the Principal to look up
+     * @param username     Username of the Principal to look up
      * @param clientDigest Digest which has been submitted by the client
-     * @param nonce Unique (or supposedly unique) token which has been used
-     * for this request
-     * @param realmName Realm name
-     * @param md5a2 Second MD5 digest used to calculate the digest :
-     * MD5(Method + ":" + uri)
+     * @param nonce        Unique (or supposedly unique) token which has been used
+     *                     for this request
+     * @param realmName    Realm name
+     * @param md5a2        Second MD5 digest used to calculate the digest :
+     *                     MD5(Method + ":" + uri)
      */
     @Override
     public Principal authenticate(String username, String clientDigest,
-            String nonce, String nc, String cnonce, String qop,
-            String realmName, String md5a2) {
+                                  String nonce, String nc, String cnonce, String qop,
+                                  String realmName, String md5a2) {
 
         Principal authenticatedUser = super.authenticate(username, clientDigest, nonce, nc, cnonce,
                 qop, realmName, md5a2);
@@ -144,9 +145,9 @@ public class LockOutRealm extends CombinedRealm {
      * Return the Principal associated with the specified username and
      * credentials, if there is one; otherwise return <code>null</code>.
      *
-     * @param username Username of the Principal to look up
+     * @param username    Username of the Principal to look up
      * @param credentials Password or other credentials to use in
-     *  authenticating this username
+     *                    authenticating this username
      */
     @Override
     public Principal authenticate(String username, String credentials) {
@@ -160,12 +161,12 @@ public class LockOutRealm extends CombinedRealm {
      * client certificates.  If there is none, return <code>null</code>.
      *
      * @param certs Array of client certificates, with the first one in
-     *  the array being the certificate of the client itself.
+     *              the array being the certificate of the client itself.
      */
     @Override
     public Principal authenticate(X509Certificate[] certs) {
         String username = null;
-        if (certs != null && certs.length >0) {
+        if (certs != null && certs.length > 0) {
             username = certs[0].getSubjectDN().getName();
         }
 
@@ -265,14 +266,11 @@ public class LockOutRealm extends CombinedRealm {
         }
 
         // Check to see if user is locked
-        if (lockRecord.getFailures() >= failureCount &&
+        return lockRecord.getFailures() >= failureCount &&
                 (System.currentTimeMillis() -
-                        lockRecord.getLastFailureTime())/1000 < lockOutTime) {
-            return true;
-        }
+                        lockRecord.getLastFailureTime()) / 1000 < lockOutTime;
 
         // User has not, yet, exceeded lock thresholds
-        return false;
     }
 
 
@@ -296,11 +294,12 @@ public class LockOutRealm extends CombinedRealm {
             if (!failedUsers.containsKey(username)) {
                 lockRecord = new LockRecord();
                 failedUsers.put(username, lockRecord);
-            } else {
+            }
+            else {
                 lockRecord = failedUsers.get(username);
                 if (lockRecord.getFailures() >= failureCount &&
                         ((System.currentTimeMillis() -
-                                lockRecord.getLastFailureTime())/1000)
+                                lockRecord.getLastFailureTime()) / 1000)
                                 > lockOutTime) {
                     // User was previously locked out but lockout has now
                     // expired so reset failure count
@@ -315,6 +314,7 @@ public class LockOutRealm extends CombinedRealm {
     /**
      * Get the number of failed authentication attempts required to lock the
      * user account.
+     *
      * @return the failureCount
      */
     public int getFailureCount() {
@@ -325,6 +325,7 @@ public class LockOutRealm extends CombinedRealm {
     /**
      * Set the number of failed authentication attempts required to lock the
      * user account.
+     *
      * @param failureCount the failureCount to set
      */
     public void setFailureCount(int failureCount) {
@@ -334,6 +335,7 @@ public class LockOutRealm extends CombinedRealm {
 
     /**
      * Get the period for which an account will be locked.
+     *
      * @return the lockOutTime
      */
     public int getLockOutTime() {
@@ -343,6 +345,7 @@ public class LockOutRealm extends CombinedRealm {
 
     /**
      * Set the period for which an account will be locked.
+     *
      * @param lockOutTime the lockOutTime to set
      */
     public void setLockOutTime(int lockOutTime) {
@@ -353,6 +356,7 @@ public class LockOutRealm extends CombinedRealm {
     /**
      * Get the maximum number of users for which authentication failure will be
      * kept in the cache.
+     *
      * @return the cacheSize
      */
     public int getCacheSize() {
@@ -363,6 +367,7 @@ public class LockOutRealm extends CombinedRealm {
     /**
      * Set the maximum number of users for which authentication failure will be
      * kept in the cache.
+     *
      * @param cacheSize the cacheSize to set
      */
     public void setCacheSize(int cacheSize) {
@@ -374,6 +379,7 @@ public class LockOutRealm extends CombinedRealm {
      * Get the minimum period a failed authentication must remain in the cache
      * to avoid generating a warning if it is removed from the cache to make
      * space for a new entry.
+     *
      * @return the cacheRemovalWarningTime
      */
     public int getCacheRemovalWarningTime() {
@@ -385,6 +391,7 @@ public class LockOutRealm extends CombinedRealm {
      * Set the minimum period a failed authentication must remain in the cache
      * to avoid generating a warning if it is removed from the cache to make
      * space for a new entry.
+     *
      * @param cacheRemovalWarningTime the cacheRemovalWarningTime to set
      */
     public void setCacheRemovalWarningTime(int cacheRemovalWarningTime) {

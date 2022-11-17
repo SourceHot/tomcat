@@ -16,8 +16,6 @@
  */
 package org.apache.catalina.tribes.transport.nio;
 
-import java.io.IOException;
-
 import org.apache.catalina.tribes.ChannelException;
 import org.apache.catalina.tribes.ChannelMessage;
 import org.apache.catalina.tribes.Member;
@@ -25,6 +23,8 @@ import org.apache.catalina.tribes.transport.AbstractSender;
 import org.apache.catalina.tribes.transport.DataSender;
 import org.apache.catalina.tribes.transport.PooledSender;
 import org.apache.catalina.tribes.util.StringManager;
+
+import java.io.IOException;
 
 public class PooledParallelSender extends PooledSender implements PooledParallelSenderMBean {
     protected static final StringManager sm = StringManager.getManager(PooledParallelSender.class);
@@ -34,7 +34,7 @@ public class PooledParallelSender extends PooledSender implements PooledParallel
         if (!isConnected()) {
             throw new ChannelException(sm.getString("pooledParallelSender.sender.disconnected"));
         }
-        ParallelNioSender sender = (ParallelNioSender)getSender();
+        ParallelNioSender sender = (ParallelNioSender) getSender();
         if (sender == null) {
             ChannelException cx = new ChannelException(sm.getString(
                     "pooledParallelSender.unable.retrieveSender.timeout",
@@ -43,7 +43,8 @@ public class PooledParallelSender extends PooledSender implements PooledParallel
                 cx.addFaultyMember(member, new NullPointerException(sm.getString("pooledParallelSender.unable.retrieveSender")));
             }
             throw cx;
-        } else {
+        }
+        else {
             try {
                 if (!sender.isConnected()) {
                     sender.connect();
@@ -63,10 +64,10 @@ public class PooledParallelSender extends PooledSender implements PooledParallel
     public DataSender getNewDataSender() {
         try {
             ParallelNioSender sender = new ParallelNioSender();
-            AbstractSender.transferProperties(this,sender);
+            AbstractSender.transferProperties(this, sender);
             return sender;
-        } catch ( IOException x ) {
-            throw new RuntimeException(sm.getString("pooledParallelSender.unable.open"),x);
+        } catch (IOException x) {
+            throw new RuntimeException(sm.getString("pooledParallelSender.unable.open"), x);
         }
     }
 }

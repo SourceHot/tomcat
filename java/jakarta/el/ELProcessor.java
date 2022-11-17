@@ -27,6 +27,8 @@ import java.util.Set;
 public class ELProcessor {
 
     private static final Set<String> PRIMITIVES = new HashSet<>();
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     static {
         PRIMITIVES.add("boolean");
         PRIMITIVES.add("byte");
@@ -38,22 +40,21 @@ public class ELProcessor {
         PRIMITIVES.add("short");
     }
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     private final ELManager manager = new ELManager();
     private final ELContext context = manager.getELContext();
     private final ExpressionFactory factory = ELManager.getExpressionFactory();
 
+    private static String bracket(String expression) {
+        return "${" + expression + "}";
+    }
 
     public ELManager getELManager() {
         return manager;
     }
 
-
     public Object eval(String expression) {
         return getValue(expression, Object.class);
     }
-
 
     public Object getValue(String expression, Class<?> expectedType) {
         ValueExpression ve = factory.createValueExpression(
@@ -61,27 +62,25 @@ public class ELProcessor {
         return ve.getValue(context);
     }
 
-
     public void setValue(String expression, Object value) {
         ValueExpression ve = factory.createValueExpression(
                 context, bracket(expression), Object.class);
         ve.setValue(context, value);
     }
 
-
     public void setVariable(String variable, String expression) {
         if (expression == null) {
             manager.setVariable(variable, null);
-        } else {
+        }
+        else {
             ValueExpression ve = factory.createValueExpression(
                     context, bracket(expression), Object.class);
             manager.setVariable(variable, ve);
         }
     }
 
-
     public void defineFunction(String prefix, String function, String className,
-            String methodName) throws ClassNotFoundException,
+                               String methodName) throws ClassNotFoundException,
             NoSuchMethodException {
 
         if (prefix == null || function == null || className == null ||
@@ -110,7 +109,7 @@ public class ELProcessor {
         }
 
         // Only returns public methods. Java 9+ access is checked below.
-        Method methods[] = clazz.getMethods();
+        Method[] methods = clazz.getMethods();
         JreCompat jreCompat = JreCompat.getInstance();
 
         for (Method method : methods) {
@@ -133,23 +132,26 @@ public class ELProcessor {
                 if (sig.getParamTypeNames().length == 0) {
                     manager.mapFunction(prefix, function, method);
                     return;
-                } else {
+                }
+                else {
                     Class<?>[] types = method.getParameterTypes();
                     String[] typeNames = sig.getParamTypeNames();
                     if (types.length == typeNames.length) {
                         boolean match = true;
                         for (int i = 0; i < types.length; i++) {
-                            if (i == types.length -1 && method.isVarArgs()) {
+                            if (i == types.length - 1 && method.isVarArgs()) {
                                 String typeName = typeNames[i];
                                 if (typeName.endsWith("...")) {
                                     typeName = typeName.substring(0, typeName.length() - 3);
                                     if (!typeName.equals(types[i].getName())) {
                                         match = false;
                                     }
-                                } else {
+                                }
+                                else {
                                     match = false;
                                 }
-                            } else if (!types[i].getName().equals(typeNames[i])) {
+                            }
+                            else if (!types[i].getName().equals(typeNames[i])) {
                                 match = false;
                                 break;
                             }
@@ -167,18 +169,14 @@ public class ELProcessor {
                 "elProcessor.defineFunctionNoMethod", methodName, className));
     }
 
-
     /**
      * Map a method to a function name.
      *
-     * @param prefix    Function prefix
-     * @param function  Function name
-     * @param method    Method
-     *
-     * @throws NullPointerException
-     *              If any of the arguments are null
-     * @throws NoSuchMethodException
-     *              If the method is not static
+     * @param prefix   Function prefix
+     * @param function Function name
+     * @param method   Method
+     * @throws NullPointerException  If any of the arguments are null
+     * @throws NoSuchMethodException If the method is not static
      */
     public void defineFunction(String prefix, String function, Method method)
             throws java.lang.NoSuchMethodException {
@@ -201,14 +199,8 @@ public class ELProcessor {
         manager.mapFunction(prefix, function, method);
     }
 
-
     public void defineBean(String name, Object bean) {
         manager.defineBean(name, bean);
-    }
-
-
-    private static String bracket(String expression) {
-        return "${" + expression + "}";
     }
 
     private static class MethodSignature {
@@ -217,14 +209,15 @@ public class ELProcessor {
         private final String[] parameterTypeNames;
 
         public MethodSignature(ELContext context, String methodName,
-                String className) throws NoSuchMethodException {
+                               String className) throws NoSuchMethodException {
 
             int paramIndex = methodName.indexOf('(');
 
             if (paramIndex == -1) {
                 name = methodName.trim();
                 parameterTypeNames = null;
-            } else {
+            }
+            else {
                 String returnTypeAndName = methodName.substring(0, paramIndex).trim();
                 // Assume that the return type and the name are separated by
                 // whitespace. Given the use of trim() above, there should only
@@ -252,7 +245,8 @@ public class ELProcessor {
                 paramString = paramString.substring(1, paramString.length() - 1).trim();
                 if (paramString.length() == 0) {
                     parameterTypeNames = EMPTY_STRING_ARRAY;
-                } else {
+                }
+                else {
                     parameterTypeNames = paramString.split(",");
                     ImportHandler importHandler = context.getImportHandler();
                     for (int i = 0; i < parameterTypeNames.length; i++) {
@@ -264,7 +258,7 @@ public class ELProcessor {
                                     parameterTypeName.substring(0, bracketPos).trim();
                             while (bracketPos > -1) {
                                 dimension++;
-                                bracketPos = parameterTypeName.indexOf('[', bracketPos+ 1);
+                                bracketPos = parameterTypeName.indexOf('[', bracketPos + 1);
                             }
                             parameterTypeName = parameterTypeNameOnly;
                         }
@@ -273,13 +267,12 @@ public class ELProcessor {
                             varArgs = true;
                             dimension = 1;
                             parameterTypeName = parameterTypeName.substring(
-                                    0, parameterTypeName.length() -3).trim();
+                                    0, parameterTypeName.length() - 3).trim();
                         }
                         boolean isPrimitive = PRIMITIVES.contains(parameterTypeName);
                         if (isPrimitive && dimension > 0) {
                             // When in an array, class name changes for primitive
-                            switch(parameterTypeName)
-                            {
+                            switch (parameterTypeName) {
                                 case "boolean":
                                     parameterTypeName = "Z";
                                     break;
@@ -308,7 +301,8 @@ public class ELProcessor {
                                     // Should never happen
                                     break;
                             }
-                        } else  if (!isPrimitive &&
+                        }
+                        else if (!isPrimitive &&
                                 !parameterTypeName.contains(".")) {
                             Class<?> clazz = importHandler.resolveClass(
                                     parameterTypeName);
@@ -352,8 +346,8 @@ public class ELProcessor {
 
         /**
          * @return <code>null</code> if just the method name was specified, an
-         *         empty List if an empty parameter list was specified - i.e. ()
-         *         - otherwise an ordered list of parameter type names
+         * empty List if an empty parameter list was specified - i.e. ()
+         * - otherwise an ordered list of parameter type names
          */
         public String[] getParamTypeNames() {
             return parameterTypeNames;

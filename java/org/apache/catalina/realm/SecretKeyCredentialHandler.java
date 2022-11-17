@@ -16,26 +16,22 @@
  */
 package org.apache.catalina.realm;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.HexUtils;
 
-public class SecretKeyCredentialHandler extends DigestCredentialHandlerBase {
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
-    private static final Log log = LogFactory.getLog(SecretKeyCredentialHandler.class);
+public class SecretKeyCredentialHandler extends DigestCredentialHandlerBase {
 
     public static final String DEFAULT_ALGORITHM = "PBKDF2WithHmacSHA1";
     public static final int DEFAULT_KEY_LENGTH = 160;
     public static final int DEFAULT_ITERATIONS = 20000;
-
-
+    private static final Log log = LogFactory.getLog(SecretKeyCredentialHandler.class);
     private SecretKeyFactory secretKeyFactory;
     private int keyLength = DEFAULT_KEY_LENGTH;
 

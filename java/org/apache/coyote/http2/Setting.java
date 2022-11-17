@@ -27,8 +27,34 @@ enum Setting {
 
     private final int id;
 
-    private Setting (int id) {
+    Setting(int id) {
         this.id = id;
+    }
+
+    static final Setting valueOf(int i) {
+        switch (i) {
+            case 1: {
+                return HEADER_TABLE_SIZE;
+            }
+            case 2: {
+                return ENABLE_PUSH;
+            }
+            case 3: {
+                return MAX_CONCURRENT_STREAMS;
+            }
+            case 4: {
+                return INITIAL_WINDOW_SIZE;
+            }
+            case 5: {
+                return MAX_FRAME_SIZE;
+            }
+            case 6: {
+                return MAX_HEADER_LIST_SIZE;
+            }
+            default: {
+                return Setting.UNKNOWN;
+            }
+        }
     }
 
     final int getId() {
@@ -38,31 +64,5 @@ enum Setting {
     @Override
     public final String toString() {
         return Integer.toString(id);
-    }
-
-    static final Setting valueOf(int i) {
-        switch(i) {
-        case 1: {
-            return HEADER_TABLE_SIZE;
-        }
-        case 2: {
-            return ENABLE_PUSH;
-        }
-        case 3: {
-            return MAX_CONCURRENT_STREAMS;
-        }
-        case 4: {
-            return INITIAL_WINDOW_SIZE;
-        }
-        case 5: {
-            return MAX_FRAME_SIZE;
-        }
-        case 6: {
-            return MAX_HEADER_LIST_SIZE;
-        }
-        default: {
-            return Setting.UNKNOWN;
-        }
-        }
     }
 }

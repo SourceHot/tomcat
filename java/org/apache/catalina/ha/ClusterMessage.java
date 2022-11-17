@@ -16,14 +16,18 @@
  */
 package org.apache.catalina.ha;
 
-import java.io.Serializable;
-
 import org.apache.catalina.tribes.Member;
 
+import java.io.Serializable;
+
 public interface ClusterMessage extends Serializable {
-    public Member getAddress();
-    public void setAddress(Member member);
-    public String getUniqueId();
-    public long getTimestamp();
-    public void setTimestamp(long timestamp);
+    Member getAddress();
+
+    void setAddress(Member member);
+
+    String getUniqueId();
+
+    long getTimestamp();
+
+    void setTimestamp(long timestamp);
 }

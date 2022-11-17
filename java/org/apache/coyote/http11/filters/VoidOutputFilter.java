@@ -16,12 +16,12 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.coyote.Response;
 import org.apache.coyote.http11.HttpOutputBuffer;
 import org.apache.coyote.http11.OutputFilter;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Void output filter, which silently swallows bytes written. Used with a 204
@@ -75,7 +75,7 @@ public class VoidOutputFilter implements OutputFilter {
 
 
     @Override
-    public void  end() throws IOException {
+    public void end() throws IOException {
         buffer.end();
     }
 }

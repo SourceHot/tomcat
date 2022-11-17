@@ -16,12 +16,12 @@
  */
 package org.apache.jasper.util;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.jasper.compiler.Localizer;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.AttributesImpl;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Wraps the default attributes implementation and ensures that each attribute
@@ -61,21 +61,23 @@ public class UniqueAttributesImpl extends AttributesImpl {
 
     @Override
     public void addAttribute(String uri, String localName, String qName,
-            String type, String value) {
+                             String type, String value) {
         if (qNames.add(qName)) {
             super.addAttribute(uri, localName, qName, type, value);
-        } else {
+        }
+        else {
             handleDuplicate(qName, value);
         }
     }
 
     @Override
     public void setAttribute(int index, String uri, String localName,
-            String qName, String type, String value) {
+                             String qName, String type, String value) {
         qNames.remove(super.getQName(index));
         if (qNames.add(qName)) {
             super.setAttribute(index, uri, localName, qName, type, value);
-        } else {
+        }
+        else {
             handleDuplicate(qName, value);
         }
     }
@@ -100,10 +102,12 @@ public class UniqueAttributesImpl extends AttributesImpl {
                 String v = super.getValue(i);
                 super.setValue(i, v + "," + value);
                 return;
-            } else if (PAGE_ENCODING.equalsIgnoreCase(qName)) {
+            }
+            else if (PAGE_ENCODING.equalsIgnoreCase(qName)) {
                 // Page encoding can only occur once per file so a second
                 // attribute - even one with a duplicate value - is an error
-            } else {
+            }
+            else {
                 // Other attributes can be repeated if and only if the values
                 // are identical
                 String v = super.getValue(qName);
@@ -115,6 +119,6 @@ public class UniqueAttributesImpl extends AttributesImpl {
 
         // Ordinary tag attributes can't be repeated, even with identical values
         throw new IllegalArgumentException(
-                    Localizer.getMessage("jsp.error.duplicateqname", qName));
+                Localizer.getMessage("jsp.error.duplicateqname", qName));
     }
 }

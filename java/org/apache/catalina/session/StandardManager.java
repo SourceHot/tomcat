@@ -16,33 +16,20 @@
  */
 package org.apache.catalina.session;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.List;
-
 import jakarta.servlet.ServletContext;
-
-import org.apache.catalina.Context;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Loader;
-import org.apache.catalina.Session;
+import org.apache.catalina.*;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.catalina.util.CustomObjectInputStream;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
+
+import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Standard implementation of the <b>Manager</b> interface that provides
@@ -58,48 +45,13 @@ import org.apache.tomcat.util.ExceptionUtils;
  */
 public class StandardManager extends ManagerBase {
 
-    private final Log log = LogFactory.getLog(StandardManager.class); // must not be static
-
-    // ---------------------------------------------------- Security Classes
-
-    private class PrivilegedDoLoad
-        implements PrivilegedExceptionAction<Void> {
-
-        PrivilegedDoLoad() {
-            // NOOP
-        }
-
-        @Override
-        public Void run() throws Exception{
-           doLoad();
-           return null;
-        }
-    }
-
-    private class PrivilegedDoUnload
-        implements PrivilegedExceptionAction<Void> {
-
-        PrivilegedDoUnload() {
-            // NOOP
-        }
-
-        @Override
-        public Void run() throws Exception{
-            doUnload();
-            return null;
-        }
-
-    }
-
-
-    // ----------------------------------------------------- Instance Variables
-
     /**
      * The descriptive name of this Manager implementation (for logging).
      */
     protected static final String name = "StandardManager";
 
-
+    // ---------------------------------------------------- Security Classes
+    private final Log log = LogFactory.getLog(StandardManager.class); // must not be static
     /**
      * Path name of the disk file in which active sessions are saved
      * when we stop, and from which these sessions are loaded when we start.
@@ -111,13 +63,12 @@ public class StandardManager extends ManagerBase {
     protected String pathname = null;
 
 
-    // ------------------------------------------------------------- Properties
+    // ----------------------------------------------------- Instance Variables
 
     @Override
     public String getName() {
         return name;
     }
-
 
     /**
      * @return The session persistence pathname, if any.
@@ -126,6 +77,8 @@ public class StandardManager extends ManagerBase {
         return pathname;
     }
 
+
+    // ------------------------------------------------------------- Properties
 
     /**
      * Set the session persistence pathname to the specified value.  If no
@@ -139,39 +92,37 @@ public class StandardManager extends ManagerBase {
         support.firePropertyChange("pathname", oldPathname, this.pathname);
     }
 
-
-    // --------------------------------------------------------- Public Methods
-
     @Override
     public void load() throws ClassNotFoundException, IOException {
-        if (SecurityUtil.isPackageProtectionEnabled()){
-            try{
-                AccessController.doPrivileged( new PrivilegedDoLoad() );
-            } catch (PrivilegedActionException ex){
+        if (SecurityUtil.isPackageProtectionEnabled()) {
+            try {
+                AccessController.doPrivileged(new PrivilegedDoLoad());
+            } catch (PrivilegedActionException ex) {
                 Exception exception = ex.getException();
                 if (exception instanceof ClassNotFoundException) {
-                    throw (ClassNotFoundException)exception;
-                } else if (exception instanceof IOException) {
-                    throw (IOException)exception;
+                    throw (ClassNotFoundException) exception;
+                }
+                else if (exception instanceof IOException) {
+                    throw (IOException) exception;
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Unreported exception in load() ", exception);
                 }
             }
-        } else {
+        }
+        else {
             doLoad();
         }
     }
-
 
     /**
      * Load any currently active sessions that were previously unloaded
      * to the appropriate persistence mechanism, if any.  If persistence is not
      * supported, this method returns without doing anything.
      *
-     * @exception ClassNotFoundException if a serialized class cannot be
-     *  found during the reload
-     * @exception IOException if an input/output error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be
+     *                                found during the reload
+     * @throws IOException            if an input/output error occurs
      */
     protected void doLoad() throws ClassNotFoundException, IOException {
         if (log.isDebugEnabled()) {
@@ -193,7 +144,7 @@ public class StandardManager extends ManagerBase {
         ClassLoader classLoader = null;
         Log logger = null;
         try (FileInputStream fis = new FileInputStream(file.getAbsolutePath());
-                BufferedInputStream bis = new BufferedInputStream(fis)) {
+             BufferedInputStream bis = new BufferedInputStream(fis)) {
             Context c = getContext();
             loader = c.getLoader();
             logger = c.getLogger();
@@ -250,32 +201,34 @@ public class StandardManager extends ManagerBase {
     }
 
 
+    // --------------------------------------------------------- Public Methods
+
     @Override
     public void unload() throws IOException {
         if (SecurityUtil.isPackageProtectionEnabled()) {
             try {
                 AccessController.doPrivileged(new PrivilegedDoUnload());
-            } catch (PrivilegedActionException ex){
+            } catch (PrivilegedActionException ex) {
                 Exception exception = ex.getException();
                 if (exception instanceof IOException) {
-                    throw (IOException)exception;
+                    throw (IOException) exception;
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Unreported exception in unLoad()", exception);
                 }
             }
-        } else {
+        }
+        else {
             doUnload();
         }
     }
-
 
     /**
      * Save any currently active sessions in the appropriate persistence
      * mechanism, if any.  If persistence is not supported, this method
      * returns without doing anything.
      *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     protected void doUnload() throws IOException {
 
@@ -301,8 +254,8 @@ public class StandardManager extends ManagerBase {
         List<StandardSession> list = new ArrayList<>();
 
         try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath());
-                BufferedOutputStream bos = new BufferedOutputStream(fos);
-                ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+             BufferedOutputStream bos = new BufferedOutputStream(fos);
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
 
             synchronized (sessions) {
                 if (log.isDebugEnabled()) {
@@ -338,13 +291,12 @@ public class StandardManager extends ManagerBase {
         }
     }
 
-
     /**
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -362,13 +314,12 @@ public class StandardManager extends ManagerBase {
         setState(LifecycleState.STARTING);
     }
 
-
     /**
      * Stop this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void stopInternal() throws LifecycleException {
@@ -388,7 +339,7 @@ public class StandardManager extends ManagerBase {
         }
 
         // Expire all active sessions
-        Session sessions[] = findSessions();
+        Session[] sessions = findSessions();
         for (Session session : sessions) {
             try {
                 if (session.isValid()) {
@@ -407,12 +358,10 @@ public class StandardManager extends ManagerBase {
         super.stopInternal();
     }
 
-
-    // ------------------------------------------------------ Protected Methods
-
     /**
      * Return a File object representing the pathname to our
      * persistence file, if any.
+     *
      * @return the file
      */
     protected File file() {
@@ -429,5 +378,37 @@ public class StandardManager extends ManagerBase {
             }
         }
         return file;
+    }
+
+    private class PrivilegedDoLoad
+            implements PrivilegedExceptionAction<Void> {
+
+        PrivilegedDoLoad() {
+            // NOOP
+        }
+
+        @Override
+        public Void run() throws Exception {
+            doLoad();
+            return null;
+        }
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+    private class PrivilegedDoUnload
+            implements PrivilegedExceptionAction<Void> {
+
+        PrivilegedDoUnload() {
+            // NOOP
+        }
+
+        @Override
+        public Void run() throws Exception {
+            doUnload();
+            return null;
+        }
+
     }
 }

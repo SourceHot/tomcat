@@ -18,12 +18,7 @@ package org.apache.jasper.el;
 
 import jakarta.el.ExpressionFactory;
 import jakarta.el.ValueExpression;
-import jakarta.servlet.jsp.el.ELException;
-import jakarta.servlet.jsp.el.ELParseException;
-import jakarta.servlet.jsp.el.Expression;
-import jakarta.servlet.jsp.el.ExpressionEvaluator;
-import jakarta.servlet.jsp.el.FunctionMapper;
-import jakarta.servlet.jsp.el.VariableResolver;
+import jakarta.servlet.jsp.el.*;
 
 @Deprecated
 public final class ExpressionEvaluatorImpl extends ExpressionEvaluator {
@@ -36,11 +31,11 @@ public final class ExpressionEvaluatorImpl extends ExpressionEvaluator {
 
     @Override
     public Expression parseExpression(String expression,
-            @SuppressWarnings("rawtypes") Class expectedType,
-            FunctionMapper fMapper) throws ELException {
+                                      @SuppressWarnings("rawtypes") Class expectedType,
+                                      FunctionMapper fMapper) throws ELException {
         try {
             ELContextImpl ctx =
-                new ELContextImpl(ELContextImpl.getDefaultResolver(factory));
+                    new ELContextImpl(ELContextImpl.getDefaultResolver(factory));
             if (fMapper != null) {
                 ctx.setFunctionMapper(new FunctionMapperImpl(fMapper));
             }
@@ -53,8 +48,8 @@ public final class ExpressionEvaluatorImpl extends ExpressionEvaluator {
 
     @Override
     public Object evaluate(String expression,
-            @SuppressWarnings("rawtypes") Class expectedType,
-            VariableResolver vResolver, FunctionMapper fMapper)
+                           @SuppressWarnings("rawtypes") Class expectedType,
+                           VariableResolver vResolver, FunctionMapper fMapper)
             throws ELException {
         return this.parseExpression(expression, expectedType, fMapper).evaluate(vResolver);
     }

@@ -20,19 +20,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLType;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -55,10 +43,8 @@ public class DelegatingCallableStatement extends DelegatingPreparedStatement imp
      * Creates a wrapper for the Statement which traces this Statement to the Connection which created it and the code
      * which created it.
      *
-     * @param connection
-     *            the {@link DelegatingConnection} that created this statement
-     * @param statement
-     *            the {@link CallableStatement} to delegate all calls to
+     * @param connection the {@link DelegatingConnection} that created this statement
+     * @param statement  the {@link CallableStatement} to delegate all calls to
      */
     public DelegatingCallableStatement(final DelegatingConnection<?> connection, final CallableStatement statement) {
         super(connection, statement);
@@ -97,7 +83,9 @@ public class DelegatingCallableStatement extends DelegatingPreparedStatement imp
         }
     }
 
-    /** @deprecated Use {@link #getBigDecimal(int)} or {@link #getBigDecimal(String)} */
+    /**
+     * @deprecated Use {@link #getBigDecimal(int)} or {@link #getBigDecimal(String)}
+     */
     @Override
     @Deprecated
     public BigDecimal getBigDecimal(final int parameterIndex, final int scale) throws SQLException {
@@ -1267,7 +1255,7 @@ public class DelegatingCallableStatement extends DelegatingPreparedStatement imp
      */
     @Override
     public void setObject(final String parameterName, final Object x, final SQLType targetSqlType,
-            final int scaleOrLength) throws SQLException {
+                          final int scaleOrLength) throws SQLException {
         checkOpen();
         try {
             getDelegateCallableStatement().setObject(parameterName, x, targetSqlType, scaleOrLength);

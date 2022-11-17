@@ -16,12 +16,11 @@
  */
 package org.apache.catalina.webresources;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.catalina.WebResourceRoot;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -29,10 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.cert.Certificate;
 import java.util.jar.Manifest;
-
-import org.apache.catalina.WebResourceRoot;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 /**
  * Represents a single resource (file or directory) that is located on a file
@@ -43,6 +38,7 @@ public class FileResource extends AbstractResource {
     private static final Log log = LogFactory.getLog(FileResource.class);
 
     private static final boolean PROPERTIES_NEED_CONVERT;
+
     static {
         boolean isEBCDIC = false;
         try {
@@ -64,15 +60,16 @@ public class FileResource extends AbstractResource {
     private final boolean needConvert;
 
     public FileResource(WebResourceRoot root, String webAppPath,
-            File resource, boolean readOnly, Manifest manifest) {
-        super(root,webAppPath);
+                        File resource, boolean readOnly, Manifest manifest) {
+        super(root, webAppPath);
         this.resource = resource;
 
         if (webAppPath.charAt(webAppPath.length() - 1) == '/') {
             String realName = resource.getName() + '/';
             if (webAppPath.endsWith(realName)) {
                 name = resource.getName();
-            } else {
+            }
+            else {
                 // This is the root directory of a mounted ResourceSet
                 // Need to return the mounted name, not the real name
                 int endOfName = webAppPath.length() - 1;
@@ -80,7 +77,8 @@ public class FileResource extends AbstractResource {
                         webAppPath.lastIndexOf('/', endOfName - 1) + 1,
                         endOfName);
             }
-        } else {
+        }
+        else {
             // Must be a file
             name = resource.getName();
         }
@@ -138,7 +136,8 @@ public class FileResource extends AbstractResource {
             byte[] content = getContent();
             if (content == null) {
                 return -1;
-            } else {
+            }
+            else {
                 return content.length;
             }
         }
@@ -174,7 +173,8 @@ public class FileResource extends AbstractResource {
             byte[] content = getContent();
             if (content == null) {
                 return null;
-            } else {
+            }
+            else {
                 return new ByteArrayInputStream(content);
             }
         }
@@ -266,7 +266,8 @@ public class FileResource extends AbstractResource {
                 }
                 return null;
             }
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -275,7 +276,8 @@ public class FileResource extends AbstractResource {
     public URL getCodeBase() {
         if (getWebappPath().startsWith("/WEB-INF/classes/") && name.endsWith(".class")) {
             return getWebResourceRoot().getResource("/WEB-INF/classes/").getURL();
-        } else {
+        }
+        else {
             return getURL();
         }
     }

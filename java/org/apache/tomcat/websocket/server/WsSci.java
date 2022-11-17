@@ -16,10 +16,6 @@
  */
 package org.apache.tomcat.websocket.server;
 
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Set;
-
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -30,8 +26,11 @@ import jakarta.websocket.Endpoint;
 import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
-
 import org.apache.tomcat.util.compat.JreCompat;
+
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Registers an interest in any class that is annotated with
@@ -41,6 +40,24 @@ import org.apache.tomcat.util.compat.JreCompat;
 @HandlesTypes({ServerEndpoint.class, ServerApplicationConfig.class,
         Endpoint.class})
 public class WsSci implements ServletContainerInitializer {
+
+    static WsServerContainer init(ServletContext servletContext,
+                                  boolean initBySciMechanism) {
+
+        WsServerContainer sc = new WsServerContainer(servletContext);
+
+        servletContext.setAttribute(
+                Constants.SERVER_CONTAINER_SERVLET_CONTEXT_ATTRIBUTE, sc);
+
+        servletContext.addListener(new WsSessionListener(sc));
+        // Can't register the ContextListener again if the ContextListener is
+        // calling this method
+        if (initBySciMechanism) {
+            servletContext.addListener(new WsContextListener());
+        }
+
+        return sc;
+    }
 
     @Override
     public void onStartup(Set<Class<?>> clazzes, ServletContext ctx)
@@ -100,7 +117,8 @@ public class WsSci implements ServletContainerInitializer {
 
         if (serverApplicationConfigs.isEmpty()) {
             filteredPojoEndpoints.addAll(scannedPojoEndpoints);
-        } else {
+        }
+        else {
             for (ServerApplicationConfig config : serverApplicationConfigs) {
                 Set<ServerEndpointConfig> configFilteredEndpoints =
                         config.getEndpointConfigs(scannedEndpointClazzes);
@@ -128,24 +146,5 @@ public class WsSci implements ServletContainerInitializer {
         } catch (DeploymentException e) {
             throw new ServletException(e);
         }
-    }
-
-
-    static WsServerContainer init(ServletContext servletContext,
-            boolean initBySciMechanism) {
-
-        WsServerContainer sc = new WsServerContainer(servletContext);
-
-        servletContext.setAttribute(
-                Constants.SERVER_CONTAINER_SERVLET_CONTEXT_ATTRIBUTE, sc);
-
-        servletContext.addListener(new WsSessionListener(sc));
-        // Can't register the ContextListener again if the ContextListener is
-        // calling this method
-        if (initBySciMechanism) {
-            servletContext.addListener(new WsContextListener());
-        }
-
-        return sc;
     }
 }

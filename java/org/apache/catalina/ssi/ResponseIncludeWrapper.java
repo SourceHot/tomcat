@@ -16,16 +16,15 @@
  */
 package org.apache.catalina.ssi;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+import org.apache.tomcat.util.http.FastHttpDateFormat;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Locale;
-
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
-
-import org.apache.tomcat.util.http.FastHttpDateFormat;
 
 /**
  * An HttpServletResponseWrapper, used from
@@ -39,13 +38,11 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * The names of some headers we want to capture.
      */
     private static final String LAST_MODIFIED = "last-modified";
-
-    protected long lastModified = -1;
-
     /**
      * Our ServletOutputStream
      */
     protected final ServletOutputStream captureServletOutputStream;
+    protected long lastModified = -1;
     protected ServletOutputStream servletOutputStream;
     protected PrintWriter printWriter;
 
@@ -53,11 +50,11 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * Initialize our wrapper with the current HttpServletResponse and
      * ServletOutputStream.
      *
-     * @param response The response to use
+     * @param response                   The response to use
      * @param captureServletOutputStream The ServletOutputStream to use
      */
     public ResponseIncludeWrapper(HttpServletResponse response,
-            ServletOutputStream captureServletOutputStream) {
+                                  ServletOutputStream captureServletOutputStream) {
         super(response);
         this.captureServletOutputStream = captureServletOutputStream;
     }
@@ -67,6 +64,7 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * Flush the servletOutputStream or printWriter ( only one will be non-null )
      * This must be called after a requestDispatcher.include, since we can't
      * assume that the included servlet flushed its stream.
+     *
      * @throws IOException an IO error occurred
      */
     public void flushOutputStreamOrWriter() throws IOException {
@@ -84,8 +82,7 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * been returned.
      *
      * @return a PrintWriter object
-     * @exception java.io.IOException
-     *                if the outputstream already been called
+     * @throws java.io.IOException if the outputstream already been called
      */
     @Override
     public PrintWriter getWriter() throws java.io.IOException {
@@ -94,7 +91,7 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
                 setCharacterEncoding(getCharacterEncoding());
                 printWriter = new PrintWriter(
                         new OutputStreamWriter(captureServletOutputStream,
-                                               getCharacterEncoding()));
+                                getCharacterEncoding()));
             }
             return printWriter;
         }
@@ -107,8 +104,7 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * been returned.
      *
      * @return an OutputStream object
-     * @exception java.io.IOException
-     *                if the printwriter already been called
+     * @throws java.io.IOException if the printwriter already been called
      */
     @Override
     public ServletOutputStream getOutputStream() throws java.io.IOException {
@@ -127,8 +123,8 @@ public class ResponseIncludeWrapper extends HttpServletResponseWrapper {
      * result is the number of milliseconds since January 1, 1970 GMT.
      *
      * @return the date the resource referenced by this
-     *   <code>ResponseIncludeWrapper</code> was last modified, or -1 if not
-     *   known.
+     * <code>ResponseIncludeWrapper</code> was last modified, or -1 if not
+     * known.
      */
     public long getLastModified() {
         return lastModified;

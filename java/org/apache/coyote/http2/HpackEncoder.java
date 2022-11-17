@@ -16,20 +16,13 @@
  */
 package org.apache.coyote.http2;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.nio.ByteBuffer;
+import java.util.*;
 
 /**
  * Encoder for HPACK frames.
@@ -65,21 +58,7 @@ class HpackEncoder {
 
 
     };
-
-    private int headersIterator = -1;
-    private boolean firstPass = true;
-
-    private MimeHeaders currentHeaders;
-
-    private int entryPositionCounter;
-
-    private int newMaxHeaderSize = -1; //if the max header size has been changed
-    private int minNewMaxHeaderSize = -1; //records the smallest value of newMaxHeaderSize, as per section 4.1
-
     private static final Map<String, TableEntry[]> ENCODING_STATIC_TABLE;
-
-    private final Deque<TableEntry> evictionQueue = new ArrayDeque<>();
-    private final Map<String, List<TableEntry>> dynamicTable = new HashMap<>(); //TODO: use a custom data structure to reduce allocations
 
     static {
         Map<String, TableEntry[]> map = new HashMap<>();
@@ -88,7 +67,8 @@ class HpackEncoder {
             TableEntry[] existing = map.get(m.name);
             if (existing == null) {
                 map.put(m.name, new TableEntry[]{new TableEntry(m.name, m.value, i)});
-            } else {
+            }
+            else {
                 TableEntry[] newEntry = new TableEntry[existing.length + 1];
                 System.arraycopy(existing, 0, newEntry, 0, existing.length);
                 newEntry[existing.length] = new TableEntry(m.name, m.value, i);
@@ -98,17 +78,23 @@ class HpackEncoder {
         ENCODING_STATIC_TABLE = Collections.unmodifiableMap(map);
     }
 
+    private final Deque<TableEntry> evictionQueue = new ArrayDeque<>();
+    private final Map<String, List<TableEntry>> dynamicTable = new HashMap<>(); //TODO: use a custom data structure to reduce allocations
+    private final HpackHeaderFunction hpackHeaderFunction;
+    private int headersIterator = -1;
+    private boolean firstPass = true;
+    private MimeHeaders currentHeaders;
+    private int entryPositionCounter;
+    private int newMaxHeaderSize = -1; //if the max header size has been changed
+    private int minNewMaxHeaderSize = -1; //records the smallest value of newMaxHeaderSize, as per section 4.1
     /**
      * The maximum table size
      */
     private int maxTableSize = Hpack.DEFAULT_TABLE_SIZE;
-
     /**
      * The current table size
      */
     private int currentTableSize;
-
-    private final HpackHeaderFunction hpackHeaderFunction;
 
     HpackEncoder() {
         this.hpackHeaderFunction = DEFAULT_HEADER_FUNCTION;
@@ -119,7 +105,6 @@ class HpackEncoder {
      *
      * @param headers The headers to encode
      * @param target  The buffer to which to write the encoded headers
-     *
      * @return The state of the encoding process
      */
     State encode(MimeHeaders headers, ByteBuffer target) {
@@ -129,7 +114,8 @@ class HpackEncoder {
             //new headers map
             it = 0;
             currentHeaders = headers;
-        } else {
+        }
+        else {
             if (headers != currentHeaders) {
                 throw new IllegalStateException();
             }
@@ -142,62 +128,67 @@ class HpackEncoder {
                 if (headerName.charAt(0) != ':') {
                     skip = true;
                 }
-            } else {
+            }
+            else {
                 if (headerName.charAt(0) == ':') {
                     skip = true;
                 }
             }
             if (!skip) {
-                    String val = headers.getValue(it).toString();
+                String val = headers.getValue(it).toString();
 
-                    if (log.isDebugEnabled()) {
-                        log.debug(sm.getString("hpackEncoder.encodeHeader", headerName, val));
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString("hpackEncoder.encodeHeader", headerName, val));
+                }
+                TableEntry tableEntry = findInTable(headerName, val);
+
+                // We use 11 to make sure we have enough room for the
+                // variable length integers
+                int required = 11 + headerName.length() + 1 + val.length();
+
+                if (target.remaining() < required) {
+                    this.headersIterator = it;
+                    return State.UNDERFLOW;
+                }
+                // Only index if it will fit
+                boolean canIndex = hpackHeaderFunction.shouldUseIndexing(headerName, val) &&
+                        (headerName.length() + val.length() + 32) < maxTableSize;
+                if (tableEntry == null && canIndex) {
+                    //add the entry to the dynamic table
+                    target.put((byte) (1 << 6));
+                    writeHuffmanEncodableName(target, headerName);
+                    writeHuffmanEncodableValue(target, headerName, val);
+                    addToDynamicTable(headerName, val);
+                }
+                else if (tableEntry == null) {
+                    //literal never indexed
+                    target.put((byte) (1 << 4));
+                    writeHuffmanEncodableName(target, headerName);
+                    writeHuffmanEncodableValue(target, headerName, val);
+                }
+                else {
+                    //so we know something is already in the table
+                    if (val.equals(tableEntry.value)) {
+                        //the whole thing is in the table
+                        target.put((byte) (1 << 7));
+                        Hpack.encodeInteger(target, tableEntry.getPosition(), 7);
                     }
-                    TableEntry tableEntry = findInTable(headerName, val);
+                    else {
+                        if (canIndex) {
+                            //add the entry to the dynamic table
+                            target.put((byte) (1 << 6));
+                            Hpack.encodeInteger(target, tableEntry.getPosition(), 6);
+                            writeHuffmanEncodableValue(target, headerName, val);
+                            addToDynamicTable(headerName, val);
 
-                    // We use 11 to make sure we have enough room for the
-                    // variable length integers
-                    int required = 11 + headerName.length() + 1 + val.length();
-
-                    if (target.remaining() < required) {
-                        this.headersIterator = it;
-                        return State.UNDERFLOW;
-                    }
-                    // Only index if it will fit
-                    boolean canIndex = hpackHeaderFunction.shouldUseIndexing(headerName, val) &&
-                            (headerName.length() + val.length() + 32) < maxTableSize;
-                    if (tableEntry == null && canIndex) {
-                        //add the entry to the dynamic table
-                        target.put((byte) (1 << 6));
-                        writeHuffmanEncodableName(target, headerName);
-                        writeHuffmanEncodableValue(target, headerName, val);
-                        addToDynamicTable(headerName, val);
-                    } else if (tableEntry == null) {
-                        //literal never indexed
-                        target.put((byte) (1 << 4));
-                        writeHuffmanEncodableName(target, headerName);
-                        writeHuffmanEncodableValue(target, headerName, val);
-                    } else {
-                        //so we know something is already in the table
-                        if (val.equals(tableEntry.value)) {
-                            //the whole thing is in the table
-                            target.put((byte) (1 << 7));
-                            Hpack.encodeInteger(target, tableEntry.getPosition(), 7);
-                        } else {
-                            if (canIndex) {
-                                //add the entry to the dynamic table
-                                target.put((byte) (1 << 6));
-                                Hpack.encodeInteger(target, tableEntry.getPosition(), 6);
-                                writeHuffmanEncodableValue(target, headerName, val);
-                                addToDynamicTable(headerName, val);
-
-                            } else {
-                                target.put((byte) (1 << 4));
-                                Hpack.encodeInteger(target, tableEntry.getPosition(), 4);
-                                writeHuffmanEncodableValue(target, headerName, val);
-                            }
+                        }
+                        else {
+                            target.put((byte) (1 << 4));
+                            Hpack.encodeInteger(target, tableEntry.getPosition(), 4);
+                            writeHuffmanEncodableValue(target, headerName, val);
                         }
                     }
+                }
 
             }
             if (++it == currentHeaders.size() && firstPass) {
@@ -212,7 +203,7 @@ class HpackEncoder {
 
     private void writeHuffmanEncodableName(ByteBuffer target, String headerName) {
         if (hpackHeaderFunction.shouldUseHuffman(headerName)) {
-            if(HPackHuffman.encode(target, headerName, true)) {
+            if (HPackHuffman.encode(target, headerName, true)) {
                 return;
             }
         }
@@ -229,7 +220,8 @@ class HpackEncoder {
             if (!HPackHuffman.encode(target, val, false)) {
                 writeValueString(target, val);
             }
-        } else {
+        }
+        else {
             writeValueString(target, val);
         }
     }
@@ -315,7 +307,8 @@ class HpackEncoder {
         this.newMaxHeaderSize = newSize;
         if (minNewMaxHeaderSize == -1) {
             minNewMaxHeaderSize = newSize;
-        } else {
+        }
+        else {
             minNewMaxHeaderSize = Math.min(newSize, minNewMaxHeaderSize);
         }
     }
@@ -342,6 +335,27 @@ class HpackEncoder {
 
     }
 
+    private interface HpackHeaderFunction {
+        boolean shouldUseIndexing(String header, String value);
+
+        /**
+         * Returns true if huffman encoding should be used on the header value
+         *
+         * @param header The header name
+         * @param value  The header value to be encoded
+         * @return <code>true</code> if the value should be encoded
+         */
+        boolean shouldUseHuffman(String header, String value);
+
+        /**
+         * Returns true if huffman encoding should be used on the header name
+         *
+         * @param header The header name to be encoded
+         * @return <code>true</code> if the value should be encoded
+         */
+        boolean shouldUseHuffman(String header);
+    }
+
     private static class TableEntry {
         private final String name;
         private final String value;
@@ -354,7 +368,8 @@ class HpackEncoder {
             this.position = position;
             if (value != null) {
                 this.size = 32 + name.length() + value.length();
-            } else {
+            }
+            else {
                 this.size = -1;
             }
         }
@@ -378,26 +393,5 @@ class HpackEncoder {
         int getPosition() {
             return super.getPosition() + entryPositionCounter + Hpack.STATIC_TABLE_LENGTH;
         }
-    }
-
-    private interface HpackHeaderFunction {
-        boolean shouldUseIndexing(String header, String value);
-
-        /**
-         * Returns true if huffman encoding should be used on the header value
-         *
-         * @param header The header name
-         * @param value  The header value to be encoded
-         * @return <code>true</code> if the value should be encoded
-         */
-        boolean shouldUseHuffman(String header, String value);
-
-        /**
-         * Returns true if huffman encoding should be used on the header name
-         *
-         * @param header The header name to be encoded
-         * @return <code>true</code> if the value should be encoded
-         */
-        boolean shouldUseHuffman(String header);
     }
 }

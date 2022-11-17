@@ -16,6 +16,15 @@
  */
 package org.apache.catalina.tribes.membership.cloud;
 
+import org.apache.catalina.tribes.ChannelListener;
+import org.apache.catalina.tribes.Heartbeat;
+import org.apache.catalina.tribes.Member;
+import org.apache.catalina.tribes.membership.Membership;
+import org.apache.catalina.tribes.membership.MembershipProviderBase;
+import org.apache.catalina.tribes.util.StringManager;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -28,21 +37,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.catalina.tribes.ChannelListener;
-import org.apache.catalina.tribes.Heartbeat;
-import org.apache.catalina.tribes.Member;
-import org.apache.catalina.tribes.membership.Membership;
-import org.apache.catalina.tribes.membership.MembershipProviderBase;
-import org.apache.catalina.tribes.util.StringManager;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-
 public abstract class CloudMembershipProvider extends MembershipProviderBase implements Heartbeat, ChannelListener {
-    private static final Log log = LogFactory.getLog(CloudMembershipProvider.class);
     protected static final StringManager sm = StringManager.getManager(CloudMembershipProvider.class);
-
     protected static final String CUSTOM_ENV_PREFIX = "OPENSHIFT_KUBE_PING_";
-
+    private static final Log log = LogFactory.getLog(CloudMembershipProvider.class);
     protected String url;
     protected StreamProvider streamProvider;
     protected int connectionTimeout;
@@ -68,6 +66,7 @@ public abstract class CloudMembershipProvider extends MembershipProviderBase imp
 
     /**
      * Get value of environment variable.
+     *
      * @param keys the environment variables
      * @return the env variables values, or null if not found
      */
@@ -85,6 +84,7 @@ public abstract class CloudMembershipProvider extends MembershipProviderBase imp
     /**
      * Get the Kubernetes namespace, or "tomcat" if the Kubernetes environment variable
      * cannot be found (with a warning log about the missing namespace).
+     *
      * @return the namespace
      */
     protected String getNamespace() {
@@ -138,14 +138,16 @@ public abstract class CloudMembershipProvider extends MembershipProviderBase imp
 
     /**
      * Fetch current cluster members from the cloud orchestration.
+     *
      * @return the member array
      */
     protected abstract Member[] fetchMembers();
 
     /**
      * Add or remove specified member.
+     *
      * @param member the member to add
-     * @param add true if the member is added, false otherwise
+     * @param add    true if the member is added, false otherwise
      */
     protected void updateMember(Member member, boolean add) {
         if (add && !membership.memberAlive(member)) {
@@ -162,7 +164,8 @@ public abstract class CloudMembershipProvider extends MembershipProviderBase imp
                 Thread.currentThread().setName(threadName);
                 if (add) {
                     membershipListener.memberAdded(member);
-                } else {
+                }
+                else {
                     membershipListener.memberDisappeared(member);
                 }
             } finally {

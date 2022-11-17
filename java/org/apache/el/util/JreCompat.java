@@ -32,7 +32,8 @@ public class JreCompat {
     static {
         if (Jre9Compat.isSupported()) {
             instance = new Jre9Compat();
-        } else {
+        }
+        else {
             instance = new JreCompat();
         }
     }
@@ -47,11 +48,10 @@ public class JreCompat {
      * Is the accessibleObject accessible (as a result of appropriate module
      * exports) on the provided instance?
      *
-     * @param base  The specific instance to be tested.
-     * @param accessibleObject  The method/field/constructor to be tested.
-     *
+     * @param base             The specific instance to be tested.
+     * @param accessibleObject The method/field/constructor to be tested.
      * @return {code true} if the AccessibleObject can be accessed otherwise
-     *         {code false}
+     * {code false}
      */
     public boolean canAccess(Object base, AccessibleObject accessibleObject) {
         // Java 8 doesn't support modules so default to true

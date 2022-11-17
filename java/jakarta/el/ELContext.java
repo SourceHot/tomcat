@@ -16,15 +16,7 @@
  */
 package jakarta.el;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public abstract class ELContext {
 
@@ -38,14 +30,10 @@ public abstract class ELContext {
 
     private List<EvaluationListener> listeners;
 
-    private Deque<Map<String,Object>> lambdaArguments = new LinkedList<>();
+    private final Deque<Map<String, Object>> lambdaArguments = new LinkedList<>();
 
     public ELContext() {
         this.resolved = false;
-    }
-
-    public void setPropertyResolved(boolean resolved) {
-        this.resolved = resolved;
     }
 
     /**
@@ -53,7 +41,6 @@ public abstract class ELContext {
      *
      * @param base     The base object on which the property was found
      * @param property The property that was resolved
-     *
      * @since EL 3.0
      */
     public void setPropertyResolved(Object base, Object property) {
@@ -65,14 +52,16 @@ public abstract class ELContext {
         return this.resolved;
     }
 
+    public void setPropertyResolved(boolean resolved) {
+        this.resolved = resolved;
+    }
+
     /**
      * Add an object to this EL context under the given key.
      *
      * @param key           The key under which to store the object
      * @param contextObject The object to add
-     *
-     * @throws NullPointerException
-     *              If the supplied key or context is <code>null</code>
+     * @throws NullPointerException If the supplied key or context is <code>null</code>
      */
     public void putContext(Class<?> key, Object contextObject) {
         Objects.requireNonNull(key);
@@ -89,11 +78,8 @@ public abstract class ELContext {
      * Obtain the context object for the given key.
      *
      * @param key The key of the required context object
-     *
      * @return The value of the context object associated with the given key
-     *
-     * @throws NullPointerException
-     *              If the supplied key is <code>null</code>
+     * @throws NullPointerException If the supplied key is <code>null</code>
      */
     public Object getContext(Class<?> key) {
         Objects.requireNonNull(key);
@@ -110,7 +96,6 @@ public abstract class ELContext {
      * This method is not thread-safe.
      *
      * @return the ImportHandler for this ELContext.
-     *
      * @since EL 3.0
      */
     public ImportHandler getImportHandler() {
@@ -136,7 +121,6 @@ public abstract class ELContext {
      * Register an EvaluationListener with this ELContext.
      *
      * @param listener The EvaluationListener to register
-     *
      * @since EL 3.0
      */
     public void addEvaluationListener(EvaluationListener listener) {
@@ -151,7 +135,6 @@ public abstract class ELContext {
      * Obtain the list of registered EvaluationListeners.
      *
      * @return A list of the EvaluationListener registered with this ELContext
-     *
      * @since EL 3.0
      */
     public List<EvaluationListener> getEvaluationListeners() {
@@ -162,7 +145,6 @@ public abstract class ELContext {
      * Notify interested listeners that an expression will be evaluated.
      *
      * @param expression The expression that will be evaluated
-     *
      * @since EL 3.0
      */
     public void notifyBeforeEvaluation(String expression) {
@@ -184,7 +166,6 @@ public abstract class ELContext {
      * Notify interested listeners that an expression has been evaluated.
      *
      * @param expression The expression that was evaluated
-     *
      * @since EL 3.0
      */
     public void notifyAfterEvaluation(String expression) {
@@ -207,7 +188,6 @@ public abstract class ELContext {
      *
      * @param base     The object on which the property was resolved
      * @param property The property that was resolved
-     *
      * @since EL 3.0
      */
     public void notifyPropertyResolved(Object base, Object property) {
@@ -230,14 +210,12 @@ public abstract class ELContext {
      * argument.
      *
      * @param name The name of the lambda argument
-     *
      * @return <code>true</code> if the name is recognised as the name of a
-     *         lambda argument, otherwise <code>false</code>
-     *
+     * lambda argument, otherwise <code>false</code>
      * @since EL 3.0
      */
     public boolean isLambdaArgument(String name) {
-        for (Map<String,Object> arguments : lambdaArguments) {
+        for (Map<String, Object> arguments : lambdaArguments) {
             if (arguments.containsKey(name)) {
                 return true;
             }
@@ -249,13 +227,11 @@ public abstract class ELContext {
      * Obtain the value of the lambda argument with the given name.
      *
      * @param name The name of the lambda argument
-     *
      * @return The value of the specified argument
-     *
      * @since EL 3.0
      */
     public Object getLambdaArgument(String name) {
-        for (Map<String,Object> arguments : lambdaArguments) {
+        for (Map<String, Object> arguments : lambdaArguments) {
             Object result = arguments.get(name);
             if (result != null) {
                 return result;
@@ -272,7 +248,7 @@ public abstract class ELContext {
      *                  expression.
      * @since EL 3.0
      */
-    public void enterLambdaScope(Map<String,Object> arguments) {
+    public void enterLambdaScope(Map<String, Object> arguments) {
         lambdaArguments.push(arguments);
     }
 
@@ -291,12 +267,8 @@ public abstract class ELContext {
      *
      * @param obj  The object to be coerced
      * @param type The type to which the object should be coerced
-     *
      * @return An instance of the requested type.
-     *
-     * @throws ELException
-     *              If the conversion fails
-     *
+     * @throws ELException If the conversion fails
      * @since EL 3.0
      */
     public Object convertToType(Object obj, Class<?> type) {

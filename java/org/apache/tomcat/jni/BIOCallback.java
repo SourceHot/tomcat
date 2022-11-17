@@ -16,10 +16,10 @@
  */
 package org.apache.tomcat.jni;
 
-/** Open SSL BIO Callback Interface
+/**
+ * Open SSL BIO Callback Interface
  *
  * @author Mladen Turk
- *
  * @deprecated Unused. Will be removed in Tomcat 10.1
  */
 @Deprecated
@@ -27,30 +27,34 @@ public interface BIOCallback {
 
     /**
      * Write data
+     *
      * @param buf containing the bytes to write.
      * @return Number of characters written.
      */
-    public int write(byte [] buf);
+    int write(byte[] buf);
 
     /**
      * Read data
+     *
      * @param buf buffer to store the read bytes.
      * @return number of bytes read.
      */
-    public int read(byte [] buf);
+    int read(byte[] buf);
 
     /**
      * Puts string
+     *
      * @param data String to write
      * @return Number of characters written
      */
-    public int puts(String data);
+    int puts(String data);
 
     /**
      * Read string up to the len or CLRLF
+     *
      * @param len Maximum number of characters to read
      * @return String with up to len bytes read
      */
-    public String gets(int len);
+    String gets(int len);
 
 }

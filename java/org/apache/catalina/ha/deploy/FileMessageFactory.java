@@ -16,19 +16,15 @@
  */
 package org.apache.catalina.ha.deploy;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This factory is used to read files and write files by splitting them up into
@@ -44,15 +40,13 @@ import org.apache.tomcat.util.res.StringManager;
  * @version 1.0
  */
 public class FileMessageFactory {
-    /*--Static Variables----------------------------------------*/
-    private static final Log log = LogFactory.getLog(FileMessageFactory.class);
-    private static final StringManager sm = StringManager.getManager(FileMessageFactory.class);
-
     /**
      * The number of bytes that we read from file
      */
     public static final int READ_SIZE = 1024 * 10; //10kb
-
+    /*--Static Variables----------------------------------------*/
+    private static final Log log = LogFactory.getLog(FileMessageFactory.class);
+    private static final StringManager sm = StringManager.getManager(FileMessageFactory.class);
     /**
      * The file that we are reading/writing
      */
@@ -63,49 +57,40 @@ public class FileMessageFactory {
      * reading with this factory
      */
     protected final boolean openForWrite;
-
-    /**
-     * Once the factory is used, it cannot be reused.
-     */
-    protected boolean closed = false;
-
-    /**
-     * When openForWrite=false, the input stream is held by this variable
-     */
-    protected FileInputStream in;
-
-    /**
-     * When openForWrite=true, the output stream is held by this variable
-     */
-    protected FileOutputStream out;
-
-    /**
-     * The number of messages we have written
-     */
-    protected int nrOfMessagesProcessed = 0;
-
-    /**
-     * The total size of the file
-     */
-    protected long size = 0;
-
-    /**
-     * The total number of packets that we split this file into
-     */
-    protected long totalNrOfMessages = 0;
-
-    /**
-     * The number of the last message processed. Message IDs are 1 based.
-     */
-    protected AtomicLong lastMessageProcessed = new AtomicLong(0);
-
     /**
      * Messages received out of order are held in the buffer until required. If
      * everything is worked as expected, messages will spend very little time in
      * the buffer.
      */
     protected final Map<Long, FileMessage> msgBuffer = new ConcurrentHashMap<>();
-
+    /**
+     * Once the factory is used, it cannot be reused.
+     */
+    protected boolean closed = false;
+    /**
+     * When openForWrite=false, the input stream is held by this variable
+     */
+    protected FileInputStream in;
+    /**
+     * When openForWrite=true, the output stream is held by this variable
+     */
+    protected FileOutputStream out;
+    /**
+     * The number of messages we have written
+     */
+    protected int nrOfMessagesProcessed = 0;
+    /**
+     * The total size of the file
+     */
+    protected long size = 0;
+    /**
+     * The total number of packets that we split this file into
+     */
+    protected long totalNrOfMessages = 0;
+    /**
+     * The number of the last message processed. Message IDs are 1 based.
+     */
+    protected AtomicLong lastMessageProcessed = new AtomicLong(0);
     /**
      * The bytes that we hold the data in, not thread safe.
      */
@@ -134,16 +119,14 @@ public class FileMessageFactory {
      * When openForWrite==false, an input stream is opened, the file has to
      * exist.
      *
-     * @param f
-     *            File - the file to be read/written
-     * @param openForWrite
-     *            boolean - true means we are writing to the file, false means
-     *            we are reading from the file
+     * @param f            File - the file to be read/written
+     * @param openForWrite boolean - true means we are writing to the file, false means
+     *                     we are reading from the file
      * @throws FileNotFoundException -
-     *             if the file to be read doesn't exist
-     * @throws IOException -
-     *             if the system fails to open input/output streams to the file
-     *             or if it fails to create the file to be written to.
+     *                               if the file to be read doesn't exist
+     * @throws IOException           -
+     *                               if the system fails to open input/output streams to the file
+     *                               or if it fails to create the file to be written to.
      */
     private FileMessageFactory(File f, boolean openForWrite)
             throws FileNotFoundException, IOException {
@@ -159,7 +142,8 @@ public class FileMessageFactory {
                 }
             }
             out = new FileOutputStream(f);
-        } else {
+        }
+        else {
             size = file.length();
             totalNrOfMessages = (size / READ_SIZE) + 1;
             in = new FileInputStream(f);
@@ -172,16 +156,14 @@ public class FileMessageFactory {
      * the readMessage can be invoked, and when opening for write the
      * writeMessage can be invoked.
      *
-     * @param f
-     *            File - the file to be read or written
-     * @param openForWrite
-     *            boolean - true, means we are writing to the file, false means
-     *            we are reading from it
-     * @throws FileNotFoundException -
-     *             if the file to be read doesn't exist
-     * @throws IOException -
-     *             if it fails to create the file that is to be written
+     * @param f            File - the file to be read or written
+     * @param openForWrite boolean - true, means we are writing to the file, false means
+     *                     we are reading from it
      * @return FileMessageFactory
+     * @throws FileNotFoundException -
+     *                               if the file to be read doesn't exist
+     * @throws IOException           -
+     *                               if it fails to create the file that is to be written
      */
     public static FileMessageFactory getInstance(File f, boolean openForWrite)
             throws FileNotFoundException, IOException {
@@ -197,14 +179,13 @@ public class FileMessageFactory {
      * factory are thread safe. Don't hand off the message to one thread and
      * read the same with another.
      *
-     * @param f
-     *            FileMessage - the message to be populated with file data
-     * @throws IllegalArgumentException -
-     *             if the factory is for writing or is closed
-     * @throws IOException -
-     *             if a file read exception occurs
+     * @param f FileMessage - the message to be populated with file data
      * @return FileMessage - returns the same message passed in as a parameter,
-     *         or null if EOF
+     * or null if EOF
+     * @throws IllegalArgumentException -
+     *                                  if the factory is for writing or is closed
+     * @throws IOException              -
+     *                                  if a file read exception occurs
      */
     public FileMessage readMessage(FileMessage f)
             throws IllegalArgumentException, IOException {
@@ -213,7 +194,8 @@ public class FileMessageFactory {
         if (length == -1) {
             cleanup();
             return null;
-        } else {
+        }
+        else {
             f.setData(data, length);
             f.setTotalNrOfMsgs(totalNrOfMessages);
             f.setMessageNumber(++nrOfMessagesProcessed);
@@ -225,14 +207,13 @@ public class FileMessageFactory {
      * Writes a message to file. If (msg.getMessageNumber() ==
      * msg.getTotalNrOfMsgs()) the output stream will be closed after writing.
      *
-     * @param msg
-     *            FileMessage - message containing data to be written
-     * @throws IllegalArgumentException -
-     *             if the factory is opened for read or closed
-     * @throws IOException -
-     *             if a file write error occurs
+     * @param msg FileMessage - message containing data to be written
      * @return returns true if the file is complete and outputstream is closed,
-     *         false otherwise.
+     * false otherwise.
+     * @throws IllegalArgumentException -
+     *                                  if the factory is opened for read or closed
+     * @throws IOException              -
+     *                                  if a file write error occurs
      */
     public boolean writeMessage(FileMessage msg)
             throws IllegalArgumentException, IOException {
@@ -252,7 +233,7 @@ public class FileMessageFactory {
         }
 
         FileMessage previous =
-            msgBuffer.put(Long.valueOf(msg.getMessageNumber()), msg);
+                msgBuffer.put(Long.valueOf(msg.getMessageNumber()), msg);
         if (previous != null) {
             // Duplicate of message not yet processed
             log.warn(sm.getString("fileMessageFactory.duplicateMessage", msg.getContextName(), msg.getFileName(),
@@ -266,10 +247,12 @@ public class FileMessageFactory {
                 next = msgBuffer.get(Long.valueOf(lastMessageProcessed.get() + 1));
                 if (next != null) {
                     isWriting = true;
-                } else {
+                }
+                else {
                     return false;
                 }
-            } else {
+            }
+            else {
                 return false;
             }
         }
@@ -283,9 +266,9 @@ public class FileMessageFactory {
                 cleanup();
                 return true;
             }
-            synchronized(this) {
+            synchronized (this) {
                 next =
-                    msgBuffer.get(Long.valueOf(lastMessageProcessed.get() + 1));
+                        msgBuffer.get(Long.valueOf(lastMessageProcessed.get() + 1));
                 if (next == null) {
                     isWriting = false;
                 }
@@ -336,7 +319,8 @@ public class FileMessageFactory {
             cleanup();
             if (openForWrite) {
                 throw new IllegalArgumentException(sm.getString("fileMessageFactory.cannotWrite"));
-            } else {
+            }
+            else {
                 throw new IllegalArgumentException(sm.getString("fileMessageFactory.cannotRead"));
             }
         }

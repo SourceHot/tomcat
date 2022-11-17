@@ -16,11 +16,11 @@
  */
 package org.apache.tomcat.util.http;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 public class RequestUtil {
 
@@ -36,9 +36,8 @@ public class RequestUtil {
      * try to perform security checks for malicious input.
      *
      * @param path Relative path to be normalized
-     *
      * @return The normalized path or <code>null</code> if the path cannot be
-     *         normalized
+     * normalized
      */
     public static String normalize(String path) {
         return normalize(path, true);
@@ -51,11 +50,10 @@ public class RequestUtil {
      * useful only for normalizing application-generated paths.  It does not
      * try to perform security checks for malicious input.
      *
-     * @param path Relative path to be normalized
+     * @param path             Relative path to be normalized
      * @param replaceBackSlash Should '\\' be replaced with '/'
-     *
      * @return The normalized path or <code>null</code> if the path cannot be
-     *         normalized
+     * normalized
      */
     public static String normalize(String path, boolean replaceBackSlash) {
 
@@ -129,7 +127,8 @@ public class RequestUtil {
         String scheme = request.getScheme();
         if (scheme == null) {
             return false;
-        } else {
+        }
+        else {
             scheme = scheme.toLowerCase(Locale.ENGLISH);
         }
         target.append(scheme);
@@ -153,7 +152,8 @@ public class RequestUtil {
                 target.append(':');
                 target.append(port);
             }
-        } else {
+        }
+        else {
             // origin and target can only be equal if:
             // a) origin includes an explicit default port
             // b) origin is using a non-default port

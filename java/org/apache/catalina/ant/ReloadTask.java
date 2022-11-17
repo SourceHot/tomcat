@@ -17,7 +17,6 @@
 package org.apache.catalina.ant;
 
 
-
 import org.apache.tools.ant.BuildException;
 
 
@@ -33,7 +32,7 @@ public class ReloadTask extends AbstractCatalinaCommandTask {
     /**
      * Execute the requested operation.
      *
-     * @exception BuildException if an error occurs
+     * @throws BuildException if an error occurs
      */
     @Override
     public void execute() throws BuildException {

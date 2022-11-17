@@ -17,13 +17,13 @@
 package org.apache.catalina.core;
 
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestWrapper;
+
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 
 
 /**
@@ -49,22 +49,30 @@ class ApplicationRequest extends ServletRequestWrapper {
     /**
      * The set of attribute names that are special for request dispatchers.
      */
-    protected static final String specials[] =
-    { RequestDispatcher.INCLUDE_REQUEST_URI,
-      RequestDispatcher.INCLUDE_CONTEXT_PATH,
-      RequestDispatcher.INCLUDE_SERVLET_PATH,
-      RequestDispatcher.INCLUDE_PATH_INFO,
-      RequestDispatcher.INCLUDE_QUERY_STRING,
-      RequestDispatcher.INCLUDE_MAPPING,
-      RequestDispatcher.FORWARD_REQUEST_URI,
-      RequestDispatcher.FORWARD_CONTEXT_PATH,
-      RequestDispatcher.FORWARD_SERVLET_PATH,
-      RequestDispatcher.FORWARD_PATH_INFO,
-      RequestDispatcher.FORWARD_QUERY_STRING,
-      RequestDispatcher.FORWARD_MAPPING};
+    protected static final String[] specials =
+            {RequestDispatcher.INCLUDE_REQUEST_URI,
+                    RequestDispatcher.INCLUDE_CONTEXT_PATH,
+                    RequestDispatcher.INCLUDE_SERVLET_PATH,
+                    RequestDispatcher.INCLUDE_PATH_INFO,
+                    RequestDispatcher.INCLUDE_QUERY_STRING,
+                    RequestDispatcher.INCLUDE_MAPPING,
+                    RequestDispatcher.FORWARD_REQUEST_URI,
+                    RequestDispatcher.FORWARD_CONTEXT_PATH,
+                    RequestDispatcher.FORWARD_SERVLET_PATH,
+                    RequestDispatcher.FORWARD_PATH_INFO,
+                    RequestDispatcher.FORWARD_QUERY_STRING,
+                    RequestDispatcher.FORWARD_MAPPING};
 
 
     // ----------------------------------------------------------- Constructors
+    /**
+     * The request attributes for this request.  This is initialized from the
+     * wrapped request, but updates are allowed.
+     */
+    protected final HashMap<String, Object> attributes = new HashMap<>();
+
+
+    // ----------------------------------------------------- Instance Variables
 
 
     /**
@@ -80,18 +88,7 @@ class ApplicationRequest extends ServletRequestWrapper {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-
-
-    /**
-     * The request attributes for this request.  This is initialized from the
-     * wrapped request, but updates are allowed.
-     */
-    protected final HashMap<String, Object> attributes = new HashMap<>();
-
-
     // ------------------------------------------------- ServletRequest Methods
-
 
     /**
      * Override the <code>getAttribute()</code> method of the wrapped request.
@@ -145,7 +142,7 @@ class ApplicationRequest extends ServletRequestWrapper {
      * Override the <code>setAttribute()</code> method of the
      * wrapped request.
      *
-     * @param name Name of the attribute to set
+     * @param name  Name of the attribute to set
      * @param value Value of the attribute to set
      */
     @Override

@@ -16,17 +16,16 @@
  */
 package org.apache.el;
 
+import jakarta.el.ELContext;
+import jakarta.el.PropertyNotWritableException;
+import jakarta.el.ValueExpression;
+import org.apache.el.util.MessageFactory;
+import org.apache.el.util.ReflectionUtil;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-
-import jakarta.el.ELContext;
-import jakarta.el.PropertyNotWritableException;
-import jakarta.el.ValueExpression;
-
-import org.apache.el.util.MessageFactory;
-import org.apache.el.util.ReflectionUtil;
 
 
 public final class ValueExpressionLiteral extends ValueExpression implements
@@ -54,7 +53,8 @@ public final class ValueExpressionLiteral extends ValueExpression implements
         Object result;
         if (this.expectedType != null) {
             result = context.convertToType(this.value, this.expectedType);
-        } else {
+        }
+        else {
             result = this.value;
         }
         context.notifyAfterEvaluation(getExpressionString());

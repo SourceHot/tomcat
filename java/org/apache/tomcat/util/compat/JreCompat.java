@@ -16,6 +16,10 @@
  */
 package org.apache.tomcat.util.compat;
 
+import org.apache.tomcat.util.res.StringManager;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AccessibleObject;
@@ -30,11 +34,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Deque;
 import java.util.jar.JarFile;
 
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-
-import org.apache.tomcat.util.res.StringManager;
-
 /**
  * This is the base implementation class for JRE compatibility and provides an
  * implementation based on Java 8. Sub-classes may extend this class and provide
@@ -42,8 +41,9 @@ import org.apache.tomcat.util.res.StringManager;
  */
 public class JreCompat {
 
+    protected static final Method setApplicationProtocolsMethod;
+    protected static final Method getApplicationProtocolMethod;
     private static final int RUNTIME_MAJOR_VERSION = 8;
-
     private static final JreCompat instance;
     private static final boolean graalAvailable;
     private static final boolean jre19Available;
@@ -51,9 +51,6 @@ public class JreCompat {
     private static final boolean jre11Available;
     private static final boolean jre9Available;
     private static final StringManager sm = StringManager.getManager(JreCompat.class);
-
-    protected static final Method setApplicationProtocolsMethod;
-    protected static final Method getApplicationProtocolMethod;
 
     static {
         boolean result = false;
@@ -74,17 +71,20 @@ public class JreCompat {
             jre9Available = true;
             jre16Available = true;
             jre19Available = true;
-        } else if (Jre16Compat.isSupported()) {
+        }
+        else if (Jre16Compat.isSupported()) {
             instance = new Jre16Compat();
             jre9Available = true;
             jre16Available = true;
             jre19Available = false;
-        } else if (Jre9Compat.isSupported()) {
+        }
+        else if (Jre9Compat.isSupported()) {
             instance = new Jre9Compat();
             jre9Available = true;
             jre16Available = false;
             jre19Available = false;
-        } else {
+        }
+        else {
             instance = new JreCompat();
             jre9Available = false;
             jre16Available = false;
@@ -146,9 +146,8 @@ public class JreCompat {
      * java.lang.reflect.InaccessibleObjectException.
      *
      * @param t The exception to test
-     *
      * @return {@code true} if the exception is an instance of
-     *         InaccessibleObjectException, otherwise {@code false}
+     * InaccessibleObjectException, otherwise {@code false}
      */
     public boolean isInstanceOfInaccessibleObjectException(Throwable t) {
         // Exception does not exist prior to Java 9
@@ -170,7 +169,8 @@ public class JreCompat {
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new UnsupportedOperationException(e);
             }
-        } else {
+        }
+        else {
             throw new UnsupportedOperationException(sm.getString("jreCompat.noApplicationProtocols"));
         }
     }
@@ -182,7 +182,6 @@ public class JreCompat {
      *
      * @param sslEngine The SSLEngine for which to obtain the negotiated
      *                  protocol
-     *
      * @return The name of the negotiated protocol
      */
     public String getApplicationProtocol(SSLEngine sslEngine) {
@@ -192,7 +191,8 @@ public class JreCompat {
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new UnsupportedOperationException(e);
             }
-        } else {
+        }
+        else {
             throw new UnsupportedOperationException(sm.getString("jreCompat.noApplicationProtocol"));
         }
     }
@@ -217,8 +217,8 @@ public class JreCompat {
      * Obtains the URLs for all the JARs on the module path when the JVM starts
      * and adds them to the provided Deque.
      *
-     * @param classPathUrlsToProcess    The Deque to which the modules should be
-     *                                  added
+     * @param classPathUrlsToProcess The Deque to which the modules should be
+     *                               added
      */
     public void addBootModulePath(Deque<URL> classPathUrlsToProcess) {
         // NO-OP for Java 8. There is no module path.
@@ -231,10 +231,8 @@ public class JreCompat {
      * required to be in this package, it is provided as a convenience method.
      *
      * @param s The JAR file to open
-     *
      * @return A JarFile instance based on the provided path
-     *
-     * @throws IOException  If an I/O error occurs creating the JarFile instance
+     * @throws IOException If an I/O error occurs creating the JarFile instance
      */
     public final JarFile jarFileNewInstance(String s) throws IOException {
         return jarFileNewInstance(new File(s));
@@ -246,10 +244,8 @@ public class JreCompat {
      * JarFile will be multi-release JAR aware.
      *
      * @param f The JAR file to open
-     *
      * @return A JarFile instance based on the provided file
-     *
-     * @throws IOException  If an I/O error occurs creating the JarFile instance
+     * @throws IOException If an I/O error occurs creating the JarFile instance
      */
     public JarFile jarFileNewInstance(File f) throws IOException {
         return new JarFile(f);
@@ -259,10 +255,9 @@ public class JreCompat {
     /**
      * Is this JarFile a multi-release JAR file.
      *
-     * @param jarFile   The JarFile to test
-     *
+     * @param jarFile The JarFile to test
      * @return {@code true} If it is a multi-release JAR file and is configured
-     *         to behave as such.
+     * to behave as such.
      */
     public boolean jarFileIsMultiRelease(JarFile jarFile) {
         // Java 8 doesn't support multi-release so default to false
@@ -279,11 +274,10 @@ public class JreCompat {
      * Is the accessibleObject accessible (as a result of appropriate module
      * exports) on the provided instance?
      *
-     * @param base  The specific instance to be tested.
-     * @param accessibleObject  The method/field/constructor to be tested.
-     *
+     * @param base             The specific instance to be tested.
+     * @param accessibleObject The method/field/constructor to be tested.
      * @return {code true} if the AccessibleObject can be accessed otherwise
-     *         {code false}
+     * {code false}
      */
     public boolean canAccess(Object base, AccessibleObject accessibleObject) {
         // Java 8 doesn't support modules so default to true
@@ -294,10 +288,9 @@ public class JreCompat {
     /**
      * Is the given class in an exported package?
      *
-     * @param type  The class to test
-     *
+     * @param type The class to test
      * @return Always {@code true} for Java 8. {@code true} if the enclosing
-     *         package is exported for Java 9+
+     * package is exported for Java 9+
      */
     public boolean isExported(Class<?> type) {
         return true;
@@ -307,10 +300,9 @@ public class JreCompat {
     /**
      * What is the module of the given class?
      *
-     * @param type  The class to test
-     *
+     * @param type The class to test
      * @return Always {@code true} for Java 8. {@code true} if the enclosing
-     *         package is exported for Java 9+
+     * package is exported for Java 9+
      */
     public String getModuleName(Class<?> type) {
         return "NO_MODULE_JAVA_8";
@@ -321,6 +313,7 @@ public class JreCompat {
 
     /**
      * Return Unix domain socket address for given path.
+     *
      * @param path The path
      * @return the socket address
      */
@@ -331,6 +324,7 @@ public class JreCompat {
 
     /**
      * Create server socket channel using the Unix domain socket ProtocolFamily.
+     *
      * @return the server socket channel
      */
     public ServerSocketChannel openUnixDomainServerSocketChannel() {
@@ -340,6 +334,7 @@ public class JreCompat {
 
     /**
      * Create socket channel using the Unix domain socket ProtocolFamily.
+     *
      * @return the socket channel
      */
     public SocketChannel openUnixDomainSocketChannel() {
@@ -352,21 +347,15 @@ public class JreCompat {
     /**
      * Obtains the executor, if any, used to create the provided thread.
      *
-     * @param thread    The thread to examine
-     *
-     * @return  The executor, if any, that created the provided thread
-     *
-     * @throws NoSuchFieldException
-     *              If a field used via reflection to obtain the executor cannot
-     *              be found
-     * @throws SecurityException
-     *              If a security exception occurs while trying to identify the
-     *              executor
-     * @throws IllegalArgumentException
-     *              If the instance object does not match the class of the field
-     *              when obtaining a field value via reflection
-     * @throws IllegalAccessException
-     *              If a field is not accessible due to access restrictions
+     * @param thread The thread to examine
+     * @return The executor, if any, that created the provided thread
+     * @throws NoSuchFieldException     If a field used via reflection to obtain the executor cannot
+     *                                  be found
+     * @throws SecurityException        If a security exception occurs while trying to identify the
+     *                                  executor
+     * @throws IllegalArgumentException If the instance object does not match the class of the field
+     *                                  when obtaining a field value via reflection
+     * @throws IllegalAccessException   If a field is not accessible due to access restrictions
      */
     public Object getExecutor(Thread thread)
             throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
@@ -378,7 +367,7 @@ public class JreCompat {
         // "runnable" in IBM JDK
         // "action" in Apache Harmony
         Object target = null;
-        for (String fieldName : new String[] { "target", "runnable", "action" }) {
+        for (String fieldName : new String[]{"target", "runnable", "action"}) {
             try {
                 Field targetField = thread.getClass().getDeclaredField(fieldName);
                 targetField.setAccessible(true);

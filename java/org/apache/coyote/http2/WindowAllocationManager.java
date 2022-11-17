@@ -27,22 +27,22 @@ import org.apache.tomcat.util.res.StringManager;
  * control window, to the connection flow control window or not waiting for an
  * allocation and only issues allocation notifications when the stream is known
  * to be waiting for the notification.
- *
+ * <p>
  * It is possible for a stream to be waiting for a connection allocation when
  * a stream allocation is made. Therefore this class tracks the type of
  * allocation that the stream is waiting for to ensure that notifications are
  * correctly triggered.
- *
+ * <p>
  * With the implementation at the time of writing, it is not possible for a
  * stream to receive an unexpected connection notification as these are only
  * issues to streams in the backlog and a stream must be waiting for a
  * connection allocation in order to be placed on the backlog. However, as a
  * precaution, this class protects against unexpected connection notifications.
- *
+ * <p>
  * It is important for asynchronous processing not to notify unless a
  * notification is expected else a dispatch will be performed unnecessarily
  * which may lead to unexpected results.
- *
+ * <p>
  * A previous implementation used separate locks for the stream and connection
  * notifications. However, correct handling of allocation waiting requires
  * holding the stream lock when making the decision to wait. Therefore both
@@ -149,7 +149,8 @@ class WindowAllocationManager {
 
             if (timeout < 0) {
                 stream.wait();
-            } else {
+            }
+            else {
                 stream.wait(timeout);
             }
         }
@@ -160,10 +161,12 @@ class WindowAllocationManager {
         synchronized (stream) {
             if (waitingFor == NONE) {
                 waitingFor = waitTarget;
-            } else if (waitingFor == waitTarget) {
+            }
+            else if (waitingFor == waitTarget) {
                 // NO-OP
                 // Non-blocking post-processing may attempt to flush
-            } else {
+            }
+            else {
                 throw new IllegalStateException(sm.getString("windowAllocationManager.waitFor.ise",
                         stream.getConnectionId(), stream.getIdAsString()));
             }
@@ -196,7 +199,8 @@ class WindowAllocationManager {
                                     stream.getConnectionId(), stream.getIdAsString()));
                         }
                         stream.notify();
-                    } else {
+                    }
+                    else {
                         // Non-blocking so dispatch
                         if (log.isDebugEnabled()) {
                             log.debug(sm.getString("windowAllocationManager.dispatched",

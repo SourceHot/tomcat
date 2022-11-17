@@ -26,13 +26,13 @@ import java.io.IOException;
  * @author Remy Maucherat
  */
 public class CoyoteReader
-    extends BufferedReader {
+        extends BufferedReader {
 
 
     // -------------------------------------------------------------- Constants
 
 
-    private static final char[] LINE_SEP = { '\r', '\n' };
+    private static final char[] LINE_SEP = {'\r', '\n'};
     private static final int MAX_LINE_LENGTH = 4096;
 
 
@@ -62,7 +62,7 @@ public class CoyoteReader
      */
     @Override
     protected Object clone()
-        throws CloneNotSupportedException {
+            throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }
 
@@ -83,42 +83,42 @@ public class CoyoteReader
 
     @Override
     public void close()
-        throws IOException {
+            throws IOException {
         ib.close();
     }
 
 
     @Override
     public int read()
-        throws IOException {
+            throws IOException {
         return ib.read();
     }
 
 
     @Override
     public int read(char[] cbuf)
-        throws IOException {
+            throws IOException {
         return ib.read(cbuf, 0, cbuf.length);
     }
 
 
     @Override
     public int read(char[] cbuf, int off, int len)
-        throws IOException {
+            throws IOException {
         return ib.read(cbuf, off, len);
     }
 
 
     @Override
     public long skip(long n)
-        throws IOException {
+            throws IOException {
         return ib.skip(n);
     }
 
 
     @Override
     public boolean ready()
-        throws IOException {
+            throws IOException {
         return ib.ready();
     }
 
@@ -131,25 +131,25 @@ public class CoyoteReader
 
     @Override
     public void mark(int readAheadLimit)
-        throws IOException {
+            throws IOException {
         ib.mark(readAheadLimit);
     }
 
 
     @Override
     public void reset()
-        throws IOException {
+            throws IOException {
         ib.reset();
     }
 
 
     @Override
     public String readLine()
-        throws IOException {
+            throws IOException {
 
         if (lineBuffer == null) {
             lineBuffer = new char[MAX_LINE_LENGTH];
-       }
+        }
 
         String result = null;
 
@@ -175,13 +175,15 @@ public class CoyoteReader
                         char nextchar;
                         if (i == (pos + nRead - 1)) {
                             nextchar = (char) read();
-                        } else {
-                            nextchar = lineBuffer[i+1];
+                        }
+                        else {
+                            nextchar = lineBuffer[i + 1];
                         }
                         if (nextchar == LINE_SEP[1]) {
                             skip++;
                         }
-                    } else if (lineBuffer[i] == LINE_SEP[1]) {
+                    }
+                    else if (lineBuffer[i] == LINE_SEP[1]) {
                         end = i;
                         skip = i + 1;
                     }
@@ -196,7 +198,8 @@ public class CoyoteReader
                 }
                 aggregator.append(lineBuffer);
                 pos = 0;
-            } else {
+            }
+            else {
                 reset();
                 skip(skip);
             }
@@ -204,7 +207,8 @@ public class CoyoteReader
 
         if (aggregator == null) {
             result = new String(lineBuffer, 0, end);
-        } else {
+        }
+        else {
             aggregator.append(lineBuffer, 0, end);
             result = aggregator.toString();
         }

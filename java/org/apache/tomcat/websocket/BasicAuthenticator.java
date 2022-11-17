@@ -31,7 +31,7 @@ public class BasicAuthenticator extends Authenticator {
 
     @Override
     public String getAuthorization(String requestUri, String WWWAuthenticate,
-            Map<String, Object> userProperties) throws AuthenticationException {
+                                   Map<String, Object> userProperties) throws AuthenticationException {
 
         String userName = (String) userProperties.get(Constants.WS_AUTHENTICATION_USER_NAME);
         String password = (String) userProperties.get(Constants.WS_AUTHENTICATION_PASSWORD);
@@ -49,7 +49,8 @@ public class BasicAuthenticator extends Authenticator {
         if (wwwAuthenticate.get(charsetparam) != null
                 && wwwAuthenticate.get(charsetparam).equalsIgnoreCase("UTF-8")) {
             charset = StandardCharsets.UTF_8;
-        } else {
+        }
+        else {
             charset = StandardCharsets.ISO_8859_1;
         }
 

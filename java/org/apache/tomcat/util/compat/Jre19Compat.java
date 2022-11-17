@@ -16,11 +16,11 @@
  */
 package org.apache.tomcat.util.compat;
 
-import java.lang.reflect.Field;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.lang.reflect.Field;
 
 public class Jre19Compat extends Jre16Compat {
 
@@ -68,7 +68,7 @@ public class Jre19Compat extends Jre16Compat {
                 return null;
             }
 
-            if (task!= null && task.getClass().getCanonicalName() != null &&
+            if (task != null && task.getClass().getCanonicalName() != null &&
                     (task.getClass().getCanonicalName().equals(
                             "org.apache.tomcat.util.threads.ThreadPoolExecutor.Worker") ||
                             task.getClass().getCanonicalName().equals(

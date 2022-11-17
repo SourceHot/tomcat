@@ -16,6 +16,16 @@
  */
 package org.apache.tomcat.websocket;
 
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.Extension;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.PongMessage;
+import org.apache.juli.logging.Log;
+import org.apache.tomcat.util.ExceptionUtils;
+import org.apache.tomcat.util.buf.Utf8Decoder;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -25,17 +35,6 @@ import java.nio.charset.CodingErrorAction;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import jakarta.websocket.CloseReason;
-import jakarta.websocket.CloseReason.CloseCodes;
-import jakarta.websocket.Extension;
-import jakarta.websocket.MessageHandler;
-import jakarta.websocket.PongMessage;
-
-import org.apache.juli.logging.Log;
-import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.buf.Utf8Decoder;
-import org.apache.tomcat.util.res.StringManager;
-
 /**
  * Takes the ServletInputStream, processes the WebSocket frames it contains and
  * extracts the messages. WebSocket Pings received will be responded to
@@ -44,18 +43,17 @@ import org.apache.tomcat.util.res.StringManager;
 public abstract class WsFrameBase {
 
     private static final StringManager sm = StringManager.getManager(WsFrameBase.class);
-
+    private static final AtomicReferenceFieldUpdater<WsFrameBase, ReadState> READ_STATE_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(WsFrameBase.class, ReadState.class, "readState");
     // Connection level attributes
     protected final WsSession wsSession;
     protected final ByteBuffer inputBuffer;
     private final Transformation transformation;
-
     // Attributes for control messages
     // Control messages can appear in the middle of other messages so need
     // separate attributes
     private final ByteBuffer controlBufferBinary = ByteBuffer.allocate(125);
     private final CharBuffer controlBufferText = CharBuffer.allocate(125);
-
     // Attributes of the current message
     private final CharsetDecoder utf8DecoderControl = new Utf8Decoder().
             onMalformedInput(CodingErrorAction.REPORT).
@@ -63,6 +61,7 @@ public abstract class WsFrameBase {
     private final CharsetDecoder utf8DecoderMessage = new Utf8Decoder().
             onMalformedInput(CodingErrorAction.REPORT).
             onUnmappableCharacter(CodingErrorAction.REPORT);
+    private final byte[] mask = new byte[4];
     private boolean continuationExpected = false;
     private boolean textMessage = false;
     private ByteBuffer messageBufferBinary;
@@ -71,22 +70,16 @@ public abstract class WsFrameBase {
     // consistently for the entire message
     private MessageHandler binaryMsgHandler = null;
     private MessageHandler textMsgHandler = null;
-
     // Attributes of the current frame
     private boolean fin = false;
     private int rsv = 0;
     private byte opCode = 0;
-    private final byte[] mask = new byte[4];
     private int maskIndex = 0;
     private long payloadLength = 0;
     private volatile long payloadWritten = 0;
-
     // Attributes tracking state
     private volatile State state = State.NEW_FRAME;
     private volatile boolean open = true;
-
-    private static final AtomicReferenceFieldUpdater<WsFrameBase, ReadState> READ_STATE_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(WsFrameBase.class, ReadState.class, "readState");
     private volatile ReadState readState = ReadState.WAITING;
 
     public WsFrameBase(WsSession wsSession, Transformation transformation) {
@@ -99,17 +92,31 @@ public abstract class WsFrameBase {
         Transformation finalTransformation;
         if (isMasked()) {
             finalTransformation = new UnmaskTransformation();
-        } else {
+        }
+        else {
             finalTransformation = new NoopTransformation();
         }
         if (transformation == null) {
             this.transformation = finalTransformation;
-        } else {
+        }
+        else {
             transformation.setNext(finalTransformation);
             this.transformation = transformation;
         }
     }
 
+    protected static long byteArrayToLong(byte[] b, int start, int len) throws IOException {
+        if (len > 8) {
+            throw new IOException(sm.getString("wsFrame.byteToLongFail", Long.valueOf(len)));
+        }
+        int shift = 0;
+        long result = 0;
+        for (int i = start + len - 1; i >= start; i--) {
+            result = result + ((b[i] & 0xFFL) << shift);
+            shift += 8;
+        }
+        return result;
+    }
 
     protected void processInputBuffer() throws IOException {
         while (!isSuspended()) {
@@ -137,10 +144,9 @@ public abstract class WsFrameBase {
         }
     }
 
-
     /**
      * @return <code>true</code> if sufficient data was present to process all
-     *         of the initial header
+     * of the initial header
      */
     private boolean processInitialHeader() throws IOException {
         // Need at least two bytes of data to do this
@@ -170,14 +176,16 @@ public abstract class WsFrameBase {
                         CloseCodes.PROTOCOL_ERROR,
                         sm.getString("wsFrame.invalidOpCode", Integer.valueOf(opCode))));
             }
-        } else {
+        }
+        else {
             if (continuationExpected) {
                 if (!Util.isContinuation(opCode)) {
                     throw new WsIOException(new CloseReason(
                             CloseCodes.PROTOCOL_ERROR,
                             sm.getString("wsFrame.noContinuation")));
                 }
-            } else {
+            }
+            else {
                 try {
                     if (opCode == Constants.OPCODE_BINARY) {
                         // New binary message
@@ -188,7 +196,8 @@ public abstract class WsFrameBase {
                         }
                         binaryMsgHandler = wsSession.getBinaryMessageHandler();
                         textMsgHandler = null;
-                    } else if (opCode == Constants.OPCODE_TEXT) {
+                    }
+                    else if (opCode == Constants.OPCODE_TEXT) {
                         // New text message
                         textMessage = true;
                         int size = wsSession.getMaxTextMessageBufferSize();
@@ -197,7 +206,8 @@ public abstract class WsFrameBase {
                         }
                         binaryMsgHandler = null;
                         textMsgHandler = wsSession.getTextMessageHandler();
-                    } else {
+                    }
+                    else {
                         throw new WsIOException(new CloseReason(
                                 CloseCodes.PROTOCOL_ERROR,
                                 sm.getString("wsFrame.invalidOpCode", Integer.valueOf(opCode))));
@@ -227,27 +237,28 @@ public abstract class WsFrameBase {
         return true;
     }
 
-
     protected abstract boolean isMasked();
-    protected abstract Log getLog();
 
+    protected abstract Log getLog();
 
     /**
      * @return <code>true</code> if sufficient data was present to complete the
-     *         processing of the header
+     * processing of the header
      */
     private boolean processRemainingHeader() throws IOException {
         // Ignore the 2 bytes already read. 4 for the mask
         int headerLength;
         if (isMasked()) {
             headerLength = 4;
-        } else {
+        }
+        else {
             headerLength = 0;
         }
         // Add additional bytes depending on length
         if (payloadLength == 126) {
             headerLength += 2;
-        } else if (payloadLength == 127) {
+        }
+        else if (payloadLength == 127) {
             headerLength += 8;
         }
         if (inputBuffer.remaining() < headerLength) {
@@ -258,7 +269,8 @@ public abstract class WsFrameBase {
             payloadLength = byteArrayToLong(inputBuffer.array(),
                     inputBuffer.arrayOffset() + inputBuffer.position(), 2);
             inputBuffer.position(inputBuffer.position() + 2);
-        } else if (payloadLength == 127) {
+        }
+        else if (payloadLength == 127) {
             payloadLength = byteArrayToLong(inputBuffer.array(),
                     inputBuffer.arrayOffset() + inputBuffer.position(), 8);
             // The most significant bit of those 8 bytes is required to be zero
@@ -289,21 +301,24 @@ public abstract class WsFrameBase {
         return true;
     }
 
-
     private boolean processData() throws IOException {
         boolean result;
         if (Util.isControl(opCode)) {
             result = processDataControl();
-        } else if (textMessage) {
+        }
+        else if (textMessage) {
             if (textMsgHandler == null) {
                 result = swallowInput();
-            } else {
+            }
+            else {
                 result = processDataText();
             }
-        } else {
+        }
+        else {
             if (binaryMsgHandler == null) {
                 result = swallowInput();
-            } else {
+            }
+            else {
                 result = processDataBinary();
             }
         }
@@ -314,7 +329,6 @@ public abstract class WsFrameBase {
         return result;
     }
 
-
     /**
      * Hook for updating server side statistics. Called on every frame received.
      *
@@ -323,7 +337,6 @@ public abstract class WsFrameBase {
     protected void updateStats(long payloadLength) {
         // NO-OP by default
     }
-
 
     private boolean processDataControl() throws IOException {
         TransformationResult tr = transformation.getMoreData(opCode, fin, rsv, controlBufferBinary);
@@ -365,11 +378,13 @@ public abstract class WsFrameBase {
                 }
             }
             wsSession.onClose(new CloseReason(Util.getCloseCode(code), reason));
-        } else if (opCode == Constants.OPCODE_PING) {
+        }
+        else if (opCode == Constants.OPCODE_PING) {
             if (wsSession.isOpen()) {
                 wsSession.getBasicRemote().sendPong(controlBufferBinary);
             }
-        } else if (opCode == Constants.OPCODE_PONG) {
+        }
+        else if (opCode == Constants.OPCODE_PONG) {
             MessageHandler.Whole<PongMessage> mhPong = wsSession.getPongMessageHandler();
             if (mhPong != null) {
                 try {
@@ -380,7 +395,8 @@ public abstract class WsFrameBase {
                     controlBufferBinary.clear();
                 }
             }
-        } else {
+        }
+        else {
             // Should have caught this earlier but just in case...
             controlBufferBinary.clear();
             throw new WsIOException(new CloseReason(
@@ -391,7 +407,6 @@ public abstract class WsFrameBase {
         newFrame();
         return true;
     }
-
 
     @SuppressWarnings("unchecked")
     protected void sendMessageText(boolean last) throws WsIOException {
@@ -409,7 +424,8 @@ public abstract class WsFrameBase {
             if (textMsgHandler instanceof MessageHandler.Partial<?>) {
                 ((MessageHandler.Partial<String>) textMsgHandler)
                         .onMessage(messageBufferText.toString(), last);
-            } else {
+            }
+            else {
                 // Caller ensures last == true if this branch is used
                 ((MessageHandler.Whole<String>) textMsgHandler)
                         .onMessage(messageBufferText.toString());
@@ -420,7 +436,6 @@ public abstract class WsFrameBase {
             messageBufferText.clear();
         }
     }
-
 
     private boolean processDataText() throws IOException {
         // Copy the available data to the buffer
@@ -436,18 +451,21 @@ public abstract class WsFrameBase {
                     throw new WsIOException(new CloseReason(
                             CloseCodes.NOT_CONSISTENT,
                             sm.getString("wsFrame.invalidUtf8")));
-                } else if (cr.isOverflow()) {
+                }
+                else if (cr.isOverflow()) {
                     // Ran out of space in text buffer - flush it
                     if (usePartial()) {
                         messageBufferText.flip();
                         sendMessageText(false);
                         messageBufferText.clear();
-                    } else {
+                    }
+                    else {
                         throw new WsIOException(new CloseReason(
                                 CloseCodes.TOO_BIG,
                                 sm.getString("wsFrame.textMessageTooBig")));
                     }
-                } else if (cr.isUnderflow()) {
+                }
+                else if (cr.isUnderflow()) {
                     // Compact what we have to create as much space as possible
                     messageBufferBinary.compact();
 
@@ -457,7 +475,8 @@ public abstract class WsFrameBase {
                         // Ran out of message buffer - exit inner loop and
                         // refill
                         break;
-                    } else {
+                    }
+                    else {
                         // TransformationResult.UNDERFLOW
                         // Ran out of input data - get some more
                         return false;
@@ -479,18 +498,21 @@ public abstract class WsFrameBase {
                 throw new WsIOException(new CloseReason(
                         CloseCodes.NOT_CONSISTENT,
                         sm.getString("wsFrame.invalidUtf8")));
-            } else if (cr.isOverflow()) {
+            }
+            else if (cr.isOverflow()) {
                 // Ran out of space in text buffer - flush it
                 if (usePartial()) {
                     messageBufferText.flip();
                     sendMessageText(false);
                     messageBufferText.clear();
-                } else {
+                }
+                else {
                     throw new WsIOException(new CloseReason(
                             CloseCodes.TOO_BIG,
                             sm.getString("wsFrame.textMessageTooBig")));
                 }
-            } else if (cr.isUnderflow() && !last) {
+            }
+            else if (cr.isUnderflow() && !last) {
                 // End of frame and possible message as well.
 
                 if (continuationExpected) {
@@ -505,11 +527,13 @@ public abstract class WsFrameBase {
                     newFrame();
                     // Process next frame
                     return true;
-                } else {
+                }
+                else {
                     // Make sure coder has flushed all output
                     last = true;
                 }
-            } else {
+            }
+            else {
                 // End of message
                 messageBufferText.flip();
                 sendMessageText(true);
@@ -519,7 +543,6 @@ public abstract class WsFrameBase {
             }
         }
     }
-
 
     private boolean processDataBinary() throws IOException {
         // Copy the available data to the buffer
@@ -565,14 +588,14 @@ public abstract class WsFrameBase {
         if (continuationExpected) {
             // More data for this message expected, start a new frame
             newFrame();
-        } else {
+        }
+        else {
             // Message is complete, start a new message
             newMessage();
         }
 
         return true;
     }
-
 
     private void handleThrowableOnSend(Throwable t) throws WsIOException {
         ExceptionUtils.handleThrowable(t);
@@ -581,7 +604,6 @@ public abstract class WsFrameBase {
                 sm.getString("wsFrame.ioeTriggeredClose"));
         throw new WsIOException(cr);
     }
-
 
     @SuppressWarnings("unchecked")
     protected void sendMessageBinary(ByteBuffer msg, boolean last) throws WsIOException {
@@ -597,7 +619,8 @@ public abstract class WsFrameBase {
         try {
             if (binaryMsgHandler instanceof MessageHandler.Partial<?>) {
                 ((MessageHandler.Partial<ByteBuffer>) binaryMsgHandler).onMessage(msg, last);
-            } else {
+            }
+            else {
                 // Caller ensures last == true if this branch is used
                 ((MessageHandler.Whole<ByteBuffer>) binaryMsgHandler).onMessage(msg);
             }
@@ -606,7 +629,6 @@ public abstract class WsFrameBase {
         }
     }
 
-
     private void newMessage() {
         messageBufferBinary.clear();
         messageBufferText.clear();
@@ -614,7 +636,6 @@ public abstract class WsFrameBase {
         continuationExpected = false;
         newFrame();
     }
-
 
     private void newFrame() {
         if (inputBuffer.remaining() == 0) {
@@ -631,7 +652,6 @@ public abstract class WsFrameBase {
         checkRoomHeaders();
     }
 
-
     private void checkRoomHeaders() {
         // Is the start of the current frame too near the end of the input
         // buffer?
@@ -641,31 +661,29 @@ public abstract class WsFrameBase {
         }
     }
 
-
     private void checkRoomPayload() {
         if (inputBuffer.capacity() - inputBuffer.position() - payloadLength + payloadWritten < 0) {
             makeRoom();
         }
     }
 
-
     private void makeRoom() {
         inputBuffer.compact();
         inputBuffer.flip();
     }
 
-
     private boolean usePartial() {
         if (Util.isControl(opCode)) {
             return false;
-        } else if (textMessage) {
+        }
+        else if (textMessage) {
             return textMsgHandler instanceof MessageHandler.Partial;
-        } else {
+        }
+        else {
             // Must be binary
             return binaryMsgHandler instanceof MessageHandler.Partial;
         }
     }
-
 
     private boolean swallowInput() {
         long toSkip = Math.min(payloadLength - payloadWritten, inputBuffer.remaining());
@@ -674,29 +692,16 @@ public abstract class WsFrameBase {
         if (payloadWritten == payloadLength) {
             if (continuationExpected) {
                 newFrame();
-            } else {
+            }
+            else {
                 newMessage();
             }
             return true;
-        } else {
+        }
+        else {
             return false;
         }
     }
-
-
-    protected static long byteArrayToLong(byte[] b, int start, int len) throws IOException {
-        if (len > 8) {
-            throw new IOException(sm.getString("wsFrame.byteToLongFail", Long.valueOf(len)));
-        }
-        int shift = 0;
-        long result = 0;
-        for (int i = start + len - 1; i >= start; i--) {
-            result = result + ((b[i] & 0xFFL) << shift);
-            shift += 8;
-        }
-        return result;
-    }
-
 
     protected boolean isOpen() {
         return open;
@@ -707,133 +712,55 @@ public abstract class WsFrameBase {
         return transformation;
     }
 
-
-    private enum State {
-        NEW_FRAME, PARTIAL_HEADER, DATA
-    }
-
-
-    /**
-     * WAITING            - not suspended
-     *                      Server case: waiting for a notification that data
-     *                      is ready to be read from the socket, the socket is
-     *                      registered to the poller
-     *                      Client case: data has been read from the socket and
-     *                      is waiting for data to be processed
-     * PROCESSING         - not suspended
-     *                      Server case: reading from the socket and processing
-     *                      the data
-     *                      Client case: processing the data if such has
-     *                      already been read and more data will be read from
-     *                      the socket
-     * SUSPENDING_WAIT    - suspended, a call to suspend() was made while in
-     *                      WAITING state. A call to resume() will do nothing
-     *                      and will transition to WAITING state
-     * SUSPENDING_PROCESS - suspended, a call to suspend() was made while in
-     *                      PROCESSING state. A call to resume() will do
-     *                      nothing and will transition to PROCESSING state
-     * SUSPENDED          - suspended
-     *                      Server case: processing data finished
-     *                      (SUSPENDING_PROCESS) / a notification was received
-     *                      that data is ready to be read from the socket
-     *                      (SUSPENDING_WAIT), socket is not registered to the
-     *                      poller
-     *                      Client case: processing data finished
-     *                      (SUSPENDING_PROCESS) / data has been read from the
-     *                      socket and is available for processing
-     *                      (SUSPENDING_WAIT)
-     *                      A call to resume() will:
-     *                      Server case: register the socket to the poller
-     *                      Client case: resume data processing
-     * CLOSING            - not suspended, a close will be send
-     *
-     * <pre>
-     *     resume           data to be        resume
-     *     no action        processed         no action
-     *  |---------------| |---------------| |----------|
-     *  |               v |               v v          |
-     *  |  |----------WAITING«--------PROCESSING----|  |
-     *  |  |             ^   processing             |  |
-     *  |  |             |   finished               |  |
-     *  |  |             |                          |  |
-     *  | suspend        |                     suspend |
-     *  |  |             |                          |  |
-     *  |  |          resume                        |  |
-     *  |  |    register socket to poller (server)  |  |
-     *  |  |    resume data processing (client)     |  |
-     *  |  |             |                          |  |
-     *  |  v             |                          v  |
-     * SUSPENDING_WAIT   |                  SUSPENDING_PROCESS
-     *  |                |                             |
-     *  | data available |        processing finished  |
-     *  |-------------»SUSPENDED«----------------------|
-     * </pre>
-     */
-    protected enum ReadState {
-        WAITING           (false),
-        PROCESSING        (false),
-        SUSPENDING_WAIT   (true),
-        SUSPENDING_PROCESS(true),
-        SUSPENDED         (true),
-        CLOSING           (false);
-
-        private final boolean isSuspended;
-
-        ReadState(boolean isSuspended) {
-            this.isSuspended = isSuspended;
-        }
-
-        public boolean isSuspended() {
-            return isSuspended;
-        }
-    }
-
     public void suspend() {
         while (true) {
             switch (readState) {
-            case WAITING:
-                if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.WAITING,
-                        ReadState.SUSPENDING_WAIT)) {
-                    continue;
-                }
-                return;
-            case PROCESSING:
-                if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.PROCESSING,
-                        ReadState.SUSPENDING_PROCESS)) {
-                    continue;
-                }
-                return;
-            case SUSPENDING_WAIT:
-                if (readState != ReadState.SUSPENDING_WAIT) {
-                    continue;
-                } else {
-                    if (getLog().isWarnEnabled()) {
-                        getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                case WAITING:
+                    if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.WAITING,
+                            ReadState.SUSPENDING_WAIT)) {
+                        continue;
                     }
-                }
-                return;
-            case SUSPENDING_PROCESS:
-                if (readState != ReadState.SUSPENDING_PROCESS) {
-                    continue;
-                } else {
-                    if (getLog().isWarnEnabled()) {
-                        getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                    return;
+                case PROCESSING:
+                    if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.PROCESSING,
+                            ReadState.SUSPENDING_PROCESS)) {
+                        continue;
                     }
-                }
-                return;
-            case SUSPENDED:
-                if (readState != ReadState.SUSPENDED) {
-                    continue;
-                } else {
-                    if (getLog().isWarnEnabled()) {
-                        getLog().warn(sm.getString("wsFrame.alreadySuspended"));
+                    return;
+                case SUSPENDING_WAIT:
+                    if (readState != ReadState.SUSPENDING_WAIT) {
+                        continue;
                     }
-                }
-                return;
-            case CLOSING:
-                return;
-            default:
-                throw new IllegalStateException(sm.getString("wsFrame.illegalReadState", state));
+                    else {
+                        if (getLog().isWarnEnabled()) {
+                            getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                        }
+                    }
+                    return;
+                case SUSPENDING_PROCESS:
+                    if (readState != ReadState.SUSPENDING_PROCESS) {
+                        continue;
+                    }
+                    else {
+                        if (getLog().isWarnEnabled()) {
+                            getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                        }
+                    }
+                    return;
+                case SUSPENDED:
+                    if (readState != ReadState.SUSPENDED) {
+                        continue;
+                    }
+                    else {
+                        if (getLog().isWarnEnabled()) {
+                            getLog().warn(sm.getString("wsFrame.alreadySuspended"));
+                        }
+                    }
+                    return;
+                case CLOSING:
+                    return;
+                default:
+                    throw new IllegalStateException(sm.getString("wsFrame.illegalReadState", state));
             }
         }
     }
@@ -841,47 +768,49 @@ public abstract class WsFrameBase {
     public void resume() {
         while (true) {
             switch (readState) {
-            case WAITING:
-                if (readState != ReadState.WAITING) {
-                    continue;
-                } else {
-                    if (getLog().isWarnEnabled()) {
-                        getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                case WAITING:
+                    if (readState != ReadState.WAITING) {
+                        continue;
                     }
-                }
-                return;
-            case PROCESSING:
-                if (readState != ReadState.PROCESSING) {
-                    continue;
-                } else {
-                    if (getLog().isWarnEnabled()) {
-                        getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                    else {
+                        if (getLog().isWarnEnabled()) {
+                            getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                        }
                     }
-                }
-                return;
-            case SUSPENDING_WAIT:
-                if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDING_WAIT,
-                        ReadState.WAITING)) {
-                    continue;
-                }
-                return;
-            case SUSPENDING_PROCESS:
-                if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDING_PROCESS,
-                        ReadState.PROCESSING)) {
-                    continue;
-                }
-                return;
-            case SUSPENDED:
-                if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDED,
-                        ReadState.WAITING)) {
-                    continue;
-                }
-                resumeProcessing();
-                return;
-            case CLOSING:
-                return;
-            default:
-                throw new IllegalStateException(sm.getString("wsFrame.illegalReadState", state));
+                    return;
+                case PROCESSING:
+                    if (readState != ReadState.PROCESSING) {
+                        continue;
+                    }
+                    else {
+                        if (getLog().isWarnEnabled()) {
+                            getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                        }
+                    }
+                    return;
+                case SUSPENDING_WAIT:
+                    if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDING_WAIT,
+                            ReadState.WAITING)) {
+                        continue;
+                    }
+                    return;
+                case SUSPENDING_PROCESS:
+                    if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDING_PROCESS,
+                            ReadState.PROCESSING)) {
+                        continue;
+                    }
+                    return;
+                case SUSPENDED:
+                    if (!READ_STATE_UPDATER.compareAndSet(this, ReadState.SUSPENDED,
+                            ReadState.WAITING)) {
+                        continue;
+                    }
+                    resumeProcessing();
+                    return;
+                case CLOSING:
+                    return;
+                default:
+                    throw new IllegalStateException(sm.getString("wsFrame.illegalReadState", state));
             }
         }
     }
@@ -911,6 +840,84 @@ public abstract class WsFrameBase {
      */
     protected abstract void resumeProcessing();
 
+    private enum State {
+        NEW_FRAME, PARTIAL_HEADER, DATA
+    }
+
+    /**
+     * WAITING            - not suspended
+     * Server case: waiting for a notification that data
+     * is ready to be read from the socket, the socket is
+     * registered to the poller
+     * Client case: data has been read from the socket and
+     * is waiting for data to be processed
+     * PROCESSING         - not suspended
+     * Server case: reading from the socket and processing
+     * the data
+     * Client case: processing the data if such has
+     * already been read and more data will be read from
+     * the socket
+     * SUSPENDING_WAIT    - suspended, a call to suspend() was made while in
+     * WAITING state. A call to resume() will do nothing
+     * and will transition to WAITING state
+     * SUSPENDING_PROCESS - suspended, a call to suspend() was made while in
+     * PROCESSING state. A call to resume() will do
+     * nothing and will transition to PROCESSING state
+     * SUSPENDED          - suspended
+     * Server case: processing data finished
+     * (SUSPENDING_PROCESS) / a notification was received
+     * that data is ready to be read from the socket
+     * (SUSPENDING_WAIT), socket is not registered to the
+     * poller
+     * Client case: processing data finished
+     * (SUSPENDING_PROCESS) / data has been read from the
+     * socket and is available for processing
+     * (SUSPENDING_WAIT)
+     * A call to resume() will:
+     * Server case: register the socket to the poller
+     * Client case: resume data processing
+     * CLOSING            - not suspended, a close will be send
+     *
+     * <pre>
+     *     resume           data to be        resume
+     *     no action        processed         no action
+     *  |---------------| |---------------| |----------|
+     *  |               v |               v v          |
+     *  |  |----------WAITING«--------PROCESSING----|  |
+     *  |  |             ^   processing             |  |
+     *  |  |             |   finished               |  |
+     *  |  |             |                          |  |
+     *  | suspend        |                     suspend |
+     *  |  |             |                          |  |
+     *  |  |          resume                        |  |
+     *  |  |    register socket to poller (server)  |  |
+     *  |  |    resume data processing (client)     |  |
+     *  |  |             |                          |  |
+     *  |  v             |                          v  |
+     * SUSPENDING_WAIT   |                  SUSPENDING_PROCESS
+     *  |                |                             |
+     *  | data available |        processing finished  |
+     *  |-------------»SUSPENDED«----------------------|
+     * </pre>
+     */
+    protected enum ReadState {
+        WAITING(false),
+        PROCESSING(false),
+        SUSPENDING_WAIT(true),
+        SUSPENDING_PROCESS(true),
+        SUSPENDED(true),
+        CLOSING(false);
+
+        private final boolean isSuspended;
+
+        ReadState(boolean isSuspended) {
+            this.isSuspended = isSuspended;
+        }
+
+        public boolean isSuspended() {
+            return isSuspended;
+        }
+    }
 
     private abstract static class TerminalTransformation implements Transformation {
 
@@ -957,7 +964,7 @@ public abstract class WsFrameBase {
 
         @Override
         public TransformationResult getMoreData(byte opCode, boolean fin, int rsv,
-                ByteBuffer dest) {
+                                                ByteBuffer dest) {
             // opCode is ignored as the transformation is the same for all
             // opCodes
             // rsv is ignored as it known to be zero at this point
@@ -972,9 +979,11 @@ public abstract class WsFrameBase {
 
             if (payloadWritten == payloadLength) {
                 return TransformationResult.END_OF_FRAME;
-            } else if (inputBuffer.remaining() == 0) {
+            }
+            else if (inputBuffer.remaining() == 0) {
                 return TransformationResult.UNDERFLOW;
-            } else {
+            }
+            else {
                 // !dest.hasRemaining()
                 return TransformationResult.OVERFLOW;
             }
@@ -998,7 +1007,7 @@ public abstract class WsFrameBase {
 
         @Override
         public TransformationResult getMoreData(byte opCode, boolean fin, int rsv,
-                ByteBuffer dest) {
+                                                ByteBuffer dest) {
             // opCode is ignored as the transformation is the same for all
             // opCodes
             // rsv is ignored as it known to be zero at this point
@@ -1014,9 +1023,11 @@ public abstract class WsFrameBase {
             }
             if (payloadWritten == payloadLength) {
                 return TransformationResult.END_OF_FRAME;
-            } else if (inputBuffer.remaining() == 0) {
+            }
+            else if (inputBuffer.remaining() == 0) {
                 return TransformationResult.UNDERFLOW;
-            } else {
+            }
+            else {
                 // !dest.hasRemaining()
                 return TransformationResult.OVERFLOW;
             }

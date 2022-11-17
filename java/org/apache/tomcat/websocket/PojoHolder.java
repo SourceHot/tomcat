@@ -16,15 +16,14 @@
  */
 package org.apache.tomcat.websocket;
 
-import javax.naming.NamingException;
-
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Endpoint;
-
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.websocket.pojo.PojoEndpointClient;
+
+import javax.naming.NamingException;
 
 public class PojoHolder implements ClientEndpointHolder {
 

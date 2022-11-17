@@ -37,14 +37,14 @@ public interface DistributedManager {
     /**
      * Returns the total session count for primary, backup and proxy.
      *
-     * @return  The total session count across the cluster.
+     * @return The total session count across the cluster.
      */
-    public int getActiveSessionsFull();
+    int getActiveSessionsFull();
 
     /**
      * Returns the list of all sessions IDS (primary, backup and proxy).
      *
-     * @return  The complete set of sessions IDs across the cluster.
+     * @return The complete set of sessions IDs across the cluster.
      */
-    public Set<String> getSessionIdsFull();
+    Set<String> getSessionIdsFull();
 }

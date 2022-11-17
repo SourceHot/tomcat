@@ -25,7 +25,6 @@ import java.util.Enumeration;
  *
  * @see jakarta.servlet.Filter
  * @see jakarta.servlet.FilterConfig
- *
  * @since Servlet 4.0
  */
 public abstract class GenericFilter implements Filter, FilterConfig, Serializable {
@@ -54,7 +53,7 @@ public abstract class GenericFilter implements Filter, FilterConfig, Serializabl
      * Obtain the FilterConfig used to initialise this Filter instance.
      *
      * @return The config previously passed to the {@link #init(FilterConfig)}
-     *         method
+     * method
      */
     public FilterConfig getFilterConfig() {
         return filterConfig;
@@ -69,7 +68,7 @@ public abstract class GenericFilter implements Filter, FilterConfig, Serializabl
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.filterConfig  = filterConfig;
+        this.filterConfig = filterConfig;
         init();
     }
 
@@ -79,7 +78,7 @@ public abstract class GenericFilter implements Filter, FilterConfig, Serializabl
      * <code>super.init(config)</code>. This is a NO-OP by default.
      *
      * @throws ServletException If an exception occurs that interrupts the
-     *         Filter's normal operation
+     *                          Filter's normal operation
      */
     public void init() throws ServletException {
         // NO-OP

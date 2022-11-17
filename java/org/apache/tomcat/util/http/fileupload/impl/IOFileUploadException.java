@@ -16,9 +16,9 @@
  */
 package org.apache.tomcat.util.http.fileupload.impl;
 
-import java.io.IOException;
-
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
+
+import java.io.IOException;
 
 /**
  * Thrown to indicate an IOException.
@@ -40,7 +40,7 @@ public class IOFileUploadException extends FileUploadException {
     /**
      * Creates a new instance with the given cause.
      *
-     * @param pMsg The detail message.
+     * @param pMsg       The detail message.
      * @param pException The exceptions cause.
      */
     public IOFileUploadException(final String pMsg, final IOException pException) {

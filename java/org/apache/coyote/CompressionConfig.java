@@ -16,16 +16,6 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -34,6 +24,11 @@ import org.apache.tomcat.util.http.ResponseUtil;
 import org.apache.tomcat.util.http.parser.AcceptEncoding;
 import org.apache.tomcat.util.http.parser.TokenList;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
+import java.util.regex.Pattern;
 
 public class CompressionConfig {
 
@@ -47,6 +42,40 @@ public class CompressionConfig {
     private String[] compressibleMimeTypes = null;
     private int compressionMinSize = 2048;
 
+    /**
+     * Checks if any entry in the string array starts with the specified value
+     *
+     * @param sArray the StringArray
+     * @param value  string
+     */
+    private static boolean startsWithStringArray(String[] sArray, String value) {
+        if (value == null) {
+            return false;
+        }
+        for (String s : sArray) {
+            if (value.startsWith(s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return compression level.
+     *
+     * @return The current compression level in string form (off/on/force)
+     */
+    public String getCompression() {
+        switch (compressionLevel) {
+            case 0:
+                return "off";
+            case 1:
+                return "on";
+            case 2:
+                return "force";
+        }
+        return "off";
+    }
 
     /**
      * Set compression level.
@@ -58,11 +87,14 @@ public class CompressionConfig {
     public void setCompression(String compression) {
         if (compression.equals("on")) {
             this.compressionLevel = 1;
-        } else if (compression.equals("force")) {
+        }
+        else if (compression.equals("force")) {
             this.compressionLevel = 2;
-        } else if (compression.equals("off")) {
+        }
+        else if (compression.equals("off")) {
             this.compressionLevel = 0;
-        } else {
+        }
+        else {
             try {
                 // Try to parse compression as an int, which would give the
                 // minimum compression size
@@ -74,29 +106,9 @@ public class CompressionConfig {
         }
     }
 
-
-    /**
-     * Return compression level.
-     *
-     * @return The current compression level in string form (off/on/force)
-     */
-    public String getCompression() {
-        switch (compressionLevel) {
-        case 0:
-            return "off";
-        case 1:
-            return "on";
-        case 2:
-            return "force";
-        }
-        return "off";
-    }
-
-
     public int getCompressionLevel() {
         return compressionLevel;
     }
-
 
     /**
      * Obtain the String form of the regular expression that defines the user
@@ -107,16 +119,11 @@ public class CompressionConfig {
     public String getNoCompressionUserAgents() {
         if (noCompressionUserAgents == null) {
             return null;
-        } else {
+        }
+        else {
             return noCompressionUserAgents.toString();
         }
     }
-
-
-    public Pattern getNoCompressionUserAgentsPattern() {
-        return noCompressionUserAgents;
-    }
-
 
     /**
      * Set no compression user agent pattern. Regular expression as supported
@@ -129,23 +136,25 @@ public class CompressionConfig {
     public void setNoCompressionUserAgents(String noCompressionUserAgents) {
         if (noCompressionUserAgents == null || noCompressionUserAgents.length() == 0) {
             this.noCompressionUserAgents = null;
-        } else {
+        }
+        else {
             this.noCompressionUserAgents =
-                Pattern.compile(noCompressionUserAgents);
+                    Pattern.compile(noCompressionUserAgents);
         }
     }
 
+    public Pattern getNoCompressionUserAgentsPattern() {
+        return noCompressionUserAgents;
+    }
 
     public String getCompressibleMimeType() {
         return compressibleMimeType;
     }
 
-
     public void setCompressibleMimeType(String valueS) {
         compressibleMimeType = valueS;
         compressibleMimeTypes = null;
     }
-
 
     public String[] getCompressibleMimeTypes() {
         String[] result = compressibleMimeTypes;
@@ -165,11 +174,9 @@ public class CompressionConfig {
         return result;
     }
 
-
     public int getCompressionMinSize() {
         return compressionMinSize;
     }
-
 
     /**
      * Set Minimum size to trigger compression.
@@ -181,16 +188,14 @@ public class CompressionConfig {
         this.compressionMinSize = compressionMinSize;
     }
 
-
     /**
      * Determines if compression should be enabled for the given response and if
      * it is, sets any necessary headers to mark it as such.
      *
      * @param request  The request that triggered the response
      * @param response The response to consider compressing
-     *
      * @return {@code true} if compression was enabled for the given response,
-     *         otherwise {@code false}
+     * otherwise {@code false}
      */
     public boolean useCompression(Request request, Response response) {
         // Check if compression is enabled
@@ -279,7 +284,7 @@ public class CompressionConfig {
             Pattern noCompressionUserAgents = this.noCompressionUserAgents;
             if (noCompressionUserAgents != null) {
                 MessageBytes userAgentValueMB = request.getMimeHeaders().getValue("user-agent");
-                if(userAgentValueMB != null) {
+                if (userAgentValueMB != null) {
                     String userAgentValue = userAgentValueMB.toString();
                     if (noCompressionUserAgents.matcher(userAgentValue).matches()) {
                         return false;
@@ -296,24 +301,5 @@ public class CompressionConfig {
         responseHeaders.setValue("Content-Encoding").setString("gzip");
 
         return true;
-    }
-
-
-    /**
-     * Checks if any entry in the string array starts with the specified value
-     *
-     * @param sArray the StringArray
-     * @param value string
-     */
-    private static boolean startsWithStringArray(String sArray[], String value) {
-        if (value == null) {
-            return false;
-        }
-        for (String s : sArray) {
-            if (value.startsWith(s)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

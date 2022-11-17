@@ -16,11 +16,11 @@
  */
 package org.apache.catalina.ha;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.tribes.ChannelListener;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * A <b>ClusterDeployer</b> interface allows to plug in and out the
@@ -30,15 +30,17 @@ public interface ClusterDeployer extends ChannelListener {
 
     /**
      * Start the cluster deployer, the owning container will invoke this
+     *
      * @throws Exception - if failure to start cluster
      */
-    public void start() throws Exception;
+    void start() throws Exception;
 
     /**
      * Stops the cluster deployer, the owning container will invoke this
+     *
      * @throws LifecycleException Error stopping cluster deployer
      */
-    public void stop() throws LifecycleException;
+    void stop() throws LifecycleException;
 
     /**
      * Install a new web application, whose web application archive is at the
@@ -51,18 +53,17 @@ public interface ClusterDeployer extends ChannelListener {
      * with the newly created <code>Context</code> as an argument.
      *
      * @param contextName The context name to which this application should
-     *  be installed (must be unique)
-     * @param webapp    A WAR file or unpacked directory structure containing
-     *                  the web application to be installed
-     *
-     * @exception IllegalArgumentException if the specified context name
-     *  is malformed
-     * @exception IllegalStateException if the specified context name
-     *  is already attached to an existing web application
-     * @exception IOException if an input/output error was encountered
-     *  during installation
+     *                    be installed (must be unique)
+     * @param webapp      A WAR file or unpacked directory structure containing
+     *                    the web application to be installed
+     * @throws IllegalArgumentException if the specified context name
+     *                                  is malformed
+     * @throws IllegalStateException    if the specified context name
+     *                                  is already attached to an existing web application
+     * @throws IOException              if an input/output error was encountered
+     *                                  during installation
      */
-    public void install(String contextName, File webapp) throws IOException;
+    void install(String contextName, File webapp) throws IOException;
 
     /**
      * Remove an existing web application, attached to the specified context
@@ -73,32 +74,33 @@ public interface ClusterDeployer extends ChannelListener {
      * if they exist in the Host's appBase.
      *
      * @param contextName The context name of the application to be removed
-     * @param undeploy boolean flag to remove web application from server
-     *
-     * @exception IllegalArgumentException if the specified context name
-     *  is malformed
-     * @exception IllegalArgumentException if the specified context name does
-     *  not identify a currently installed web application
-     * @exception IOException if an input/output error occurs during
-     *  removal
+     * @param undeploy    boolean flag to remove web application from server
+     * @throws IllegalArgumentException if the specified context name
+     *                                  is malformed
+     * @throws IllegalArgumentException if the specified context name does
+     *                                  not identify a currently installed web application
+     * @throws IOException              if an input/output error occurs during
+     *                                  removal
      */
-    public void remove(String contextName, boolean undeploy) throws IOException;
+    void remove(String contextName, boolean undeploy) throws IOException;
 
     /**
      * call from container Background Process
      */
-    public void backgroundProcess();
+    void backgroundProcess();
 
     /**
      * Returns the cluster the cluster deployer is associated with
+     *
      * @return CatalinaCluster
      */
-    public CatalinaCluster getCluster();
+    CatalinaCluster getCluster();
 
     /**
      * Associates the cluster deployer with a cluster
+     *
      * @param cluster CatalinaCluster
      */
-    public void setCluster(CatalinaCluster cluster);
+    void setCluster(CatalinaCluster cluster);
 
 }

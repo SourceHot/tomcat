@@ -1245,10 +1245,12 @@ public abstract class AbstractEndpoint<S, U> {
     }
 
     public final void init() throws Exception {
+        // 成员变量bindOnInit是否为true，如果是
         if (bindOnInit) {
             bindWithCleanup();
             bindState = BindState.BOUND_ON_INIT;
         }
+        // 域名不为空
         if (this.domain != null) {
             // Register endpoint (as ThreadPool - historical name)
             oname = new ObjectName(domain + ":type=ThreadPool,name=\"" + getName() + "\"");
@@ -1337,10 +1339,15 @@ public abstract class AbstractEndpoint<S, U> {
      * unlock the acceptor.
      */
     public void pause() {
+        // 启动并且没有暂停
         if (running && !paused) {
+            // 设置暂停
             paused = true;
+            // 释放计数器
             releaseConnectionLatch();
+            // 解锁accept
             unlockAccept();
+            // 处理器暂停
             getHandler().pause();
         }
     }

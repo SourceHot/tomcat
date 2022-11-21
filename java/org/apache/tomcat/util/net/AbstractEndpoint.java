@@ -60,6 +60,9 @@ public abstract class AbstractEndpoint<S, U> {
      * socket 属性
      */
     protected final SocketProperties socketProperties = new SocketProperties();
+    /**
+     * 协议名称集合
+     */
     protected final List<String> negotiableProtocols = new ArrayList<>();
     /**
      * Running state of the endpoint.
@@ -101,6 +104,7 @@ public abstract class AbstractEndpoint<S, U> {
     /**
      * Unused.
      *
+     * 接受器线程数量
      * @deprecated This attribute is hard-coded to {@code 1} and is no longer
      * configurable. It will be removed in Tomcat 10.1.
      */
@@ -108,6 +112,7 @@ public abstract class AbstractEndpoint<S, U> {
     protected int acceptorThreadCount = 1;
     /**
      * Priority of the acceptor threads.
+     * 接受器线程优先级
      */
     protected int acceptorThreadPriority = Thread.NORM_PRIORITY;
     /**
@@ -137,29 +142,43 @@ public abstract class AbstractEndpoint<S, U> {
     private String defaultSSLHostConfigName = SSLHostConfig.DEFAULT_SSL_HOST_NAME;
     /**
      * Has the user requested that send file be used where possible?
+     * 是否启用文件发送
      */
     private boolean useSendfile = true;
     /**
      * Time to wait for the internal executor (if used) to terminate when the
      * endpoint is stopped in milliseconds. Defaults to 5000 (5 seconds).
+     * 端点停止工作时，等待内部程序处理的时间
      */
     private long executorTerminationTimeoutMillis = 5000;
+
+    /**
+     * 最大链接数
+     */
     private int maxConnections = 8 * 1024;
     /**
      * External Executor based thread pool.
+     *
+     * 执行器
      */
     private Executor executor = null;
     /**
      * External Executor based thread pool for utility tasks.
+     * 线程池
      */
     private ScheduledExecutorService utilityExecutor = null;
     /**
      * Server socket port.
+     * 端口
      */
     private int port = -1;
+    /**
+     * 端口偏移量
+     */
     private int portOffset = 0;
     /**
      * Address for the server socket.
+     * socket地址
      */
     private InetAddress address;
     /**
@@ -175,46 +194,63 @@ public abstract class AbstractEndpoint<S, U> {
      * binds the port on {@link #init()} and unbinds it on {@link #destroy()}.
      * If set to <code>false</code> the port is bound on {@link #start()} and
      * unbound on {@link #stop()}.
+     *
+     * 在什么时候进行绑定，true时在init方法处理时绑定，false在start方法处理时绑定
      */
     private boolean bindOnInit = true;
+    /**
+     * 绑定状态
+     */
     private volatile BindState bindState = BindState.UNBOUND;
     /**
      * Keepalive timeout, if not set the soTimeout is used.
+     * keepalive的超时时间
      */
     private Integer keepAliveTimeout = null;
     /**
      * SSL engine.
+     * 是否启动SSL
      */
     private boolean SSLEnabled = false;
+    /**
+     * 最小线程数
+     */
     private int minSpareThreads = 10;
     /**
      * Maximum amount of worker threads.
+     * 最大线程数
      */
     private int maxThreads = 200;
     /**
      * Max keep alive requests
+     * 最多支持几个keepalive的请求
      */
     private int maxKeepAliveRequests = 100; // as in Apache HTTPD server
     /**
      * Name of the thread pool, which will be used for naming child threads.
+     * 线程池名称
      */
     private String name = "TP";
     /**
      * Name of domain to use for JMX registration.
+     * JMX中的域名
      */
     private String domain;
     /**
      * The default is true - the created threads will be
      * in daemon mode. If set to false, the control thread
      * will not be daemon - and will keep the process alive.
+     * 是否是守护进程
      */
     private boolean daemon = true;
     /**
      * Expose asynchronous IO capability.
+     * 是否启用异步IO
      */
     private boolean useAsyncIO = true;
     /**
      * Handling of accepted sockets.
+     * socket处理器
      */
     private Handler<S> handler = null;
 
@@ -223,20 +259,36 @@ public abstract class AbstractEndpoint<S, U> {
         return (timeout > 0) ? timeout : Long.MAX_VALUE;
     }
 
+    /**
+     * 解析地址
+     *
+     * @param localAddress
+     * @return
+     * @throws SocketException
+     */
     private static InetSocketAddress getUnlockAddress(InetSocketAddress localAddress) throws SocketException {
+        // 判断参数socket地址是否是通配符地址
         if (localAddress.getAddress().isAnyLocalAddress()) {
             // Need a local address of the same type (IPv4 or IPV6) as the
             // configured bind address since the connector may be configured
             // to not map between types.
+            // 绑定IPV4或者IPV6的地址
             InetAddress loopbackUnlockAddress = null;
             InetAddress linkLocalUnlockAddress = null;
 
+            // 获取网络接口
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            // 判断是否还有网络接口（循环网络接口）
             while (networkInterfaces.hasMoreElements()) {
+                // 获取一个网络接口对象
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
+                // 从网络接口对象中获取网络地址集合
                 Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+                // 遍历网络地址集合
                 while (inetAddresses.hasMoreElements()) {
+                    // 获取一个网络地址
                     InetAddress inetAddress = inetAddresses.nextElement();
+                    // 推论loopbackUnlockAddress和linkLocalUnlockAddress
                     if (localAddress.getAddress().getClass().isAssignableFrom(inetAddress.getClass())) {
                         if (inetAddress.isLoopbackAddress()) {
                             if (loopbackUnlockAddress == null) {
@@ -248,6 +300,7 @@ public abstract class AbstractEndpoint<S, U> {
                                 linkLocalUnlockAddress = inetAddress;
                             }
                         }
+                        // 创建新的socket地址对象
                         else {
                             // Use a non-link local, non-loop back address by default
                             return new InetSocketAddress(inetAddress, localAddress.getPort());
@@ -313,6 +366,7 @@ public abstract class AbstractEndpoint<S, U> {
      * Add the given SSL Host configuration, optionally replacing the existing
      * configuration for the given host.
      *
+     * 添加SSL主机配置
      * @param sslHostConfig The configuration to add
      * @param replace       If {@code true} replacement of an existing
      *                      configuration is permitted, otherwise any such
@@ -323,6 +377,7 @@ public abstract class AbstractEndpoint<S, U> {
      *                                  allowed
      */
     public void addSslHostConfig(SSLHostConfig sslHostConfig, boolean replace) throws IllegalArgumentException {
+
         String key = sslHostConfig.getHostName();
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException(sm.getString("endpoint.noSslHostName"));
@@ -1454,9 +1509,23 @@ public abstract class AbstractEndpoint<S, U> {
     protected abstract void destroySocket(U socket);
 
     protected enum BindState {
+        /**
+         * 未绑定
+         */
         UNBOUND(false, false),
+        /**
+         * 在INIT时绑定
+         */
         BOUND_ON_INIT(true, true),
+
+        /**
+         * 在START时绑定
+         */
         BOUND_ON_START(true, true),
+
+        /**
+         * 关闭
+          */
         SOCKET_CLOSED_ON_STOP(false, true);
 
         private final boolean bound;

@@ -1089,13 +1089,17 @@ public abstract class AbstractEndpoint<S, U> {
      */
     protected void unlockAccept() {
         // Only try to unlock the acceptor if it is necessary
+        // 成员变量acceptor为空，或者acceptor状态不是RUNNING
         if (acceptor == null || acceptor.getState() != AcceptorState.RUNNING) {
             return;
         }
 
+        // 需要解绑的地址
         InetSocketAddress unlockAddress = null;
+        // 本地地址
         InetSocketAddress localAddress = null;
         try {
+            // 获取本地地址
             localAddress = getLocalAddress();
         } catch (IOException ioe) {
             getLog().debug(sm.getString("endpoint.debug.unlock.localFail", getName()), ioe);
@@ -1106,10 +1110,14 @@ public abstract class AbstractEndpoint<S, U> {
         }
 
         try {
+            // 获取需要解绑的地址
             unlockAddress = getUnlockAddress(localAddress);
 
+            // 创建socket对象
             try (java.net.Socket s = new java.net.Socket()) {
+                // SO_TIMEOUT（socket操作超时时间）
                 int stmo = 2 * 1000;
+                // 解锁超时时间
                 int utmo = 2 * 1000;
                 if (getSocketProperties().getSoTimeout() > stmo) {
                     stmo = getSocketProperties().getSoTimeout();
@@ -1117,12 +1125,15 @@ public abstract class AbstractEndpoint<S, U> {
                 if (getSocketProperties().getUnlockTimeout() > utmo) {
                     utmo = getSocketProperties().getUnlockTimeout();
                 }
+                // 设置SO_TIMEOUT
                 s.setSoTimeout(stmo);
                 s.setSoLinger(getSocketProperties().getSoLingerOn(), getSocketProperties().getSoLingerTime());
                 if (getLog().isDebugEnabled()) {
                     getLog().debug("About to unlock socket for:" + unlockAddress);
                 }
+                // 建立链接
                 s.connect(unlockAddress, utmo);
+                // 是否接收延迟
                 if (getDeferAccept()) {
                     /*
                      * In the case of a deferred accept / accept filters we need to

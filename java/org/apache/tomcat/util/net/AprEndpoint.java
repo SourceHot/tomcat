@@ -84,37 +84,46 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
 
     /**
      * Root APR memory pool.
+     *
+     * apr 的根内存池
      */
     protected long rootPool = 0;
 
 
     /**
      * Server socket "pointer".
+     * 服务器套接字
      */
     protected volatile long serverSock = 0;
 
 
     /**
      * APR memory pool for the server socket.
+     * 服务器套接字相关的内存池
+     *
      */
     protected long serverSockPool = 0;
 
 
     /**
      * SSL context.
+     * SSL 上下文
      */
     protected long sslContext = 0;
     /**
      * Defer accept.
+     * 是否支持延迟接受
      */
     protected boolean deferAccept = true;
     /**
      * Size of the sendfile (= concurrent files which can be served).
+     * 文件发送大小
      */
     protected int sendfileSize = 1024;
     /**
      * Poll interval, in microseconds. The smaller the value, the more CPU the poller
      * will use, but the more responsive to activity it will be.
+     * 轮询间隔
      */
     protected int pollTime = 2000;
 
@@ -122,6 +131,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
     // ------------------------------------------------------------ Constructor
     /**
      * The socket poller.
+     * 轮训器
      */
     protected Poller poller = null;
 
@@ -129,11 +139,24 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
     // ------------------------------------------------------------- Properties
     /**
      * The static file sender.
+     * 发送文件对象，是一个线程处理器
      */
     protected Sendfile sendfile = null;
+    /**
+     * 接受端口
+     */
     private int previousAcceptedPort = -1;
+    /**
+     * 接受地址
+     */
     private String previousAcceptedAddress = null;
+    /**
+     * 接受socket的时间差
+     */
     private long previousAcceptedSocketNanoTime = 0;
+    /**
+     * 是否只支持ipv6
+     */
     private boolean ipv6v6only = false;
     /*
      * When the endpoint is created and configured, the APR library will not
@@ -141,14 +164,17 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
      * value of useSendFile should be changed if the APR library indicates it
      * supports send file once it has been initialised. If useSendFile is set
      * by configuration, that configuration will always take priority.
+     * 是否使用发送文件
      */
     private boolean useSendFileSet = false;
     /**
      * Path for the Unix Domain Socket, used to create the socket address.
+     * Unix 中所需要使用的套接字域名地址
      */
     private String unixDomainSocketPath = null;
     /**
      * Permissions which will be set on the Unix Domain Socket if it is created.
+     * unix 套接字域名权限
      */
     private String unixDomainSocketPathPermissions = null;
 
@@ -225,6 +251,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         else {
             long sa;
             try {
+                // 通过地址类获取socket地址
                 sa = Address.get(Socket.APR_LOCAL, s);
             } catch (IOException ioe) {
                 // re-throw
@@ -233,6 +260,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
                 // wrap
                 throw new IOException(e);
             }
+            // 通过地址类根据sa变量解析得到 Sockaddr
             Sockaddr addr = Address.getInfo(sa);
             if (addr.hostname == null) {
                 // any local address
@@ -339,6 +367,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         String hostname = null;
 
         // Create the root APR memory pool
+        // 创建根 APR 内存池
         try {
             rootPool = Pool.create(0);
         } catch (UnsatisfiedLinkError e) {
@@ -346,11 +375,15 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         }
 
         // Create the pool for the server socket
+        // 为服务器套接字创建池
         serverSockPool = Pool.create(rootPool);
 
         // Create the APR address that will be bound
+        // 创建要绑定的APR地址
         if (getUnixDomainSocketPath() != null) {
+            // 在UNIX
             if (Library.APR_HAVE_UNIX) {
+                // 提取hostname和family
                 hostname = getUnixDomainSocketPath();
                 family = Socket.APR_UNIX;
             }
@@ -359,16 +392,20 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
             }
         }
         else {
-
+            // 地址为空
             if (getAddress() != null) {
+                // 确认hostname
                 hostname = getAddress().getHostAddress();
             }
+            // 确认family
             family = Socket.APR_UNSPEC;
         }
 
+        // 确认socket地址
         long sockAddress = Address.info(hostname, family, getPortWithOffset(), 0, rootPool);
 
         // Create the APR server socket
+        // 创建 APR相关的socket服务
         if (family == Socket.APR_UNIX) {
             serverSock = Socket.create(family, Socket.SOCK_STREAM, 0, rootPool);
         }
@@ -393,17 +430,20 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         }
 
         // Bind the server socket
+        // 将成员变量serverSock和socket地址绑定
         int ret = Socket.bind(serverSock, sockAddress);
         if (ret != 0) {
             throw new Exception(sm.getString("endpoint.init.bind", "" + ret, Error.strerror(ret)));
         }
 
         // Start listening on the server socket
+        // 开始监听socket
         ret = Socket.listen(serverSock, getAcceptCount());
         if (ret != 0) {
             throw new Exception(sm.getString("endpoint.init.listen", "" + ret, Error.strerror(ret)));
         }
 
+        // family变量处理
         if (family == Socket.APR_UNIX) {
             if (getUnixDomainSocketPathPermissions() != null) {
                 FileAttribute<Set<PosixFilePermission>> attrs =
@@ -422,6 +462,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
 
         // Enable Sendfile by default if it has not been configured but usage on
         // systems which don't support it cause major problems
+        // 设置useSendfile变量
         if (!useSendFileSet) {
             setUseSendfileInternal(Library.APR_HAS_SENDFILE);
         }
@@ -432,6 +473,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         // Delay accepting of new connections until data is available
         // Only Linux kernels 2.4 + have that implemented
         // on other platforms this call is noop and will return APR_ENOTIMPL.
+        // 处理 deferAccept 变量
         if (deferAccept) {
             if (Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1) == Status.APR_ENOTIMPL) {
                 deferAccept = false;
@@ -439,20 +481,27 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         }
 
         // Initialize SSL if needed
+        // 启用SSL
         if (isSSLEnabled()) {
+            // 根据SSLHostConfig创建SSL上下文
             for (SSLHostConfig sslHostConfig : sslHostConfigs.values()) {
                 createSSLContext(sslHostConfig);
             }
+            // 获取默认的SSLHostConfig
             SSLHostConfig defaultSSLHostConfig = sslHostConfigs.get(getDefaultSSLHostConfigName());
+            // 如果默认的SSLHostConfig为空抛出异常
             if (defaultSSLHostConfig == null) {
                 throw new IllegalArgumentException(sm.getString("endpoint.noSslHostConfig",
                         getDefaultSSLHostConfigName(), getName()));
             }
+            // 获取默认的SSL上下文
             Long defaultSSLContext = defaultSSLHostConfig.getOpenSslContext();
+            // 注册默认上下文
             sslContext = defaultSSLContext.longValue();
             SSLContext.registerDefault(defaultSSLContext, this);
 
             // For now, sendfile is not supported with SSL
+            // 使用发送文件
             if (getUseSendfile()) {
                 setUseSendfileInternal(false);
                 if (useSendFileSet) {
@@ -1926,6 +1975,9 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
 
     // --------------------------------------------------- Sendfile Inner Class
 
+    /**
+     * 轮巡器
+     */
     public class Poller implements Runnable {
 
         /**
@@ -2578,10 +2630,19 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
         protected long sendfilePollset = 0;
         protected long pool = 0;
         protected long[] desc;
+        /**
+         * 发送文件的数据
+         */
         protected HashMap<Long, SendfileData> sendfileData;
 
+        /**
+         * 文件发送数量
+         */
         protected int sendfileCount;
         protected ArrayList<SendfileData> addS;
+        /**
+         * 文件发送线程
+         */
         private volatile Thread sendfileThread;
         private volatile boolean sendfileRunning = true;
 

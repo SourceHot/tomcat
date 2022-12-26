@@ -631,26 +631,34 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
      */
     @Override
     public void stopInternal() {
+        // 判断是否处于暂停状态，如果不是则执行pause方法
         if (!paused) {
             pause();
         }
+        // 判断是否处于运行状态
         if (running) {
+            // 运行状态设置为false
             running = false;
             // Stop new connections being accepted.
+            // 关闭接收者处理器
             acceptor.stop(10);
 
             // Stop the Poller calling select
+            // 关闭轮训器
             poller.stop();
 
+            // 如果使用发送文件则需要停止发送文件
             if (getUseSendfile()) {
                 sendfile.stop();
             }
 
             // Wait for the acceptor to shutdown
+            // 接收者处理器状态不是ENDED，并且bindOnInit变量为false
             if (acceptor.getState() != AcceptorState.ENDED && !getBindOnInit()) {
                 log.warn(sm.getString("endpoint.warn.unlockAcceptorFailed", acceptor.getThreadName()));
                 // If the Acceptor is still running force
                 // the hard socket close.
+                // 服务器套接字存在关闭服务套接字
                 if (serverSock != 0) {
                     Socket.shutdown(serverSock, Socket.APR_SHUTDOWN_READ);
                     serverSock = 0;
@@ -658,6 +666,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
             }
 
             // Wait for Poller to stop
+            // 计算等待时间
             int waitMillis = 0;
             try {
                 while (poller.pollerThread.isAlive() && waitMillis < 10000) {
@@ -667,7 +676,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
             } catch (InterruptedException e) {
                 // Ignore
             }
-
+            // 是否使用发送文件
             if (getUseSendfile()) {
                 try {
                     // Wait for the sendfile thread to exit, otherwise parallel
@@ -696,6 +705,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
             // Use the blocking status write lock as a proxy for a lock on
             // writing to the socket. Don't want to close it while another
             // thread is writing as that could trigger a JVM crash.
+            // 遍历链接将链接关闭
             for (SocketWrapperBase<Long> socketWrapper : connections.values()) {
                 WriteLock wl = ((AprSocketWrapper) socketWrapper).getBlockingStatusWriteLock();
                 wl.lock();
@@ -705,7 +715,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
                     wl.unlock();
                 }
             }
-
+            // 关闭socket
             for (Long socket : connections.keySet()) {
                 // Close the APR Socket. Need to do this before destroying the
                 // poller since that will also destroy the root pool for these
@@ -713,6 +723,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
                 Socket.shutdown(socket.longValue(), Socket.APR_SHUTDOWN_READWRITE);
             }
 
+            // 是否使用发送文件，如果是则摧毁发送文件对象
             if (getUseSendfile()) {
                 try {
                     sendfile.destroy();
@@ -722,18 +733,21 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
                 sendfile = null;
             }
 
+            // 摧毁轮训器
             try {
                 poller.destroy();
             } catch (Exception e) {
                 // Ignore
             }
             poller = null;
+            // 清理链接映射
             connections.clear();
             if (processorCache != null) {
                 processorCache.clear();
                 processorCache = null;
             }
         }
+        // 关闭执行器
         shutdownExecutor();
     }
 

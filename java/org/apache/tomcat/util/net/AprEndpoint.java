@@ -34,6 +34,7 @@ import org.apache.tomcat.util.net.openssl.OpenSSLUtil;
 import javax.net.ssl.KeyManager;
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.Thread;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
@@ -56,7 +57,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import java.lang.Thread;
 
 
 /**
@@ -84,7 +84,7 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
 
     /**
      * Root APR memory pool.
-     *
+     * <p>
      * apr 的根内存池
      */
     protected long rootPool = 0;
@@ -100,7 +100,6 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
     /**
      * APR memory pool for the server socket.
      * 服务器套接字相关的内存池
-     *
      */
     protected long serverSockPool = 0;
 
@@ -514,27 +513,39 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
 
     @Override
     protected void createSSLContext(SSLHostConfig sslHostConfig) throws Exception {
+        // 初始化SSL上下文
         OpenSSLContext sslContext = null;
+        // 从SSL配置中获取证书集合
         Set<SSLHostConfigCertificate> certificates = sslHostConfig.getCertificates(true);
+
+        // 遍历证书集合
         for (SSLHostConfigCertificate certificate : certificates) {
+            // 上下文为空的情况下
             if (sslContext == null) {
+                // 从SSLUtil接口中为SSL主机配置设置enabledProtocols和enabledCiphers
                 SSLUtil sslUtil = new OpenSSLUtil(certificate);
                 sslHostConfig.setEnabledProtocols(sslUtil.getEnabledProtocols());
                 sslHostConfig.setEnabledCiphers(sslUtil.getEnabledCiphers());
 
                 try {
+                    // 通过SSLUtil创建SSL上下文
                     sslContext = (OpenSSLContext) sslUtil.createSSLContext(negotiableProtocols);
                 } catch (Exception e) {
                     throw new IllegalArgumentException(e.getMessage(), e);
                 }
             }
             else {
+                // 创建SSLUtil接口
                 SSLUtil sslUtil = new OpenSSLUtil(certificate);
+                // 从SSLUtil接口中获取key管理器
                 KeyManager[] kms = sslUtil.getKeyManagers();
+                // 为证书设置key管理器
                 certificate.setCertificateKeyManager(OpenSSLUtil.chooseKeyManager(kms));
+                // 为SSL上下文添加证书
                 sslContext.addCertificate(certificate);
             }
 
+            // 证书设置SSL上下文
             certificate.setSslContext(sslContext);
         }
 
@@ -572,34 +583,44 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
     @Override
     public void startInternal() throws Exception {
 
+        // 判断是否处于运行状态
         if (!running) {
+            // 运行状态设置为true
             running = true;
+            // 暂停状态设置为false
             paused = false;
 
+            // 如果socket属性中能够处理的缓存数量不为0
             if (socketProperties.getProcessorCache() != 0) {
+                // 创建socket处理器缓存
                 processorCache = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         socketProperties.getProcessorCache());
             }
 
             // Create worker collection
+            // 如果执行器为空，则创建执行器
             if (getExecutor() == null) {
                 createExecutor();
             }
 
+            // 初始化限流器
             initializeConnectionLatch();
 
             // Start poller thread
+            // 创建poller，初始化并启动
             poller = new Poller();
             poller.init();
             poller.start();
 
             // Start sendfile thread
+            // 使用发送文件的情况下，创建Sendfile对象初始化并启动
             if (getUseSendfile()) {
                 sendfile = new Sendfile();
                 sendfile.init();
                 sendfile.start();
             }
 
+            // 启动处理器线程
             startAcceptorThread();
         }
     }
@@ -722,25 +743,32 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
      */
     @Override
     public void unbind() throws Exception {
+        // 判断是否处于运行状态
         if (running) {
+            // 执行stop方法
             stop();
         }
 
         // Destroy pool if it was initialised
+        // 摧毁服务器套接字相关的内存池
         if (serverSockPool != 0) {
             Pool.destroy(serverSockPool);
             serverSockPool = 0;
         }
 
+        // 关闭服务器套接字
         doCloseServerSocket();
+        // 摧毁ssl
         destroySsl();
 
         // Close all APR memory pools and resources if initialised
+        // 摧毁apr的根内存池
         if (rootPool != 0) {
             Pool.destroy(rootPool);
             rootPool = 0;
         }
 
+        // 回收资源
         getHandler().recycle();
     }
 
@@ -1981,51 +2009,6 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
     public class Poller implements Runnable {
 
         /**
-         * Pointer to the poller.
-         */
-        private long aprPoller;
-
-        /**
-         * Actual poller size.
-         */
-        private int pollerSize = 0;
-
-        /**
-         * Root pool.
-         */
-        private long pool = 0;
-
-        /**
-         * Socket descriptors.
-         */
-        private long[] desc;
-
-        /**
-         * List of sockets to be added to the poller.
-         */
-        private SocketList addList = null;  // Modifications guarded by this
-
-
-        /**
-         * List of sockets to be closed.
-         */
-        private SocketList closeList = null; // Modifications guarded by this
-
-
-        /**
-         * Structure used for storing timeouts.
-         */
-        private SocketTimeouts timeouts = null;
-
-
-        /**
-         * Last run of maintain. Maintain will run approximately once every one
-         * second (may be slightly longer between runs).
-         */
-        private long lastMaintain = System.currentTimeMillis();
-
-
-        /**
          * The number of connections currently inside this Poller. The correct
          * operation of the Poller depends on this figure being correct. If it
          * is not, it is possible that the Poller will enter a wait loop where
@@ -2036,6 +2019,39 @@ public class AprEndpoint extends AbstractEndpoint<Long, Long> implements SNICall
          * thread-safe.
          */
         private final AtomicInteger connectionCount = new AtomicInteger(0);
+        /**
+         * Pointer to the poller.
+         */
+        private long aprPoller;
+        /**
+         * Actual poller size.
+         */
+        private int pollerSize = 0;
+        /**
+         * Root pool.
+         */
+        private long pool = 0;
+        /**
+         * Socket descriptors.
+         */
+        private long[] desc;
+        /**
+         * List of sockets to be added to the poller.
+         */
+        private SocketList addList = null;  // Modifications guarded by this
+        /**
+         * List of sockets to be closed.
+         */
+        private SocketList closeList = null; // Modifications guarded by this
+        /**
+         * Structure used for storing timeouts.
+         */
+        private SocketTimeouts timeouts = null;
+        /**
+         * Last run of maintain. Maintain will run approximately once every one
+         * second (may be slightly longer between runs).
+         */
+        private long lastMaintain = System.currentTimeMillis();
         private volatile Thread pollerThread;
         private volatile boolean pollerRunning = true;
 

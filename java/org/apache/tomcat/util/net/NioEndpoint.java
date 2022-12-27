@@ -324,27 +324,33 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
                 eventCache = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         socketProperties.getEventCache());
             }
+            // 获取actualBufferPool
             int actualBufferPool =
                     socketProperties.getActualBufferPool(isSSLEnabled() ? getSniParseLimit() * 2 : 0);
+            // 如果actualBufferPool不为0
             if (actualBufferPool != 0) {
                 nioChannels = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         actualBufferPool);
             }
 
             // Create worker collection
+            // 如果执行器为空
             if (getExecutor() == null) {
+                // 创建执行器
                 createExecutor();
             }
-
+            // 初始化限流器
             initializeConnectionLatch();
 
             // Start poller thread
+            // 创建轮询器
             poller = new Poller();
+            // 创建轮询线程并启动
             Thread pollerThread = new Thread(poller, getName() + "-Poller");
             pollerThread.setPriority(threadPriority);
             pollerThread.setDaemon(true);
             pollerThread.start();
-
+            // 启动接受者线程
             startAcceptorThread();
         }
     }
@@ -355,28 +361,37 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
      */
     @Override
     public void stopInternal() {
+        // 是否处于停止状态，如果不是则执行pause方法进行停止
         if (!paused) {
             pause();
         }
+        // 如果处于运行状态
         if (running) {
+            // 将运行状态设置为false
             running = false;
+            // 接受者停止处理数据
             acceptor.stop(10);
+            // 如果轮询器不为空则需要摧毁轮询器
             if (poller != null) {
                 poller.destroy();
                 poller = null;
             }
             try {
+                // 停止器停止工作
                 if (!getStopLatch().await(selectorTimeout + 100, TimeUnit.MILLISECONDS)) {
                     log.warn(sm.getString("endpoint.nio.stopLatchAwaitFail"));
                 }
             } catch (InterruptedException e) {
                 log.warn(sm.getString("endpoint.nio.stopLatchAwaitInterrupted"), e);
             }
+            // 关闭执行器
             shutdownExecutor();
+            // 如果事件缓存不为空
             if (eventCache != null) {
                 eventCache.clear();
                 eventCache = null;
             }
+            // NioChannel容器不为空
             if (nioChannels != null) {
                 NioChannel socket;
                 while ((socket = nioChannels.pop()) != null) {
@@ -384,6 +399,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
                 }
                 nioChannels = null;
             }
+            // socket处理器缓存不为空
             if (processorCache != null) {
                 processorCache.clear();
                 processorCache = null;

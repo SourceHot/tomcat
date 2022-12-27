@@ -221,14 +221,20 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
      */
     @Override
     public void stopInternal() {
+
+        // 是否处于停止状态，如果不是则执行pause方法进行停止
         if (!paused) {
             pause();
         }
+        // 如果处于运行状态
         if (running) {
+            // 将运行状态设置为false
             running = false;
+            // 接受者停止处理数据
             acceptor.stop(10);
             // Use the executor to avoid binding the main thread if something bad
             // occurs and unbind will also wait for a bit for it to complete
+            // 通过执行器将成员变量connections中的链接关闭
             getExecutor().execute(() -> {
                 // Then close all active connections if any remain
                 try {
@@ -241,6 +247,7 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
                     allClosed = true;
                 }
             });
+            // 如果成员变量nioChannels不为空则将其全部关闭
             if (nioChannels != null) {
                 Nio2Channel socket;
                 while ((socket = nioChannels.pop()) != null) {

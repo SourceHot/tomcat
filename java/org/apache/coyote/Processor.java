@@ -34,6 +34,8 @@ public interface Processor {
      * data arrives) that allows processing to continue for a connection that is
      * not currently being processed.
      *
+     * 处理链接
+     *
      * @param socketWrapper The connection to process
      * @param status        The status of the connection that triggered this additional
      *                      processing
@@ -87,11 +89,13 @@ public interface Processor {
     void timeoutAsync(long now);
 
     /**
+     * 获取请求
      * @return The request associated with this processor.
      */
     Request getRequest();
 
     /**
+     * 回收处理器
      * Recycle the processor, ready for the next request which may be on the
      * same connection or a different connection.
      */
@@ -100,6 +104,7 @@ public interface Processor {
     /**
      * Set the SSL information for this HTTP connection.
      *
+     * 设置SSL支持
      * @param sslSupport The SSL support object to use for this connection
      */
     void setSslSupport(SSLSupport sslSupport);
@@ -120,6 +125,8 @@ public interface Processor {
      * new connections. This is primarily intended to enable processors that
      * use multiplexed connections to prevent further 'streams' being added to
      * an existing multiplexed connection.
+     *
+     * 暂停
      */
     void pause();
 
@@ -128,7 +135,7 @@ public interface Processor {
      * generation of the AsyncStateMachine) is the same as the generation when
      * the most recent async timeout was triggered. This is intended to be used
      * to avoid unnecessary processing.
-     *
+     * 检查异步超时
      * @return {@code true} If the async generation has not changed since the
      * async timeout was triggered
      */

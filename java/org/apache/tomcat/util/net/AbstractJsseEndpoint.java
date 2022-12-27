@@ -32,9 +32,18 @@ import java.util.Set;
 
 public abstract class AbstractJsseEndpoint<S, U> extends AbstractEndpoint<S, U> {
 
+    /**
+     * SSL 实现类类名
+     */
     private String sslImplementationName = null;
+    /**
+     * SNI 解析大小限制
+     */
     private int sniParseLimit = 64 * 1024;
 
+    /**
+     * SSL实现
+     */
     private SSLImplementation sslImplementation = null;
 
     public String getSslImplementationName() {
@@ -61,16 +70,24 @@ public abstract class AbstractJsseEndpoint<S, U> extends AbstractEndpoint<S, U> 
         this.sniParseLimit = sniParseLimit;
     }
 
-
+    /**
+     * 初始化ssl
+     *
+     * @throws Exception
+     */
     protected void initialiseSsl() throws Exception {
+        // 启用ssl
         if (isSSLEnabled()) {
+            // 通过SSLImplementation类根据实现类名称获取具体实现
             sslImplementation = SSLImplementation.getInstance(getSslImplementationName());
 
+            // 创建SSL上下文
             for (SSLHostConfig sslHostConfig : sslHostConfigs.values()) {
                 createSSLContext(sslHostConfig);
             }
 
             // Validate default SSLHostConfigName
+            // 如果ssl主机配置中没有默认的主机配置则抛出异常
             if (sslHostConfigs.get(getDefaultSSLHostConfigName()) == null) {
                 throw new IllegalArgumentException(sm.getString("endpoint.noSslHostConfig",
                         getDefaultSSLHostConfigName(), getName()));
@@ -85,27 +102,36 @@ public abstract class AbstractJsseEndpoint<S, U> extends AbstractEndpoint<S, U> 
 
         // HTTP/2 does not permit optional certificate authentication with any
         // version of TLS.
+        // 证书验证是不需要的，并且协议是h2
         if (sslHostConfig.getCertificateVerification().isOptional() &&
                 negotiableProtocols.contains("h2")) {
             getLog().warn(sm.getString("sslHostConfig.certificateVerificationWithHttp2", sslHostConfig.getHostName()));
         }
-
+        // 证书验证通过情况
         boolean firstCertificate = true;
+        // 从SSL主机配置中获取证书
         for (SSLHostConfigCertificate certificate : sslHostConfig.getCertificates(true)) {
+            // 通过SSL实现类获取SSLUtil
             SSLUtil sslUtil = sslImplementation.getSSLUtil(certificate);
+            // 判断变量firstCertificate是否为真
             if (firstCertificate) {
+                // 设置变量firstCertificate为false
                 firstCertificate = false;
+                // 设置enabledProtocols
                 sslHostConfig.setEnabledProtocols(sslUtil.getEnabledProtocols());
+                // 设置enabledCiphers
                 sslHostConfig.setEnabledCiphers(sslUtil.getEnabledCiphers());
             }
 
+            // SSL上下文
             SSLContext sslContext;
             try {
+                // 通过SSLUtil创建SSL上下文
                 sslContext = sslUtil.createSSLContext(negotiableProtocols);
             } catch (Exception e) {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
-
+            // 设置证书SSL上下文
             certificate.setSslContext(sslContext);
         }
     }

@@ -52,25 +52,39 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
     // ----------------------------------------------------------------- Fields
     /**
      * Allows detecting if a completion handler completes inline.
+     * <p>
+     * 允许检测完成处理程序是否以内联方式完成。
      */
     private static final ThreadLocal<Boolean> inlineCompletion = new ThreadLocal<>();
     /**
      * Server socket "pointer".
+     * 服务端socket
      */
     private volatile AsynchronousServerSocketChannel serverSock = null;
     /**
      * Thread group associated with the server socket.
+     * 与服务器套接字关联的线程组。
      */
     private AsynchronousChannelGroup threadGroup = null;
 
+    /**
+     * 是否全部关闭
+     */
     private volatile boolean allClosed;
 
     /**
      * Bytebuffer cache, each channel holds a set of buffers (two, except for SSL holds four)
+     * Nio2Channel 堆栈
      */
     private SynchronizedStack<Nio2Channel> nioChannels;
 
+    /**
+     * 以前的socket地址
+     */
     private SocketAddress previousAcceptedSocketRemoteAddress = null;
+    /**
+     * 以前的socket接受时间
+     */
     private long previousAcceptedSocketNanoTime = 0;
 
 
@@ -114,23 +128,32 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
     public void bind() throws Exception {
 
         // Create worker collection
+        // 如果执行器为空，创建执行器
         if (getExecutor() == null) {
             createExecutor();
         }
+        // 执行器类型是ExecutorService
         if (getExecutor() instanceof ExecutorService) {
+            // 创建线程组
             threadGroup = AsynchronousChannelGroup.withThreadPool((ExecutorService) getExecutor());
         }
         // AsynchronousChannelGroup needs exclusive access to its executor service
+        // 是否使用内部执行器
         if (!internalExecutor) {
             log.warn(sm.getString("endpoint.nio2.exclusiveExecutor"));
         }
 
+        // 创建服务端socket
         serverSock = AsynchronousServerSocketChannel.open(threadGroup);
+        // 设置服务端socket配置
         socketProperties.setProperties(serverSock);
+        // 创建socket地址
         InetSocketAddress addr = new InetSocketAddress(getAddress(), getPortWithOffset());
+        // 将socket地址和服务端绑定
         serverSock.bind(addr, getAcceptCount());
 
         // Initialize SSL if needed
+        // 初始化SSL
         initialiseSsl();
     }
 
@@ -140,27 +163,34 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
     @Override
     public void startInternal() throws Exception {
 
+        // 判断是否处于运行中，如果不是
         if (!running) {
+            // 设置变量
             allClosed = false;
             running = true;
             paused = false;
 
+            // 如果socket属性中能够处理的缓存数量不为0
             if (socketProperties.getProcessorCache() != 0) {
                 processorCache = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         socketProperties.getProcessorCache());
             }
+            // 获取actualBufferPool
             int actualBufferPool =
                     socketProperties.getActualBufferPool(isSSLEnabled() ? getSniParseLimit() * 2 : 0);
+
             if (actualBufferPool != 0) {
                 nioChannels = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         actualBufferPool);
             }
             // Create worker collection
+            // 如果执行器为空
             if (getExecutor() == null) {
                 createExecutor();
             }
-
+            // 初始化限流器
             initializeConnectionLatch();
+            // 启动处理线程
             startAcceptorThread();
         }
     }
@@ -395,9 +425,6 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
         private SendfileData sendfileData = null;
         private boolean readInterest = false; // Guarded by readCompletionHandler
         private boolean readNotify = false;
-        private boolean writeInterest = false; // Guarded by writeCompletionHandler
-        private boolean writeNotify = false;
-
         private final CompletionHandler<Integer, SendfileData> sendfileHandler
                 = new CompletionHandler<Integer, SendfileData>() {
 
@@ -483,6 +510,8 @@ public class Nio2Endpoint extends AbstractJsseEndpoint<Nio2Channel, Asynchronous
                 }
             }
         };
+        private boolean writeInterest = false; // Guarded by writeCompletionHandler
+        private boolean writeNotify = false;
 
         public Nio2SocketWrapper(Nio2Channel channel, final Nio2Endpoint endpoint) {
             super(channel, endpoint);

@@ -77,25 +77,36 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
     // ----------------------------------------------------------------- Fields
     /**
      * Server socket "pointer".
+     * 服务端socket
      */
     private volatile ServerSocketChannel serverSock = null;
 
     /**
      * Stop latch used to wait for poller stop
+     * 停止器
      */
     private volatile CountDownLatch stopLatch = null;
 
     /**
      * Cache for poller events
+     * 事件缓存
      */
     private SynchronizedStack<PollerEvent> eventCache;
 
     /**
      * Bytebuffer cache, each channel holds a set of buffers (two, except for SSL holds four)
+     *
+     * NioChannel容器
      */
     private SynchronizedStack<NioChannel> nioChannels;
 
+    /**
+     * 以前的socket地址
+     */
     private SocketAddress previousAcceptedSocketRemoteAddress = null;
+    /**
+     * 以前的socket接受时间
+     */
     private long previousAcceptedSocketNanoTime = 0;
 
 
@@ -103,23 +114,35 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
 
     /**
      * Use System.inheritableChannel to obtain channel from stdin/stdout.
+     *
+     * 使用 System.inheritableChannel 从 stdin/stdout. 获取通道。
      */
     private boolean useInheritedChannel = false;
     /**
      * Path for the Unix domain socket, used to create the socket address.
+     *
+     * Unix 域套接字的路径，用于创建套接字地址。
      */
     private String unixDomainSocketPath = null;
     /**
      * Permissions which will be set on the Unix domain socket if it is created.
+     *
+     * Unix套接字权限
+     * rw-rw-rw-.
      */
     private String unixDomainSocketPathPermissions = null;
     /**
      * Priority of the poller thread.
+     * 轮询线程优先级
      */
     private int pollerThreadPriority = Thread.NORM_PRIORITY;
+    /**
+     * selector 执行超时时间
+     */
     private long selectorTimeout = 1000;
     /**
      * The socket poller.
+     * 轮询器
      */
     private Poller poller = null;
 
@@ -203,41 +226,58 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
      */
     @Override
     public void bind() throws Exception {
+        // 初始化服务端socket
         initServerSocket();
-
+        // 设置停止器
         setStopLatch(new CountDownLatch(1));
-
         // Initialize SSL if needed
+        // 初始化SSL
         initialiseSsl();
     }
 
     // Separated out to make it easier for folks that extend NioEndpoint to
     // implement custom [server]sockets
     protected void initServerSocket() throws Exception {
+        // 成员变量useInheritedChannel为true
         if (getUseInheritedChannel()) {
             // Retrieve the channel provided by the OS
+            // 通过System获取Channel
             Channel ic = System.inheritedChannel();
+            // 如果Channel类型是ServerSocketChannel，则需要将其赋值给成员变量serverSock
             if (ic instanceof ServerSocketChannel) {
                 serverSock = (ServerSocketChannel) ic;
             }
+            // 如果成员变量serverSock为空抛出异常
             if (serverSock == null) {
                 throw new IllegalArgumentException(sm.getString("endpoint.init.bind.inherited"));
             }
         }
+        // 成员变量unixDomainSocketPath不为空
         else if (getUnixDomainSocketPath() != null) {
+            // 通过JreCompat获取socket地址
             SocketAddress sa = JreCompat.getInstance().getUnixDomainSocketAddress(getUnixDomainSocketPath());
+            // 创建服务端socket
             serverSock = JreCompat.getInstance().openUnixDomainServerSocketChannel();
+            // 服务端socke与socket地址进行绑定
             serverSock.bind(sa, getAcceptCount());
+            // Unix套接字权限不为空
             if (getUnixDomainSocketPathPermissions() != null) {
+                // 将Unix套接字路径转换为Path对象
                 Path path = Paths.get(getUnixDomainSocketPath());
+                // 将成员变量unixDomainSocketPathPermissions转换为权限对象
                 Set<PosixFilePermission> permissions =
                         PosixFilePermissions.fromString(getUnixDomainSocketPathPermissions());
+                // 判断Path对象中是否有posix，如果有
                 if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                    // 将权限设置到path对象中
                     FileAttribute<Set<PosixFilePermission>> attrs = PosixFilePermissions.asFileAttribute(permissions);
                     Files.setAttribute(path, attrs.name(), attrs.value());
                 }
+                // 判断Path对象中是否有posix，如果没有
                 else {
+                    // 将path对象转换为文件对象
                     java.io.File file = path.toFile();
+                    // 判断权限中是否包含OTHERS_READ
                     if (permissions.contains(PosixFilePermission.OTHERS_READ) && !file.setReadable(true, false)) {
                         log.warn(sm.getString("endpoint.nio.perms.readFail", file.getPath()));
                     }
@@ -248,11 +288,16 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
             }
         }
         else {
+            // 通过ServerSocketChannel对象创建服务端socket
             serverSock = ServerSocketChannel.open();
+            // 设置socket属性表
             socketProperties.setProperties(serverSock.socket());
+            // 创建socket地址
             InetSocketAddress addr = new InetSocketAddress(getAddress(), getPortWithOffset());
+            // 服务端socket与socket地址绑定
             serverSock.bind(addr, getAcceptCount());
         }
+        // 将服务端socket设置为已配置
         serverSock.configureBlocking(true); //mimic APR behavior
     }
 
@@ -263,14 +308,18 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel, SocketChannel>
     @Override
     public void startInternal() throws Exception {
 
+        // 判断是否处于运行状态，如果是则不做处理
         if (!running) {
+            // 运行状态设置为true
             running = true;
+            // 暂停状态设置为false
             paused = false;
-
+            // 如果socket属性中能够处理的缓存数量不为0
             if (socketProperties.getProcessorCache() != 0) {
                 processorCache = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         socketProperties.getProcessorCache());
             }
+            // 如果事件缓存不为0
             if (socketProperties.getEventCache() != 0) {
                 eventCache = new SynchronizedStack<>(SynchronizedStack.DEFAULT_SIZE,
                         socketProperties.getEventCache());

@@ -717,6 +717,9 @@ public class SSLHostConfig implements Serializable {
     }
 
 
+    /**
+     * 证书验证规则
+     */
     public enum CertificateVerification {
         NONE(false),
         OPTIONAL_NO_CA(true),

@@ -41,14 +41,19 @@ public abstract class AbstractProcessorLight implements Processor {
     public SocketState process(SocketWrapperBase<?> socketWrapper, SocketEvent status)
             throws IOException {
 
+        // 创建socket状态，初始值为CLOSED
         SocketState state = SocketState.CLOSED;
+
         Iterator<DispatchType> dispatches = null;
         do {
+            // 如果dispatches遍历不为空
             if (dispatches != null) {
+                // 从dispatches中获取一个元素
                 DispatchType nextDispatch = dispatches.next();
                 if (getLog().isDebugEnabled()) {
                     getLog().debug("Processing dispatch type: [" + nextDispatch + "]");
                 }
+                // 通过dispatch方法处理请求
                 state = dispatch(nextDispatch.getSocketStatus());
                 if (!dispatches.hasNext()) {
                     state = checkForPipelinedData(state, socketWrapper);
@@ -96,8 +101,10 @@ public abstract class AbstractProcessorLight implements Processor {
                 // dispatches to process.
                 dispatches = getIteratorAndClearDispatches();
             }
-        } while (state == SocketState.ASYNC_END ||
-                dispatches != null && state != SocketState.CLOSED);
+        } while (
+                state == SocketState.ASYNC_END ||
+                dispatches != null &&
+                        state != SocketState.CLOSED);
 
         return state;
     }

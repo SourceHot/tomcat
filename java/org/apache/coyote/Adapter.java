@@ -21,6 +21,7 @@ import org.apache.tomcat.util.net.SocketEvent;
 /**
  * Adapter. This represents the entry point in a coyote-based servlet container.
  *
+ * Adapter
  * @author Remy Maucherat
  * @see ProtocolHandler
  */
@@ -59,6 +60,14 @@ public interface Adapter {
      */
     boolean prepare(Request req, Response res) throws Exception;
 
+    /**
+     * 异步调度
+     * @param req
+     * @param res
+     * @param status
+     * @return
+     * @throws Exception
+     */
     boolean asyncDispatch(Request req, Response res, SocketEvent status)
             throws Exception;
 

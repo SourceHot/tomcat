@@ -43,16 +43,46 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractProcessor extends AbstractProcessorLight implements ActionHook {
 
+    /**
+     * 字符串管理器
+     */
     private static final StringManager sm = StringManager.getManager(AbstractProcessor.class);
+    /**
+     * 适配器
+     */
     protected final Adapter adapter;
+    /**
+     * 异步请求下所使用的的状态管理器
+     */
     protected final AsyncStateMachine asyncStateMachine;
+    /**
+     * 请求对象
+     */
     protected final Request request;
+    /**
+     * 响应对象
+     */
     protected final Response response;
+    /**
+     * 用户数据帮助其
+     */
     protected final UserDataHelper userDataHelper;
+    /**
+     * socket包装
+     */
     protected volatile SocketWrapperBase<?> socketWrapper = null;
+    /**
+     * SSL支持
+     */
     protected volatile SSLSupport sslSupport;
     // Used to avoid useless B2C conversion on the host name.
+    /**
+     * 主机名
+     */
     private char[] hostNameC = new char[0];
+    /**
+     * 异步超时时间
+     */
     private volatile long asyncTimeout = -1;
     /*
      * Tracks the current async generation when a timeout is dispatched. In the
@@ -66,6 +96,7 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
     private volatile long asyncTimeoutGeneration = 0;
     /**
      * Error state for the request/response currently being processed.
+     * 异常状态
      */
     private ErrorState errorState = ErrorState.NONE;
 
@@ -192,48 +223,61 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
 
     @Override
     public final SocketState dispatch(SocketEvent status) throws IOException {
-
+        // 事件是OPEN_WRITE并且响应中的写监听器不为空
         if (status == SocketEvent.OPEN_WRITE && response.getWriteListener() != null) {
+            // 异步状态处理器更新状态
             asyncStateMachine.asyncOperation();
             try {
+                // 写出数据
                 if (flushBufferedWrite()) {
+                    // 返回LONG
                     return SocketState.LONG;
                 }
             } catch (IOException ioe) {
                 if (getLog().isDebugEnabled()) {
                     getLog().debug("Unable to write async data.", ioe);
                 }
+                // 事件设置为ERROR
                 status = SocketEvent.ERROR;
+                // 在请求中写入异常
                 request.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ioe);
             }
         }
+        // 事件是OPEN_READ并且响应中的读监听器不为空
         else if (status == SocketEvent.OPEN_READ && request.getReadListener() != null) {
+            // 异步更新状态
             dispatchNonBlockingRead();
         }
+        // 事件是ERROR
         else if (status == SocketEvent.ERROR) {
             // An I/O error occurred on a non-container thread. This includes:
             // - read/write timeouts fired by the Poller (NIO & APR)
             // - completion handler failures in NIO2
-
+            // 请求中的ERROR_EXCEPTION信息不为空
             if (request.getAttribute(RequestDispatcher.ERROR_EXCEPTION) == null) {
                 // Because the error did not occur on a container thread the
                 // request's error attribute has not been set. If an exception
                 // is available from the socketWrapper, use it to set the
                 // request's error attribute here so it is visible to the error
                 // handling.
+                // 设置请求的ERROR_EXCEPTION数据
                 request.setAttribute(RequestDispatcher.ERROR_EXCEPTION, socketWrapper.getError());
             }
 
+            // 请求中的读监听器不为空或者响应中的写监听器不为空
             if (request.getReadListener() != null || response.getWriteListener() != null) {
                 // The error occurred during non-blocking I/O. Set the correct
                 // state else the error handling will trigger an ISE.
+                // 更新状态
                 asyncStateMachine.asyncOperation();
             }
         }
-
+        // 从请求中获取请求信息
         RequestInfo rp = request.getRequestProcessor();
         try {
+            // 设置stage为STAGE_SERVICE
             rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
+            // 执行异步调度，如果执行结果为false则需要设置异常状态
             if (!getAdapter().asyncDispatch(request, response, status)) {
                 setErrorState(ErrorState.CLOSE_NOW, null);
             }
@@ -245,19 +289,29 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
             getLog().error(sm.getString("http11processor.request.process"), t);
         }
 
+        // 设置stage为STAGE_ENDED
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
 
+        // 创建返回值
         SocketState state;
 
+        // 如果异常状态存在
         if (getErrorState().isError()) {
+            // reqProcessorMX计数器加一
             request.updateCounters();
+            // socket状态设置为CLOSED
             state = SocketState.CLOSED;
         }
+        // 如果是异步的
         else if (isAsync()) {
+            // 状态设置为LONG
             state = SocketState.LONG;
         }
+        // 其他情况
         else {
+            // reqProcessorMX计数器加一
             request.updateCounters();
+            // 交给dispatchEndRequest进行处理
             state = dispatchEndRequest();
         }
 
@@ -1013,7 +1067,7 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
      * remaining data from a previous incomplete write.
      *
      * @return <code>true</code> if data remains to be flushed at the end of
-     * method
+     * method  如果在方法结束时仍需刷新数据
      * @throws IOException If an I/O error occurs while attempting to flush the
      *                     data
      */

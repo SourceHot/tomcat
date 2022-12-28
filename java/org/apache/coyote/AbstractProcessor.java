@@ -64,7 +64,7 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
      */
     protected final Response response;
     /**
-     * 用户数据帮助其
+     * 用户数据帮助器
      */
     protected final UserDataHelper userDataHelper;
     /**
@@ -253,7 +253,7 @@ public abstract class AbstractProcessor extends AbstractProcessorLight implement
             // An I/O error occurred on a non-container thread. This includes:
             // - read/write timeouts fired by the Poller (NIO & APR)
             // - completion handler failures in NIO2
-            // 请求中的ERROR_EXCEPTION信息不为空
+            // 请求中的ERROR_EXCEPTION信息为空
             if (request.getAttribute(RequestDispatcher.ERROR_EXCEPTION) == null) {
                 // Because the error did not occur on a container thread the
                 // request's error attribute has not been set. If an exception

@@ -321,40 +321,55 @@ public class AjpProcessor extends AbstractProcessor {
     @Override
     public SocketState service(SocketWrapperBase<?> socket) throws IOException {
 
+        // 从请求中获取请求信息
         RequestInfo rp = request.getRequestProcessor();
+        // 设置stage为STAGE_PARSE
         rp.setStage(org.apache.coyote.Constants.STAGE_PARSE);
 
         // Setting up the socket
+        // 将参数socket赋值到成员变量socketWrapper
         this.socketWrapper = socket;
 
         boolean cping = false;
         // Expected to block on the first read as there should be at least one
         // AJP message to read.
+        // 是否是第一次读取数据
         boolean firstRead = true;
 
+        // 循环，不存在异常并且协议处理器非暂停状态
         while (!getErrorState().isError() && !protocol.isPaused()) {
             // Parsing the request header
             try {
                 // Get first message of the request
+                // 读取消息，如果读取失败则结束处理
                 if (!readMessage(requestHeaderMessage, firstRead)) {
                     break;
                 }
+                // 将是否是第一次读取数据设置为false
                 firstRead = false;
 
                 // Processing the request so make sure the connection rather
                 // than keep-alive timeout is used
+                // 设置读取超时时间
                 socketWrapper.setReadTimeout(protocol.getConnectionTimeout());
 
                 // Check message type, process right away and break if
                 // not regular request processing
+                // 从请求头消息中读取类型
                 int type = requestHeaderMessage.getByte();
+                // 不同类型处理
+                // 类型是JK_AJP13_CPING_REQUEST
                 if (type == Constants.JK_AJP13_CPING_REQUEST) {
+                    // 协议处理器是否暂停
                     if (protocol.isPaused()) {
+                        // 释放资源
                         recycle();
                         break;
                     }
+                    // cping 设置为true
                     cping = true;
                     try {
+                        // 写出数据
                         socketWrapper.write(true, pongMessageArray, 0, pongMessageArray.length);
                         socketWrapper.flush(true);
                     } catch (IOException e) {
@@ -363,18 +378,23 @@ public class AjpProcessor extends AbstractProcessor {
                         }
                         setErrorState(ErrorState.CLOSE_CONNECTION_NOW, e);
                     }
+                    // 是否资源
                     recycle();
+                    // 进行下一个循环
                     continue;
                 }
+                // 类型不是JK_AJP13_FORWARD_REQUEST
                 else if (type != Constants.JK_AJP13_FORWARD_REQUEST) {
                     // Unexpected packet type. Unread body packets should have
                     // been swallowed in finish().
                     if (getLog().isDebugEnabled()) {
                         getLog().debug("Unexpected message: " + type);
                     }
+                    // 设置异常状态结束处理
                     setErrorState(ErrorState.CLOSE_CONNECTION_NOW, null);
                     break;
                 }
+                // 设置开始时间
                 request.setStartTimeNanos(System.nanoTime());
             } catch (IOException e) {
                 setErrorState(ErrorState.CLOSE_CONNECTION_NOW, e);
@@ -387,10 +407,13 @@ public class AjpProcessor extends AbstractProcessor {
                 setErrorState(ErrorState.CLOSE_CLEAN, t);
             }
 
+            // 异常状态是io允许的
             if (getErrorState().isIoAllowed()) {
                 // Setting up filters, and parse some request headers
+                // 设置stage为STAGE_PREPARE
                 rp.setStage(org.apache.coyote.Constants.STAGE_PREPARE);
                 try {
+                    // 准备请求
                     prepareRequest();
                 } catch (Throwable t) {
                     ExceptionUtils.handleThrowable(t);
@@ -400,18 +423,25 @@ public class AjpProcessor extends AbstractProcessor {
                     setErrorState(ErrorState.CLOSE_CLEAN, t);
                 }
             }
-
+            // 满足三个条件设置响应状态为503，并设置异常状态为CLOSE_CLEAN
+            // 1. 异常状态是io允许的
+            // 2. cping为false
+            // 3. 协议处理器没有暂停
             if (getErrorState().isIoAllowed() && !cping && protocol.isPaused()) {
                 // 503 - Service unavailable
                 response.setStatus(503);
                 setErrorState(ErrorState.CLOSE_CLEAN, null);
             }
+            // 设置cping为false
             cping = false;
 
             // Process the request in the adapter
+            // 异常状态是io允许的
             if (getErrorState().isIoAllowed()) {
                 try {
+                    // 设置stage为STAGE_SERVICE
                     rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
+                    // 获取适配器进行请求和响应的处理
                     getAdapter().service(request, response);
                 } catch (InterruptedIOException e) {
                     setErrorState(ErrorState.CLOSE_CONNECTION_NOW, e);
@@ -425,11 +455,13 @@ public class AjpProcessor extends AbstractProcessor {
                 }
             }
 
+            // 如果是异步的并且异常状态没有异常结束处理
             if (isAsync() && !getErrorState().isError()) {
                 break;
             }
 
             // Finish the response if not done yet
+            // 如果responseFinished
             if (!responseFinished && getErrorState().isIoAllowed()) {
                 try {
                     action(ActionCode.COMMIT, null);

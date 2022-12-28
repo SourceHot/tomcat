@@ -238,19 +238,31 @@ public class Http11Processor extends AbstractProcessor {
     @Override
     public SocketState service(SocketWrapperBase<?> socketWrapper)
             throws IOException {
+        // 从请求中获取请求信息
         RequestInfo rp = request.getRequestProcessor();
+        // 设置stage为STAGE_PARSE
         rp.setStage(org.apache.coyote.Constants.STAGE_PARSE);
 
         // Setting up the I/O
+        // 初始化inputBuffer、outputBuffer
         setSocketWrapper(socketWrapper);
 
         // Flags
+        // 创建标记变量默认值
         keepAlive = true;
         openSocket = false;
         readComplete = true;
         boolean keptAlive = false;
+        // 创建发送文件状态，初始值DONE
         SendfileState sendfileState = SendfileState.DONE;
 
+        // 循环
+        // 1. 异常状态不存在异常
+        // 2. keepAlive为true
+        // 3. 非异步请求
+        // 4. upgradeToken为空
+        // 5. 发送文件状态是DONE
+        // 6. 协议处理器处于非暂停状态
         while (!getErrorState().isError() && keepAlive && !isAsync() && upgradeToken == null &&
                 sendfileState == SendfileState.DONE && !protocol.isPaused()) {
 
@@ -461,6 +473,7 @@ public class Http11Processor extends AbstractProcessor {
             sendfileState = processSendfile(socketWrapper);
         }
 
+        // 设置stage为STAGE_ENDED
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
 
         if (getErrorState().isError() || (protocol.isPaused() && !isAsync())) {

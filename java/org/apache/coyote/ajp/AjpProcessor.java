@@ -378,7 +378,7 @@ public class AjpProcessor extends AbstractProcessor {
                         }
                         setErrorState(ErrorState.CLOSE_CONNECTION_NOW, e);
                     }
-                    // 是否资源
+                    // 释放资源
                     recycle();
                     // 进行下一个循环
                     continue;
@@ -461,10 +461,13 @@ public class AjpProcessor extends AbstractProcessor {
             }
 
             // Finish the response if not done yet
-            // 如果responseFinished
+            // 如果responseFinished为false
+            // 异常状态是io允许的
             if (!responseFinished && getErrorState().isIoAllowed()) {
                 try {
+                    // 执行action方法
                     action(ActionCode.COMMIT, null);
+                    // 完成响应对象
                     finishResponse();
                 } catch (IOException ioe) {
                     setErrorState(ErrorState.CLOSE_CONNECTION_NOW, ioe);
@@ -476,25 +479,32 @@ public class AjpProcessor extends AbstractProcessor {
 
             // If there was an error, make sure the request is counted as
             // and error, and update the statistics counter
+            // 如果异常状态是异常，将响应信息设置为500
             if (getErrorState().isError()) {
                 response.setStatus(500);
             }
+            // 为请求对象的reqProcessorMX累加1
             request.updateCounters();
 
+            // 设置stage为STAGE_KEEPALIVE
             rp.setStage(org.apache.coyote.Constants.STAGE_KEEPALIVE);
 
             // Set keep alive timeout for next request
+            // 设置读取超时时间
             socketWrapper.setReadTimeout(protocol.getKeepAliveTimeout());
-
+            // 释放资源
             recycle();
         }
 
+        // 设置stage为STAGE_ENDED
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
 
+        // 如果异常状态是异常，协议处理器暂停处理返回CLOSED
         if (getErrorState().isError() || protocol.isPaused()) {
             return SocketState.CLOSED;
         }
         else {
+            // 是异步的返回LONG,不是的返回OPEN
             if (isAsync()) {
                 return SocketState.LONG;
             }

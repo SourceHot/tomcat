@@ -268,11 +268,14 @@ public class Http11Processor extends AbstractProcessor {
 
             // Parsing the request header
             try {
+                // 读取请求数据中的请求头部分
                 if (!inputBuffer.parseRequestLine(keptAlive, protocol.getConnectionTimeout(),
                         protocol.getKeepAliveTimeout())) {
+                    // 请求解析阶段是-1返回UPGRADING
                     if (inputBuffer.getParsingRequestLinePhase() == -1) {
                         return SocketState.UPGRADING;
                     }
+                    // 如果是不完整的请求头读取直接结束处理
                     else if (handleIncompleteRequestLineRead()) {
                         break;
                     }
@@ -281,18 +284,26 @@ public class Http11Processor extends AbstractProcessor {
                 // Process the Protocol component of the request line
                 // Need to know if this is an HTTP 0.9 request before trying to
                 // parse headers.
+                // 准备请求协议，设置http09
+                //http11
+                //keepAlive
                 prepareRequestProtocol();
 
+                // 协议处理器处于暂停状态，为响应设置503状态码，设置异常状态为CLOSE_CLEAN
                 if (protocol.isPaused()) {
                     // 503 - Service unavailable
                     response.setStatus(503);
                     setErrorState(ErrorState.CLOSE_CLEAN, null);
                 }
+                // 协议处理器不处于暂停状态
                 else {
+                    // 变量keptAlive设置为true
                     keptAlive = true;
                     // Set this every time in case limit has been changed via JMX
+                    // 设置请求中对象中的MimeHeaders的数据
                     request.getMimeHeaders().setLimit(protocol.getMaxHeaderCount());
                     // Don't parse headers for HTTP/0.9
+                    // 如果不是http/0.9 并且解析请求头失败
                     if (!http09 && !inputBuffer.parseHeaders()) {
                         // We've read part of the request, don't recycle it
                         // instead associate it with the socket
@@ -300,6 +311,7 @@ public class Http11Processor extends AbstractProcessor {
                         readComplete = false;
                         break;
                     }
+                    //
                     if (!protocol.getDisableUploadTimeout()) {
                         socketWrapper.setReadTimeout(protocol.getConnectionUploadTimeout());
                     }
@@ -332,16 +344,23 @@ public class Http11Processor extends AbstractProcessor {
             }
 
             // Has an upgrade been requested?
+            // 如果请求中的令牌是upgrade
             if (isConnectionToken(request.getMimeHeaders(), "upgrade")) {
                 // Check the protocol
+                // 获取请求头中的Upgrade数据
                 String requestedProtocol = request.getHeader("Upgrade");
 
+                // 获取协议升级器
                 UpgradeProtocol upgradeProtocol = protocol.getUpgradeProtocol(requestedProtocol);
+                // 协议升级器不为空的情况下进行协议升级
                 if (upgradeProtocol != null) {
+                    // 判断协议升级器是否可以处理升级请求
                     if (upgradeProtocol.accept(request)) {
                         // Create clone of request for upgraded protocol
+                        // 创建请求对象，用于存储升级结果
                         Request upgradeRequest = null;
                         try {
+                            // 将原始请求克隆
                             upgradeRequest = cloneRequest(request);
                         } catch (ByteChunk.BufferOverflowException ioe) {
                             response.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
@@ -351,6 +370,7 @@ public class Http11Processor extends AbstractProcessor {
                             setErrorState(ErrorState.CLOSE_CLEAN, ioe);
                         }
 
+                        // 升级后的请求对象不为空
                         if (upgradeRequest != null) {
                             // Complete the HTTP/1.1 upgrade process
                             response.setStatus(HttpServletResponse.SC_SWITCHING_PROTOCOLS);
@@ -360,9 +380,11 @@ public class Http11Processor extends AbstractProcessor {
                             getAdapter().log(request, response, 0);
 
                             // Continue processing using new protocol
+                            // 获取InternalHttpUpgradeHandler对象
                             InternalHttpUpgradeHandler upgradeHandler =
                                     upgradeProtocol.getInternalUpgradeHandler(socketWrapper, getAdapter(), upgradeRequest);
                             UpgradeToken upgradeToken = new UpgradeToken(upgradeHandler, null, null, requestedProtocol);
+                            // 执行升级动作
                             action(ActionCode.UPGRADE, upgradeToken);
                             return SocketState.UPGRADING;
                         }
@@ -370,10 +392,13 @@ public class Http11Processor extends AbstractProcessor {
                 }
             }
 
+            // 异常状态是io允许的
             if (getErrorState().isIoAllowed()) {
                 // Setting up filters, and parse some request headers
+                // 设置stage为STAGE_PREPARE
                 rp.setStage(org.apache.coyote.Constants.STAGE_PREPARE);
                 try {
+                    // 预处理请求
                     prepareRequest();
                 } catch (Throwable t) {
                     ExceptionUtils.handleThrowable(t);
@@ -386,19 +411,25 @@ public class Http11Processor extends AbstractProcessor {
                 }
             }
 
+            // 获取协议处理器的maxKeepAliveRequests变量
             int maxKeepAliveRequests = protocol.getMaxKeepAliveRequests();
+            // 如果maxKeepAliveRequests变量等于1
             if (maxKeepAliveRequests == 1) {
                 keepAlive = false;
             }
+            // 如果maxKeepAliveRequests变量大于0并且socket中的keepAliveLeft变量小于等于0
             else if (maxKeepAliveRequests > 0 &&
                     socketWrapper.decrementKeepAlive() <= 0) {
                 keepAlive = false;
             }
 
             // Process the request in the adapter
+            // 异常状态是io允许的
             if (getErrorState().isIoAllowed()) {
                 try {
+                    // 设置stage为STAGE_SERVICE
                     rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
+                    // 获取适配器进行请求和响应的处理
                     getAdapter().service(request, response);
                     // Handle when the response was committed before a serious
                     // error occurred.  Throwing a ServletException should both
@@ -435,22 +466,29 @@ public class Http11Processor extends AbstractProcessor {
             }
 
             // Finish the handling of the request
+            // 设置stage为STAGE_ENDINPUT
             rp.setStage(org.apache.coyote.Constants.STAGE_ENDINPUT);
+            // 非异步
             if (!isAsync()) {
                 // If this is an async request then the request ends when it has
                 // been completed. The AsyncContext is responsible for calling
                 // endRequest() in that case.
+                // 结束请求
                 endRequest();
             }
+            // 设置stage为STAGE_ENDOUTPUT
             rp.setStage(org.apache.coyote.Constants.STAGE_ENDOUTPUT);
 
             // If there was an error, make sure the request is counted as
-            // and error, and update the statistics counter
+            // and error, and update the statistics
+            // 异常状态是异常，将响应信息设置为500
             if (getErrorState().isError()) {
                 response.setStatus(500);
             }
 
+            // 不是异步或者异常状态是异常
             if (!isAsync() || getErrorState().isError()) {
+                // reqProcessorMX累加1
                 request.updateCounters();
                 if (getErrorState().isIoAllowed()) {
                     inputBuffer.nextRequest();
@@ -458,6 +496,7 @@ public class Http11Processor extends AbstractProcessor {
                 }
             }
 
+            // 如果协议处理器上传标记为false
             if (!protocol.getDisableUploadTimeout()) {
                 int connectionTimeout = protocol.getConnectionTimeout();
                 if (connectionTimeout > 0) {
@@ -468,29 +507,37 @@ public class Http11Processor extends AbstractProcessor {
                 }
             }
 
+            // 设置stage为STAGE_KEEPALIVE
             rp.setStage(org.apache.coyote.Constants.STAGE_KEEPALIVE);
-
+            // 处理发送文件
             sendfileState = processSendfile(socketWrapper);
         }
 
         // 设置stage为STAGE_ENDED
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
 
+        // 异常状态是异常，协议处理器已暂停并且不是异步的返回CLOSED
         if (getErrorState().isError() || (protocol.isPaused() && !isAsync())) {
             return SocketState.CLOSED;
         }
+        // 异步的返回LONG
         else if (isAsync()) {
             return SocketState.LONG;
         }
+        // 需要升级的返回UPGRADING
         else if (isUpgrade()) {
             return SocketState.UPGRADING;
         }
+        // 其他情况
         else {
+            // 发送文件状态是PENDING，返回SENDFILE
             if (sendfileState == SendfileState.PENDING) {
                 return SocketState.SENDFILE;
             }
             else {
+                // 如果socket是开启状态
                 if (openSocket) {
+                    // 已经完全读取信息返回OPEN，反之返回LONG
                     if (readComplete) {
                         return SocketState.OPEN;
                     }
@@ -498,6 +545,7 @@ public class Http11Processor extends AbstractProcessor {
                         return SocketState.LONG;
                     }
                 }
+                // 其他情况CLOSED
                 else {
                     return SocketState.CLOSED;
                 }

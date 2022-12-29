@@ -333,6 +333,7 @@ public abstract class AbstractHttp11Protocol<S> extends AbstractProtocol<S> {
      * connectionUploadTimeout will be ignored and the regular socket timeout
      * will be used for the full duration of the connection.
      *
+     * 上传超时标记
      * @return {@code true} if the separate upload timeout is disabled
      */
     public boolean getDisableUploadTimeout() {

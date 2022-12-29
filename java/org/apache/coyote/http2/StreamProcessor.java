@@ -416,9 +416,11 @@ class StreamProcessor extends AbstractProcessor {
     @Override
     public final SocketState service(SocketWrapperBase<?> socket) throws IOException {
         try {
+            // 请求验证通过
             if (validateRequest()) {
                 adapter.service(request, response);
             }
+            // 验证不通过
             else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 adapter.log(request, response, 0);
